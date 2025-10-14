@@ -36,9 +36,12 @@ class FormalSpec:
 @dataclass
 class ProofResult:
     """Result of attempting to prove a formal specification."""
-    spec: FormalSpec
+    spec: Optional[FormalSpec]
     proven: bool
     proof_time_ms: float
     error_message: Optional[str]
     counter_example: Optional[str]
-    proof_output: str = ""  # Stdout output from proof attempt
+    proof_output: str = ""
+    prover_name: Optional[str] = None
+    solver_status: Optional[str] = None
+    auto_repaired: bool = False

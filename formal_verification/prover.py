@@ -61,7 +61,9 @@ class CoqProver:
                 proof_time_ms=0,
                 error_message="Coq theorem prover not available",
                 counter_example=None,
-                proof_output=""
+                proof_output="",
+                prover_name="coq",
+                solver_status="unavailable",
             )
         
         start_time = time.time()
@@ -87,7 +89,9 @@ class CoqProver:
                     proof_time_ms=proof_time,
                     error_message=None,
                     counter_example=None,
-                    proof_output=result.stdout.decode('utf-8') if result.stdout else ""
+                    proof_output=result.stdout.decode('utf-8') if result.stdout else "",
+                    prover_name="coq",
+                    solver_status="proved",
                 )
             else:
                 error_msg = result.stderr.decode('utf-8') if result.stderr else "Proof failed"
@@ -99,7 +103,9 @@ class CoqProver:
                     proof_time_ms=proof_time,
                     error_message=error_msg,
                     counter_example=self._extract_counter_example(error_msg),
-                    proof_output=result.stdout.decode('utf-8') if result.stdout else ""
+                    proof_output=result.stdout.decode('utf-8') if result.stdout else "",
+                    prover_name="coq",
+                    solver_status="refuted",
                 )
             
             # Cache the result
@@ -116,7 +122,9 @@ class CoqProver:
                 proof_time_ms=self.timeout_seconds * 1000,
                 error_message="Proof attempt timed out",
                 counter_example=None,
-                proof_output=""
+                proof_output="",
+                prover_name="coq",
+                solver_status="timeout",
             )
         
         finally:

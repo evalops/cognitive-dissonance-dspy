@@ -6,7 +6,7 @@ existing DSPy-based dissonance detection and reconciliation pipeline.
 
 import logging
 import time
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
 from .openai_agents import OpenAIClaimExtractor

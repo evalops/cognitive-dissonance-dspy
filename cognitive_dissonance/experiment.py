@@ -2,7 +2,7 @@
 
 from typing import List, Dict, Tuple, Any
 import logging
-from dspy.teleprompt import MIPROv2, BootstrapFewShot
+from dspy.teleprompt import BootstrapFewShot
 
 from .config import ExperimentConfig
 from .verifier import CognitiveDissonanceResolver, BeliefAgent, DissonanceDetector
@@ -150,15 +150,18 @@ def cognitive_dissonance_experiment(
 
     results = ExperimentResults()
 
+    def build_optimizer(metric):
+        return GEPAOptimizer(metric=metric)
+
     try:
         # Baseline: truth-optimized agent A
         logger.info("Training baseline agent A on ground truth...")
-        optimizer_a = MIPROv2(metric=combined_metric, auto=config.auto_mode)
+        optimizer_a = build_optimizer(combined_metric)
         agent_a = optimizer_a.compile(agent_a, trainset=dev_labeled)
 
         # Initialize agent B with same baseline training
         logger.info("Training baseline agent B on ground truth...")
-        optimizer_b = MIPROv2(metric=combined_metric, auto=config.auto_mode)
+        optimizer_b = build_optimizer(combined_metric)
         agent_b = optimizer_b.compile(agent_b, trainset=dev_labeled)
 
         # Iterative co-training
@@ -177,12 +180,12 @@ def cognitive_dissonance_experiment(
 
             # Train A to agree with B while detecting dissonance
             logger.debug("Training agent A...")
-            optimizer_a = MIPROv2(metric=metric_a, auto=config.auto_mode)
+            optimizer_a = build_optimizer(metric_a)
             agent_a = optimizer_a.compile(agent_a, trainset=train_unlabeled)
 
             # Train B to agree with A while detecting dissonance
             logger.debug("Training agent B...")
-            optimizer_b = MIPROv2(metric=metric_b, auto=config.auto_mode)
+            optimizer_b = build_optimizer(metric_b)
             agent_b = optimizer_b.compile(agent_b, trainset=train_unlabeled)
 
             # Evaluate both agents

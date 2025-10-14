@@ -191,7 +191,9 @@ class FormalVerificationConflictDetector:
                     proof_time_ms=hybrid_result.get('time_ms', 0),
                     error_message=hybrid_result.get('error', ''),
                     proof_output=f"Prover: {hybrid_result.get('prover', 'unknown')}",
-                    counter_example=hybrid_result.get('counter_example', {})
+                    counter_example=hybrid_result.get('counter_example', {}),
+                    prover_name=hybrid_result.get('prover', 'hybrid'),
+                    solver_status="proved" if hybrid_result.get('proven') else "refuted",
                 )
             else:
                 # Using CoqProver
@@ -208,6 +210,7 @@ class FormalVerificationConflictDetector:
                         # Using NecessityProofIntegrator
                         repaired_result = self.prover.prove_with_necessity_priority(repaired_spec.claim)
                         repaired_result.proof_output += " (with auto-repair)"
+                        repaired_result.auto_repaired = True
                     elif Z3_AVAILABLE and hasattr(self.prover, 'prove_claim'):
                         # Using HybridProver
                         repaired_hybrid_result = self.prover.prove_claim(repaired_spec.claim.claim_text, code=code)
@@ -217,12 +220,16 @@ class FormalVerificationConflictDetector:
                             proof_time_ms=repaired_hybrid_result.get('time_ms', 0),
                             error_message=repaired_hybrid_result.get('error', ''),
                             proof_output=f"Prover: {repaired_hybrid_result.get('prover', 'unknown')} (with auto-repair)",
-                            counter_example=repaired_hybrid_result.get('counter_example', {})
+                            counter_example=repaired_hybrid_result.get('counter_example', {}),
+                            prover_name=repaired_hybrid_result.get('prover', 'hybrid'),
+                            solver_status="proved" if repaired_hybrid_result.get('proven') else "refuted",
+                            auto_repaired=True,
                         )
                     else:
                         # Using CoqProver  
                         repaired_result = self.prover.prove_specification(repaired_spec)
                         repaired_result.proof_output += " (with auto-repair)"
+                        repaired_result.auto_repaired = True
                     
                     if repaired_result.proven:
                         logger.info(f"Automatic repair successful for '{spec.claim.claim_text[:50]}...'")
@@ -301,7 +308,10 @@ class FormalVerificationConflictDetector:
                                 proof_time_ms=repaired_result.get('time_ms', 0),
                                 error_message='',
                                 proof_output=f"Deep Analysis + Auto-Repair + {repaired_result.get('prover', 'unknown')}",
-                                counter_example={}
+                                counter_example={},
+                                prover_name=repaired_result.get('prover', 'hybrid'),
+                                solver_status="proved",
+                                auto_repaired=True,
                             )
                             logger.info(f"Successfully repaired property: {spec.spec_text[:50]}...")
             

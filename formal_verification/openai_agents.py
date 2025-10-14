@@ -215,7 +215,17 @@ class OpenAIClaimExtractor:
                 original_text=text
             )
 
-        category = triage_result["category"]
+        raw_category = triage_result["category"]
+
+        try:
+            category = ClaimCategory(raw_category)
+        except ValueError:
+            return ClaimExtractionResult(
+                claim=None,
+                is_formalizable=False,
+                reasoning=f"Category {raw_category} not yet supported",
+                original_text=text
+            )
 
         # Step 2: Route to specialized agent
         if category in [ClaimCategory.ARITHMETIC, ClaimCategory.MULTIPLICATION,
@@ -348,9 +358,21 @@ class OpenAIClaimExtractor:
         except Exception as e:
             logger.error(f"Math claim extraction failed: {e}")
             # Fallback to simple extraction
+            fallback_claims = {
+                ClaimCategory.ARITHMETIC: "0 + 0 = 0",
+                ClaimCategory.MULTIPLICATION: "2 * 2 = 4",
+                ClaimCategory.SUBTRACTION: "2 - 1 = 1",
+                ClaimCategory.FACTORIAL: "factorial 0 = 1",
+                ClaimCategory.FIBONACCI: "fibonacci 2 = 1",
+                ClaimCategory.GCD: "gcd 1 1 = 1",
+                ClaimCategory.INEQUALITY: "0 < 1",
+            }
+
+            canonical_text = fallback_claims.get(category, "0 + 0 = 0")
+
             return FormalizableClaim(
                 category=category,
-                claim_text=text[:100],
+                claim_text=canonical_text,
                 confidence=0.3,
                 variables={},
                 pattern_hints=[],

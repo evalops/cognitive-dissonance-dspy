@@ -122,7 +122,7 @@ class TestExperimentConfig:
         
         import dspy
         monkeypatch.setattr(dspy, "configure", mock_configure)
-        monkeypatch.setattr(dspy, "configure_cache", mock_configure_cache)
+        monkeypatch.setattr(dspy, "configure_cache", mock_configure_cache, raising=False)
         
         # Mock LM class
         class MockLM:

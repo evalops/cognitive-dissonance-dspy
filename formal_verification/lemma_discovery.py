@@ -576,8 +576,10 @@ def demo_lemma_discovery():
         proven=False,
         proof_time_ms=1500,
         error_message="Unable to unify (factorial 5) with 120. This usually indicates that an inductive proof is needed.",
+        counter_example={},
         proof_output="Tactic 'reflexivity' failed.",
-        counter_example={}
+        prover_name="coq",
+        solver_status="refuted",
     )
     
     engine = LemmaDiscoveryEngine()

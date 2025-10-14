@@ -517,7 +517,9 @@ class HybridProver:
             proof_time_ms=result['time_ms'],
             error_message=result.get('error', ''),
             proof_output=f"Prover: {result['prover']}",
-            counter_example=result.get('counter_example', {})
+            counter_example=result.get('counter_example', {}),
+            prover_name=result['prover'],
+            solver_status="proved" if result['proven'] else "refuted",
         )
         
         self.learner.record_proof_attempt(claim, result['prover'], learning_result, code)
@@ -536,7 +538,9 @@ class HybridProver:
                 proof_time_ms=alternative_result['time_ms'], 
                 error_message=alternative_result.get('error', ''),
                 proof_output=f"Prover: {alternative_result['prover']}",
-                counter_example=alternative_result.get('counter_example', {})
+                counter_example=alternative_result.get('counter_example', {}),
+                prover_name=alternative_result['prover'],
+                solver_status="proved" if alternative_result['proven'] else "refuted",
             )
             
             self.learner.record_proof_attempt(claim, alternative_result['prover'], alt_learning_result, code)

@@ -384,7 +384,9 @@ class NecessityBasedProver:
                 proof_time_ms=(end_time - start_time) * 1000,
                 error_message="No mathematical necessity pattern detected",
                 counter_example=None,
-                proof_output="Necessity-Based Prover: No applicable necessity pattern"
+                proof_output="Necessity-Based Prover: No applicable necessity pattern",
+                prover_name="necessity",
+                solver_status="inconclusive",
             )
         
         # Generate proof based on necessity
@@ -439,7 +441,9 @@ class NecessityBasedProver:
             proof_time_ms=0.0,  # Will be set by caller
             error_message=error_message,
             counter_example=counter_example,
-            proof_output=proof_output
+            proof_output=proof_output,
+            prover_name="necessity",
+            solver_status="proved" if proven else "refuted",
         )
     
     def _generate_coq_from_necessity(self, evidence: NecessityEvidence) -> str:
@@ -514,7 +518,9 @@ class NecessityProofIntegrator:
                         proof_time_ms=fallback_dict.get('time_ms', 0) + necessity_result.proof_time_ms,
                         error_message=fallback_dict.get('error', None),
                         counter_example=fallback_dict.get('counter_example', {}),
-                        proof_output=f"Necessity + Fallback: {fallback_dict.get('prover', 'unknown')}"
+                        proof_output=f"Necessity + Fallback: {fallback_dict.get('prover', 'unknown')}",
+                        prover_name=fallback_dict.get('prover', 'hybrid'),
+                        solver_status="proved" if fallback_dict.get('proven') else "refuted",
                     )
                     return fallback_result
                     
@@ -524,6 +530,10 @@ class NecessityProofIntegrator:
                     fallback_result = self.fallback_prover.prove_specification(spec)
                     fallback_result.proof_time_ms = fallback_result.proof_time_ms + necessity_result.proof_time_ms
                     fallback_result.proof_output = f"Necessity + {fallback_result.proof_output}"
+                    if fallback_result.prover_name is None:
+                        fallback_result.prover_name = "coq"
+                    if fallback_result.solver_status is None:
+                        fallback_result.solver_status = "proved" if fallback_result.proven else "refuted"
                     return fallback_result
                     
             except Exception as e:

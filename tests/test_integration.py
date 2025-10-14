@@ -31,7 +31,7 @@ class TestEndToEndPipeline:
         
         # Mock DSPy configuration
         with patch('dspy.configure'):
-            with patch('dspy.configure_cache'):
+            with patch('dspy.configure_cache', create=True):
                 with patch('dspy.LM'):
                     config.setup_dspy()
         
@@ -176,8 +176,8 @@ class TestDataIntegration:
 class TestExperimentIntegration:
     """Test experiment integration."""
     
-    @patch('cognitive_dissonance.experiment.MIPROv2')
-    def test_mini_experiment(self, mock_mipro):
+    @patch('cognitive_dissonance.experiment.GEPAOptimizer')
+    def test_mini_experiment(self, mock_gepa):
         """Test minimal experiment execution."""
         # Setup minimal config
         config = ExperimentConfig(
@@ -198,11 +198,11 @@ class TestExperimentIntegration:
             confidence2="low"
         )
         mock_optimizer.compile = Mock(return_value=mock_compiled)
-        mock_mipro.return_value = mock_optimizer
+        mock_gepa.return_value = mock_optimizer
         
         # Mock DSPy setup
         with patch('dspy.configure'):
-            with patch('dspy.configure_cache'):
+            with patch('dspy.configure_cache', create=True):
                 with patch('dspy.LM'):
                     results = cognitive_dissonance_experiment(config)
         
@@ -311,8 +311,8 @@ class TestConfigurationIntegration:
 class TestLongRunningIntegration:
     """Long-running integration tests (marked as slow)."""
     
-    @patch('cognitive_dissonance.experiment.MIPROv2')
-    def test_multi_round_experiment(self, mock_mipro):
+    @patch('cognitive_dissonance.experiment.GEPAOptimizer')
+    def test_multi_round_experiment(self, mock_gepa):
         """Test multi-round experiment."""
         config = ExperimentConfig(rounds=3)
         
@@ -328,10 +328,10 @@ class TestLongRunningIntegration:
             confidence2="low"
         )
         mock_optimizer.compile = Mock(return_value=mock_compiled)
-        mock_mipro.return_value = mock_optimizer
+        mock_gepa.return_value = mock_optimizer
         
         with patch('dspy.configure'):
-            with patch('dspy.configure_cache'):
+            with patch('dspy.configure_cache', create=True):
                 with patch('dspy.LM'):
                     results = cognitive_dissonance_experiment(config)
         

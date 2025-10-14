@@ -120,8 +120,8 @@ class TestCognitiveDissonanceExperiment:
     
     @patch('cognitive_dissonance.experiment.get_dev_labeled')
     @patch('cognitive_dissonance.experiment.get_train_unlabeled')
-    @patch('cognitive_dissonance.experiment.MIPROv2')
-    def test_basic_experiment(self, mock_mipro, mock_train, mock_dev, mock_config):
+    @patch('cognitive_dissonance.experiment.GEPAOptimizer')
+    def test_basic_experiment(self, mock_gepa, mock_train, mock_dev, mock_config):
         """Test basic experiment execution."""
         # Setup mock data
         mock_dev.return_value = [
@@ -138,7 +138,7 @@ class TestCognitiveDissonanceExperiment:
         # Setup mock optimizer
         mock_optimizer = Mock()
         mock_optimizer.compile = Mock(return_value=Mock())
-        mock_mipro.return_value = mock_optimizer
+        mock_gepa.return_value = mock_optimizer
         
         # Configure for minimal rounds
         mock_config.rounds = 1

@@ -9,7 +9,9 @@ from cognitive_dissonance.mathematical_resolver import (
     ClaimClassifier,
     ClaimCategory,
     MathematicalEvidence,
-    ResolutionResult
+    ResolutionResult,
+    ResolutionMethod,
+    EvidenceStatus,
 )
 from formal_verification import Claim as FormalClaim, PropertyType, ProofResult, FormalSpec
 
@@ -142,8 +144,8 @@ class TestMathematicalCognitiveDissonanceResolver:
         result = resolver(text1="2 plus 2 equals 4", text2="Math works as expected")
         
         assert result.conflict_detected is False
-        assert result.resolution_method == "probabilistic"
-        assert result.final_confidence == 0.8
+        assert result.resolution_method == ResolutionMethod.PROBABILISTIC
+        assert pytest.approx(result.final_confidence, rel=0.01) == 0.85
         assert len(result.mathematical_evidence) == 0
     
     @patch('cognitive_dissonance.mathematical_resolver.FormalVerificationConflictDetector')
@@ -180,6 +182,8 @@ class TestMathematicalCognitiveDissonanceResolver:
         mock_formal_result1.proof_time_ms = 150.0
         mock_formal_result1.error_message = None
         mock_formal_result1.proof_output = "Z3 Solver"
+        mock_formal_result1.prover_name = "z3"
+        mock_formal_result1.counter_example = None
         
         mock_formal_result2 = Mock(spec=ProofResult)
         mock_formal_result2.spec = Mock()
@@ -189,6 +193,8 @@ class TestMathematicalCognitiveDissonanceResolver:
         mock_formal_result2.proof_time_ms = 75.0
         mock_formal_result2.error_message = "Arithmetic contradiction"
         mock_formal_result2.proof_output = "Z3 Solver"
+        mock_formal_result2.prover_name = "z3"
+        mock_formal_result2.counter_example = None
         
         mock_analysis_results = {
             'proof_results': [mock_formal_result1, mock_formal_result2]
@@ -203,7 +209,7 @@ class TestMathematicalCognitiveDissonanceResolver:
         result = resolver(text1="2 plus 2 equals 4", text2="Actually 2 plus 2 equals 5")
         
         assert result.conflict_detected is True
-        assert result.resolution_method == "mathematical_proof"
+        assert result.resolution_method == ResolutionMethod.MATHEMATICAL_PROOF
         assert result.final_confidence == 1.0  # Mathematical certainty
         assert result.resolved_claim == "2 + 2 = 4"
         assert len(result.mathematical_evidence) == 2
@@ -247,8 +253,8 @@ class TestMathematicalCognitiveDissonanceResolver:
         )
         
         assert result.conflict_detected is True
-        assert result.resolution_method == "probabilistic"
-        assert result.final_confidence == 0.6  # Medium confidence for probabilistic
+        assert result.resolution_method == ResolutionMethod.PROBABILISTIC
+        assert pytest.approx(result.final_confidence, rel=0.05) == 0.6
         assert len(result.mathematical_evidence) == 0
         assert "probabilistic" in result.reasoning.lower()
     
@@ -259,7 +265,9 @@ class TestMathematicalCognitiveDissonanceResolver:
             proven=True,
             proof_time_ms=100.5,
             prover_used="Z3",
+            status=EvidenceStatus.PROVEN,
             error_message=None,
+            counter_example=None,
             confidence_score=1.0
         )
         
@@ -268,6 +276,7 @@ class TestMathematicalCognitiveDissonanceResolver:
         assert evidence.proof_time_ms == 100.5
         assert evidence.prover_used == "Z3"
         assert evidence.confidence_score == 1.0
+        assert evidence.status is EvidenceStatus.PROVEN
     
     def test_resolution_result_creation(self):
         """Test creation of resolution result objects."""
@@ -275,24 +284,30 @@ class TestMathematicalCognitiveDissonanceResolver:
             claim_text="test",
             proven=True,
             proof_time_ms=50.0,
-            prover_used="Coq"
+            prover_used="Coq",
+            status=EvidenceStatus.PROVEN,
+            error_message=None,
+            counter_example=None,
         )]
         
         result = ResolutionResult(
             original_claim1="claim 1",
             original_claim2="claim 2", 
             conflict_detected=True,
-            resolution_method="mathematical_proof",
+            resolution_method=ResolutionMethod.MATHEMATICAL_PROOF,
             resolved_claim="resolved",
             mathematical_evidence=evidence,
             probabilistic_confidence=0.7,
             final_confidence=1.0,
-            reasoning="Mathematical proof succeeded"
+            reasoning="Mathematical proof succeeded",
+            audit_metadata={},
+            solver_diagnostics=[],
+            normalized_specs=[],
         )
         
         assert result.original_claim1 == "claim 1"
         assert result.conflict_detected is True
-        assert result.resolution_method == "mathematical_proof"
+        assert result.resolution_method == ResolutionMethod.MATHEMATICAL_PROOF
         assert result.final_confidence == 1.0
         assert len(result.mathematical_evidence) == 1
         assert result.mathematical_evidence[0].proven is True
@@ -335,6 +350,8 @@ class TestIntegrationScenarios:
         mock_formal_result.proof_time_ms = 200.0
         mock_formal_result.error_message = None
         mock_formal_result.proof_output = "Coq Prover"
+        mock_formal_result.prover_name = "coq"
+        mock_formal_result.counter_example = None
         
         mock_analysis_results = {
             'proof_results': [mock_formal_result]
@@ -352,7 +369,7 @@ class TestIntegrationScenarios:
         )
         
         assert result.conflict_detected is True
-        assert result.resolution_method == "mathematical_proof"
+        assert result.resolution_method == ResolutionMethod.MATHEMATICAL_PROOF
         assert result.final_confidence == 1.0
         assert len(result.mathematical_evidence) == 1
         assert result.mathematical_evidence[0].proven is True

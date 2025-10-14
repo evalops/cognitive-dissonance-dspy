@@ -251,7 +251,5 @@ class TestAdvancedOptimizerFactory:
     
     def test_create_unknown_strategy(self):
         """Test creating optimizer with unknown strategy."""
-        from dspy.teleprompt import MIPROv2
-        
         optimizer = create_advanced_optimizer("unknown_strategy")
-        assert isinstance(optimizer, MIPROv2)
+        assert isinstance(optimizer, GEPAOptimizer)

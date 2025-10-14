@@ -43,7 +43,7 @@ def demo_mathematical_resolution():
     result = resolver(text1=text1, text2=text2)
     
     print(f"Conflict Detected: {result.conflict_detected}")
-    print(f"Resolution Method: {result.resolution_method}")
+    print(f"Resolution Method: {result.resolution_method.value}")
     print(f"Final Confidence: {result.final_confidence:.3f}")
     print(f"Resolved Claim: {result.resolved_claim}")
     print(f"Reasoning: {result.reasoning}")
@@ -78,7 +78,7 @@ def demo_mathematical_resolution():
     result2 = resolver(text1=text3, text2=text4, code=sample_code)
     
     print(f"Conflict Detected: {result2.conflict_detected}")
-    print(f"Resolution Method: {result2.resolution_method}")  
+    print(f"Resolution Method: {result2.resolution_method.value}")  
     print(f"Final Confidence: {result2.final_confidence:.3f}")
     print(f"Resolved Claim: {result2.resolved_claim}")
     print(f"Reasoning: {result2.reasoning}")
@@ -101,7 +101,7 @@ def demo_mathematical_resolution():
     result3 = resolver(text1=text5, text2=text6)
     
     print(f"Conflict Detected: {result3.conflict_detected}")
-    print(f"Resolution Method: {result3.resolution_method}")
+    print(f"Resolution Method: {result3.resolution_method.value}")
     print(f"Final Confidence: {result3.final_confidence:.3f}")
     print(f"Resolved Claim: {result3.resolved_claim}")
     print(f"Reasoning: {result3.reasoning}")

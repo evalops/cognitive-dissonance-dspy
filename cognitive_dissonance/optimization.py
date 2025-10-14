@@ -3,7 +3,8 @@
 import logging
 from typing import List, Dict, Any, Optional, Callable, Union
 import dspy
-from dspy.teleprompt import MIPROv2, BootstrapFewShot
+
+from dspy.teleprompt import BootstrapFewShot
 
 logger = logging.getLogger(__name__)
 
@@ -188,8 +189,7 @@ class GEPAOptimizer:
             
             # Try to improve using reflection insights
             try:
-                # Use MIPROv2 with reflection-informed optimization
-                optimizer = MIPROv2(metric=self.metric, auto="light")
+                optimizer = BootstrapFewShot(metric=self.metric)
                 improved_module = optimizer.compile(best_module, trainset=trainset)
                 
                 # Evaluate improvement
@@ -415,25 +415,23 @@ def create_advanced_optimizer(optimization_strategy: str = "gepa+ensemble") -> A
     
     if optimization_strategy == "gepa":
         return GEPAOptimizer(metric=combined_metric)
-    
-    elif optimization_strategy == "ensemble":
-        base_optimizers = [
-            MIPROv2(metric=combined_metric, auto="light"),
-            MIPROv2(metric=dissonance_detection_accuracy, auto="light"),
-            BootstrapFewShot(metric=combined_metric)
+
+    if optimization_strategy == "ensemble":
+        base_optimizers: List[Any] = [
+            GEPAOptimizer(metric=combined_metric),
+            BootstrapFewShot(metric=combined_metric),
+            BootstrapFewShot(metric=dissonance_detection_accuracy),
         ]
         return EnsembleOptimizer(base_optimizers)
-    
-    elif optimization_strategy == "gepa+ensemble":
-        # Combined approach: use GEPA for initial optimization, then ensemble
+
+    if optimization_strategy == "gepa+ensemble":
         gepa = GEPAOptimizer(metric=combined_metric)
         base_optimizers = [
             gepa,
-            MIPROv2(metric=combined_metric, auto="light"),
-            MIPROv2(metric=dissonance_detection_accuracy, auto="light")
+            BootstrapFewShot(metric=combined_metric),
+            BootstrapFewShot(metric=dissonance_detection_accuracy),
         ]
-        return EnsembleOptimizer(base_optimizers, ensemble_size=3)
-    
-    else:
-        logger.warning(f"Unknown optimization strategy: {optimization_strategy}")
-        return MIPROv2(metric=combined_metric, auto="light")
+        return EnsembleOptimizer(base_optimizers, ensemble_size=len(base_optimizers))
+
+    logger.warning(f"Unknown optimization strategy: {optimization_strategy}")
+    return GEPAOptimizer(metric=combined_metric)

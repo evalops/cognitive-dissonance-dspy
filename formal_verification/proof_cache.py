@@ -75,7 +75,11 @@ class ProofCache:
                     proven=data["proven"],
                     proof_time_ms=data["proof_time_ms"],
                     error_message=data.get("error_message"),
-                    proof_output=data.get("proof_output", "")
+                    counter_example=data.get("counter_example"),
+                    proof_output=data.get("proof_output", ""),
+                    prover_name=data.get("prover_name"),
+                    solver_status=data.get("solver_status"),
+                    auto_repaired=data.get("auto_repaired", False),
                 )
                 
                 # Add to memory cache
@@ -113,6 +117,10 @@ class ProofCache:
                 "proof_time_ms": result.proof_time_ms,
                 "error_message": result.error_message,
                 "proof_output": result.proof_output,
+                "counter_example": result.counter_example,
+                "prover_name": result.prover_name,
+                "solver_status": result.solver_status,
+                "auto_repaired": result.auto_repaired,
                 "cached_at": time.time()
             }
             

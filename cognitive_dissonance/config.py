@@ -78,10 +78,11 @@ class ExperimentConfig:
             max_tokens=self.max_tokens,
         )
 
-        dspy.configure_cache(
-            enable_disk_cache=self.enable_disk_cache,
-            enable_memory_cache=self.enable_memory_cache,
-        )
+        if hasattr(dspy, "configure_cache"):
+            dspy.configure_cache(
+                enable_disk_cache=self.enable_disk_cache,
+                enable_memory_cache=self.enable_memory_cache,
+            )
 
         dspy.configure(lm=lm)
         logger.info(f"DSPy configured with model: {self.model}")
