@@ -18,6 +18,7 @@ from formal_verification import (
     PropertyType,
     ProofResult
 )
+from formal_verification.semantic_bridge import SemanticLogicalBridge
 from .verifier import BeliefAgent, DissonanceDetector, ReconciliationAgent
 
 logger = logging.getLogger(__name__)
@@ -169,6 +170,9 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
         # Initialize mathematical components
         self.claim_classifier = ClaimClassifier()
         
+        # Initialize semantic bridge system
+        self.semantic_bridge = SemanticLogicalBridge()
+        
         # Initialize formal verification system
         self.enable_formal_verification = enable_formal_verification
         if enable_formal_verification:
@@ -236,12 +240,16 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
         
         mathematical_evidence = []
         
-        # Step 4: Attempt formal verification for verifiable claims
+        # Step 4: Attempt formal verification for verifiable claims (including bridged subjective)
         if self.enable_formal_verification and self.formal_detector:
             formal_claims = []
+            bridged_claims = []  # Track which claims were semantically bridged
             
-            # Create formal claims for verifiable categories
+            # Process each claim through classification and semantic bridging
             for i, (claim_text, category) in enumerate([(claim1_text, category1), (claim2_text, category2)]):
+                claims_to_verify = []
+                
+                # Handle directly verifiable claims
                 if category in [ClaimCategory.MATHEMATICAL, ClaimCategory.ALGORITHMIC, 
                                ClaimCategory.PHYSICAL, ClaimCategory.SOFTWARE]:
                     
@@ -261,6 +269,44 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
                         timestamp=time.time()
                     )
                     formal_claims.append(formal_claim)
+                
+                # Handle subjective/unverifiable claims through semantic bridging
+                elif category in [ClaimCategory.SUBJECTIVE, ClaimCategory.UNVERIFIABLE]:
+                    logger.info(f"Attempting semantic bridging for {category.value} claim: '{claim_text[:50]}...'")
+                    
+                    # Analyze for objective components
+                    bridge = self.semantic_bridge.analyze_subjective_claim(claim_text)
+                    
+                    if self.semantic_bridge.should_attempt_verification(bridge):
+                        logger.info(f"Found objective grounding (score: {bridge.total_objectivity_score:.2f}) - creating verification targets")
+                        
+                        # Generate verification targets from bridged components
+                        verification_targets = self.semantic_bridge.get_verification_targets(bridge)
+                        
+                        for target_claim in verification_targets:
+                            # Determine property type based on the target claim content
+                            if any(word in target_claim.lower() for word in ['complexity', 'time', 'space', 'O(', 'algorithm']):
+                                prop_type = PropertyType.TIME_COMPLEXITY
+                            elif any(word in target_claim.lower() for word in ['memory', 'buffer', 'safe', 'overflow']):
+                                prop_type = PropertyType.MEMORY_SAFETY
+                            else:
+                                prop_type = PropertyType.CORRECTNESS
+                            
+                            bridged_claim = FormalClaim(
+                                agent_id=f"agent_{i+1}_bridged",
+                                claim_text=target_claim,
+                                property_type=prop_type,
+                                confidence=bridge.total_objectivity_score,
+                                timestamp=time.time()
+                            )
+                            formal_claims.append(bridged_claim)
+                            bridged_claims.append({
+                                'original': claim_text,
+                                'bridged': target_claim,
+                                'objectivity_score': bridge.total_objectivity_score
+                            })
+                    else:
+                        logger.debug(f"Insufficient objective grounding (score: {bridge.total_objectivity_score:.2f}) - using probabilistic fallback")
             
             # Perform formal analysis
             if formal_claims:
@@ -288,10 +334,28 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
                 except Exception as e:
                     logger.warning(f"Formal verification failed: {e}")
         
-        # Step 5: Resolve using mathematical evidence
-        return self._resolve_with_mathematical_evidence(
+        # Step 5: Resolve using mathematical evidence (including bridged claims)
+        resolution_result = self._resolve_with_mathematical_evidence(
             claim1_text, claim2_text, mathematical_evidence, dissonance.reason
         )
+        
+        # Enhance resolution with semantic bridging information
+        if 'bridged_claims' in locals() and bridged_claims:
+            bridge_info = []
+            for bridge_data in bridged_claims:
+                bridge_info.append(
+                    f"Bridged '{bridge_data['original'][:30]}...' → '{bridge_data['bridged']}' "
+                    f"(objectivity: {bridge_data['objectivity_score']:.2f})"
+                )
+            
+            if resolution_result.resolution_method == "mathematical_proof":
+                resolution_result.reasoning += f"\n\nSemantic Bridge Analysis: {'; '.join(bridge_info)}"
+            elif resolution_result.resolution_method == "hybrid":
+                resolution_result.reasoning = f"Hybrid resolution with semantic bridging: {'; '.join(bridge_info)}. {resolution_result.reasoning}"
+            
+            logger.info(f"Resolution enhanced with {len(bridged_claims)} semantic bridges")
+        
+        return resolution_result
     
     def _resolve_with_mathematical_evidence(
         self, 
