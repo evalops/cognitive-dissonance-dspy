@@ -2,7 +2,7 @@
 
 [![Requirements: Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![DSPy](https://img.shields.io/badge/DSPy-Compatible-green.svg)](https://github.com/stanfordnlp/dspy)
-[![Coq](https://img.shields.io/badge/Coq-8.18+-orange.svg)](https://coq.inria.fr/)
+[![Coq/Rocq](https://img.shields.io/badge/Coq%2FRocq-required-orange.svg)](https://coq.inria.fr/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This repository accompanies the manuscript:
@@ -18,6 +18,10 @@ disagreement through theorem proving. The central claim is methodological:
 > deterministic canonicalization, provider-assisted extraction, proof outcome,
 > and evidence strength. Exact-match auditing is necessary because provider
 > lift on hard paraphrases comes with silent-correction risk.
+
+All reported results presume a correctly configured Coq/Rocq environment. Runs
+without `coqc` and `coqchk` are treated as setup failures, not as meaningful
+experimental conditions.
 
 ## Research Claim
 
@@ -41,7 +45,8 @@ Artifacts reported here were generated on 2026-04-07 from `56d718c-dirty`.
 
 ### Symbolic proof baseline
 
-The 45-case symbolic benchmark is fully decisive once Coq is available locally.
+The 45-case symbolic benchmark is fully decisive under the required
+Coq/Rocq-backed environment.
 
 | Condition | Decisive Coverage | Decisive Accuracy | Machine-Checked Cases |
 | --- | ---: | ---: | ---: |
@@ -159,6 +164,8 @@ Primary study artifacts:
 ```bash
 .venv/bin/python research/run_study.py
 ```
+
+`research/run_study.py` now fails fast if `coqc` or `coqchk` is missing.
 
 ### Live provider-backed extraction run
 

@@ -67,7 +67,7 @@ verification benchmark, a 35-case easy natural-language extraction benchmark,
 and a 19-case hard paraphrase benchmark designed to defeat deterministic
 normalization.
 
-With \texttt{coqc} and \texttt{coqchk} available locally, the symbolic
+Under the required \texttt{coqc}/\texttt{coqchk} toolchain, the symbolic
 benchmark is fully decisive, and the easy extraction benchmark also saturates
 on its formalizable slice. However, that easy benchmark no longer measures
 provider extraction strength because all 27 formalizable cases are solved by
@@ -267,9 +267,10 @@ Study date & 2026-04-07 \\
 \bottomrule
 \end{longtable}
 
-The availability of \texttt{coqc} and \texttt{coqchk} matters materially.
-Earlier local runs without Coq support produced weaker end-to-end proof
-coverage. All claims in this paper refer to the Coq-enabled environment above.
+The Coq/Rocq toolchain is a prerequisite for this study, not an experimental
+variable. Missing \texttt{coqc} or \texttt{coqchk} is treated as environment
+misconfiguration because the manuscript's claims concern machine-checked or
+checker-validated proof behavior.
 
 \subsection{Benchmark Slices}
 

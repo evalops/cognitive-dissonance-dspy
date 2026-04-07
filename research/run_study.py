@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import statistics
 import subprocess
 import time
@@ -23,6 +24,19 @@ from formal_verification.translator import ClaimTranslator
 ROOT = Path(__file__).resolve().parents[1]
 BENCHMARKS_DIR = ROOT / "research" / "benchmarks"
 RESULTS_DIR = ROOT / "research" / "results"
+
+
+def _require_coq_toolchain() -> None:
+    """Fail fast when the research environment is missing Coq/Rocq tooling."""
+    missing = [
+        binary for binary in ("coqc", "coqchk") if shutil.which(binary) is None
+    ]
+    if missing:
+        raise RuntimeError(
+            "Research study requires the Coq/Rocq toolchain. Missing binaries: "
+            + ", ".join(missing)
+            + ". Install coqc and coqchk before running research/run_study.py."
+        )
 
 
 def _load_json(path: Path) -> list[dict[str, Any]]:
@@ -842,6 +856,7 @@ def _results_summary(study: dict[str, Any]) -> str:
 
 def run_study(args: argparse.Namespace) -> dict[str, Any]:
     """Execute the full study and write JSON plus markdown artifacts."""
+    _require_coq_toolchain()
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
     formal_benchmark = _load_json(BENCHMARKS_DIR / "formal_verification_benchmark.json")
