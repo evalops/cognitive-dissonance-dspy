@@ -217,6 +217,46 @@ print(f"Proven: {results['proof_results'][0].proven}")    # True
 print(f"Proof time: {results['proof_results'][0].proof_time_ms}ms")  # ~150ms
 ```
 
+### OpenAI-Compatible Claim Extraction
+
+The structured extractor supports the default OpenAI endpoint and compatible
+providers such as OpenRouter.
+
+```bash
+export OPENAI_API_KEY='your-key-here'
+
+# Optional for OpenAI-compatible providers
+export OPENAI_BASE_URL='https://openrouter.ai/api/v1'
+export OPENAI_APP_NAME='EvalOps Cognitive Dissonance'
+export OPENAI_SITE_URL='https://evalops.dev'
+```
+
+```python
+from formal_verification.openai_agents import OpenAIClaimExtractor
+
+extractor = OpenAIClaimExtractor(model="openai/gpt-4.1-mini")
+result = extractor.extract_claim("two plus two equals four")
+
+print(result.is_formalizable)         # True
+print(result.claim.claim_text)        # "2 + 2 = 4"
+print(result.claim.category.value)    # "arithmetic"
+```
+
+The extractor uses strict JSON schema on the native OpenAI endpoint and a more
+portable JSON-object mode on compatible endpoints, then normalizes lighter
+provider payloads before validation.
+
+Optional live smoke coverage is available for a provider-backed extraction plus
+hybrid proof run:
+
+```bash
+RUN_LIVE_API_TESTS=true \
+OPENAI_API_KEY="$OPENAI_API_KEY" \
+OPENAI_BASE_URL="${OPENAI_BASE_URL:-https://openrouter.ai/api/v1}" \
+OPENAI_MODEL="${OPENAI_MODEL:-openai/gpt-4.1-mini}" \
+.venv/bin/python -m pytest -q tests/test_openai_compatible_integration.py
+```
+
 ## Research Applications
 
 This framework enables research in:

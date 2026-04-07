@@ -9,6 +9,12 @@ upon the DSPy-based approach by:
 
 Run with:
     python examples/openai_agents_demo.py
+
+Optional provider settings:
+    export OPENAI_API_KEY='...'
+    export OPENAI_BASE_URL='https://openrouter.ai/api/v1'
+    export OPENAI_APP_NAME='EvalOps Cognitive Dissonance'
+    export OPENAI_SITE_URL='https://evalops.dev'
 """
 
 import logging
@@ -215,10 +221,18 @@ def demo_comparison():
     print("\nResults:")
     print(f"  Total claims: {metrics['total_claims']}")
     print("\n  OpenAI SDK + Guardrails:")
-    print(f"    Formalizable: {metrics['openai']['formalizable_count']}/{metrics['total_claims']} "
-          f"({metrics['openai']['formalizable_rate']:.1%})")
-    print(f"    Proven: {metrics['openai']['proven_count']}/{metrics['total_claims']} "
-          f"({metrics['openai']['proven_rate']:.1%})")
+    print(
+        "    Formalizable: "
+        f"{metrics['openai']['formalizable_count']}/"
+        f"{metrics['total_claims']} "
+        f"({metrics['openai']['formalizable_rate']:.1%})"
+    )
+    print(
+        "    Proven: "
+        f"{metrics['openai']['proven_count']}/"
+        f"{metrics['total_claims']} "
+        f"({metrics['openai']['proven_rate']:.1%})"
+    )
     print(f"    Avg extraction: {metrics['openai']['avg_extraction_time_ms']:.1f}ms")
     print(f"    Avg proof: {metrics['openai']['avg_proof_time_ms']:.1f}ms")
     print(f"    Total time: {metrics['openai']['total_time_ms']:.1f}ms")
@@ -230,13 +244,22 @@ def main():
     print("OpenAI Agents SDK Integration for Cognitive Dissonance DSPy")
     print("="*80)
 
-    # Check for OpenAI API key
+    # Check for OpenAI-compatible API key
     if not os.getenv("OPENAI_API_KEY"):
         print("\n⚠️  WARNING: OPENAI_API_KEY not set in environment")
-        print("Please set your OpenAI API key:")
+        print("Please set your OpenAI-compatible API key:")
         print("  export OPENAI_API_KEY='your-key-here'")
+        print("\nOptional provider settings:")
+        print("  export OPENAI_BASE_URL='https://openrouter.ai/api/v1'")
+        print("  export OPENAI_APP_NAME='EvalOps Cognitive Dissonance'")
+        print("  export OPENAI_SITE_URL='https://evalops.dev'")
         print("\nDemos will fail without a valid API key.\n")
         return
+
+    if os.getenv("OPENAI_BASE_URL"):
+        print(f"\nUsing compatible provider endpoint: {os.getenv('OPENAI_BASE_URL')}")
+    else:
+        print("\nUsing default OpenAI API endpoint")
 
     try:
         # Run demos
@@ -255,8 +278,9 @@ def main():
         print(f"\n✗ Error: {e}")
         print("\nCommon issues:")
         print("  1. OPENAI_API_KEY not set or invalid")
-        print("  2. Coq not installed (required for proof verification)")
-        print("  3. Missing dependencies (run: pip install openai pydantic)")
+        print("  2. OPENAI_BASE_URL points to an incompatible endpoint")
+        print("  3. Coq not installed (required for proof verification)")
+        print("  4. Missing dependencies (run: pip install openai pydantic)")
 
 
 if __name__ == "__main__":

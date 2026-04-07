@@ -4,8 +4,10 @@ This module provides specialized agents for extracting formalizable claims
 with much higher accuracy than the unstructured DSPy approach.
 """
 
+import json
 import logging
 import os
+import re
 from typing import Any
 
 from openai import OpenAI
@@ -15,6 +17,32 @@ from .translator import ClaimTranslator
 from .types import Claim, PropertyType
 
 logger = logging.getLogger(__name__)
+
+VARIABLE_KEYS = (
+    "left",
+    "right",
+    "result",
+    "input",
+    "output",
+    "a",
+    "b",
+    "variable",
+    "property",
+    "hypothesis",
+    "conclusion",
+    "index",
+    "length",
+    "start",
+    "end",
+    "target",
+    "value",
+    "size",
+    "element",
+    "elements",
+    "array",
+    "maximum",
+    "minimum",
+)
 
 
 # Agent instructions for different specializations
@@ -40,7 +68,8 @@ UNFORMALIZABLE claims:
 - Requires external knowledge: "uses industry best practices"
 - Natural language without math: "the user will be happy"
 
-When you identify a claim, categorize it precisely and route to the appropriate specialist.
+When you identify a claim, categorize it precisely and route to the
+appropriate specialist.
 Be conservative - if uncertain, mark as unformalizable.
 """
 
@@ -77,9 +106,11 @@ INEQUALITY:
 - Pattern: 'N < M', 'N > M', 'N <= M', 'N >= M'
 - Example: '3 < 5' (NOT "three is less than five")
 
-Extract variables into a dictionary with keys: 'left', 'right', 'result' (or 'input', 'output' for functions).
+Extract variables into a dictionary with keys: 'left', 'right', 'result'
+(or 'input', 'output' for functions).
 
-CRITICAL: Output must be in exact format - no natural language, no articles ("the", "a"), no qualifiers.
+CRITICAL: Output must be in exact format - no natural language, no articles
+("the", "a"), no qualifiers.
 """
 
 
@@ -167,17 +198,207 @@ class OpenAIClaimExtractor:
     that produces claims matching the translator's regex patterns.
     """
 
-    def __init__(self, api_key: str | None = None, model: str = "gpt-4"):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str = "gpt-4",
+        base_url: str | None = None,
+        app_name: str | None = None,
+        site_url: str | None = None,
+    ):
         """Initialize the OpenAI claim extractor.
 
         Args:
             api_key: OpenAI API key (defaults to OPENAI_API_KEY env var)
             model: Model to use (default: gpt-4)
+            base_url: Optional OpenAI-compatible API base URL
+            app_name: Optional client title header for compatible providers
+            site_url: Optional referer header for compatible providers
         """
-        self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
+        default_headers = {}
+        resolved_app_name = app_name or os.getenv("OPENAI_APP_NAME")
+        resolved_site_url = site_url or os.getenv("OPENAI_SITE_URL")
+
+        if resolved_app_name:
+            default_headers["X-Title"] = resolved_app_name
+        if resolved_site_url:
+            default_headers["HTTP-Referer"] = resolved_site_url
+
+        client_kwargs: dict[str, Any] = {
+            "api_key": api_key or os.getenv("OPENAI_API_KEY")
+        }
+        resolved_base_url = base_url or os.getenv("OPENAI_BASE_URL")
+        if resolved_base_url:
+            client_kwargs["base_url"] = resolved_base_url
+        if default_headers:
+            client_kwargs["default_headers"] = default_headers
+
+        self.client = OpenAI(**client_kwargs)
         self.model = model
         self.translator = ClaimTranslator()
+        self._uses_compatible_base_url = bool(
+            resolved_base_url and "api.openai.com" not in resolved_base_url
+        )
         logger.info(f"Initialized OpenAIClaimExtractor with model {model}")
+
+    @staticmethod
+    def _normalize_category(raw_category: Any) -> str:
+        """Normalize provider category labels to enum-compatible values."""
+        if isinstance(raw_category, ClaimCategory):
+            return raw_category.value
+
+        normalized = str(raw_category).strip().lower()
+        normalized = re.sub(r"[\s\-]+", "_", normalized)
+        return normalized
+
+    @staticmethod
+    def _variables_schema() -> dict[str, Any]:
+        """Return a provider-compatible schema for extracted variables."""
+        return {
+            "type": "object",
+            "properties": {
+                key: {"type": "string"}
+                for key in VARIABLE_KEYS
+            },
+            "additionalProperties": False,
+        }
+
+    def _response_format(self, name: str, schema: dict[str, Any]) -> dict[str, Any]:
+        """Return the most portable structured-output format for the provider."""
+        if self._uses_compatible_base_url:
+            return {"type": "json_object"}
+
+        return {
+            "type": "json_schema",
+            "json_schema": {
+                "name": name,
+                "strict": True,
+                "schema": schema,
+            },
+        }
+
+    def _instruction_text(self, instruction: str) -> str:
+        """Add portable JSON guidance for compatible providers."""
+        if self._uses_compatible_base_url:
+            return f"{instruction}\n\nReturn only valid JSON."
+
+        return instruction
+
+    def _user_prompt(self, prompt: str, json_contract: str) -> str:
+        """Add an explicit JSON contract for compatible providers."""
+        if self._uses_compatible_base_url:
+            return (
+                f"{prompt}\n\nReturn JSON only. "
+                f"Use exactly these keys: {json_contract}."
+            )
+
+        return prompt
+
+    @staticmethod
+    def _normalize_triage_result(result: dict[str, Any]) -> dict[str, Any]:
+        """Normalize looser provider triage payloads to the expected shape."""
+        is_formalizable = result.get("is_formalizable")
+        if is_formalizable is None:
+            is_formalizable = result.get("formalizable", False)
+        if isinstance(is_formalizable, str):
+            is_formalizable = is_formalizable.strip().lower() in {
+                "true",
+                "yes",
+                "formalizable",
+                "supported",
+            }
+
+        reasoning = result.get("reasoning")
+        if not reasoning:
+            reasoning = (
+                "Provider classified the claim as formalizable."
+                if is_formalizable
+                else "Provider classified the claim as unformalizable."
+            )
+
+        return {
+            "is_formalizable": bool(is_formalizable),
+            "category": result.get("category", "unformalizable"),
+            "reasoning": reasoning,
+            "suggestion": result.get("suggestion", ""),
+        }
+
+    @staticmethod
+    def _normalize_claim_payload(
+        result: dict[str, Any],
+        category: ClaimCategory,
+    ) -> dict[str, Any]:
+        """Normalize looser provider claim payloads to the expected shape."""
+        variables = result.get("variables", {})
+        if not isinstance(variables, dict):
+            variables = {}
+        if not variables:
+            variables = {
+                key: result[key]
+                for key in VARIABLE_KEYS
+                if key in result and result[key] is not None
+            }
+
+        pattern_hints = (
+            result.get("pattern_hints")
+            or result.get("hints")
+            or result.get("keywords")
+            or []
+        )
+        if not isinstance(pattern_hints, list):
+            pattern_hints = []
+
+        confidence = result.get("confidence", 0.5)
+        try:
+            confidence = float(confidence)
+        except (TypeError, ValueError):
+            confidence = 0.5
+
+        return {
+            "claim_text": (
+                result.get("claim_text")
+                or result.get("claim")
+                or result.get("normalized_claim")
+                or ""
+            ),
+            "confidence": confidence,
+            "variables": {
+                str(key): str(value)
+                for key, value in variables.items()
+                if value is not None
+            },
+            "pattern_hints": [str(item) for item in pattern_hints],
+            "reasoning": result.get(
+                "reasoning",
+                f"Extracted {category.value} claim",
+            ),
+            "function_name": result.get("function_name"),
+        }
+
+    @staticmethod
+    def _parse_response_content(content: str) -> dict[str, Any]:
+        """Parse provider JSON content, tolerating code fences and wrappers."""
+        text = content.strip()
+        candidates = [text]
+
+        fence_match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.DOTALL)
+        if fence_match:
+            candidates.append(fence_match.group(1).strip())
+
+        start = text.find("{")
+        end = text.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            candidates.append(text[start:end + 1].strip())
+
+        for candidate in candidates:
+            try:
+                parsed = json.loads(candidate)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(parsed, dict):
+                return parsed
+
+        raise ValueError("Provider did not return a valid JSON object")
 
     def extract_claim(
         self,
@@ -208,9 +429,10 @@ class OpenAIClaimExtractor:
             )
 
         raw_category = triage_result["category"]
+        normalized_category = self._normalize_category(raw_category)
 
         try:
-            category = ClaimCategory(raw_category)
+            category = ClaimCategory(normalized_category)
         except ValueError:
             return ClaimExtractionResult(
                 claim=None,
@@ -255,31 +477,47 @@ class OpenAIClaimExtractor:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": TRIAGE_AGENT_INSTRUCTIONS},
-                    {"role": "user", "content": f"Analyze this text: {text}"}
+                    {
+                        "role": "system",
+                        "content": self._instruction_text(
+                            TRIAGE_AGENT_INSTRUCTIONS
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": self._user_prompt(
+                            f"Analyze this text: {text}",
+                            (
+                                "is_formalizable (boolean), category (string), "
+                                "reasoning (string), suggestion (string)"
+                            ),
+                        ),
+                    },
                 ],
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "triage_result",
-                        "strict": True,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "is_formalizable": {"type": "boolean"},
-                                "category": {"type": "string"},
-                                "reasoning": {"type": "string"},
-                                "suggestion": {"type": "string"}
-                            },
-                            "required": ["is_formalizable", "category", "reasoning", "suggestion"],
-                            "additionalProperties": False
-                        }
-                    }
-                }
+                response_format=self._response_format(
+                    "triage_result",
+                    {
+                        "type": "object",
+                        "properties": {
+                            "is_formalizable": {"type": "boolean"},
+                            "category": {"type": "string"},
+                            "reasoning": {"type": "string"},
+                            "suggestion": {"type": "string"},
+                        },
+                        "required": [
+                            "is_formalizable",
+                            "category",
+                            "reasoning",
+                            "suggestion",
+                        ],
+                        "additionalProperties": False,
+                    },
+                ),
             )
 
-            import json
-            result = json.loads(response.choices[0].message.content)
+            result = self._normalize_triage_result(
+                self._parse_response_content(response.choices[0].message.content)
+            )
             logger.debug(f"Triage result: {result}")
             return result
 
@@ -302,38 +540,54 @@ class OpenAIClaimExtractor:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": MATH_AGENT_INSTRUCTIONS},
+                    {
+                        "role": "system",
+                        "content": self._instruction_text(
+                            MATH_AGENT_INSTRUCTIONS
+                        ),
+                    },
                     {
                         "role": "user",
-                        "content": f"Extract {category.value} claim from: {text}"
+                        "content": self._user_prompt(
+                            f"Extract {category.value} claim from: {text}",
+                            (
+                                "claim_text (string), confidence (number), "
+                                "variables (object), pattern_hints "
+                                "(array of strings), reasoning (string)"
+                            ),
+                        ),
                     }
                 ],
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "math_claim",
-                        "strict": True,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "claim_text": {"type": "string"},
-                                "confidence": {"type": "number"},
-                                "variables": {"type": "object"},
-                                "pattern_hints": {
-                                    "type": "array",
-                                    "items": {"type": "string"}
-                                },
-                                "reasoning": {"type": "string"}
+                response_format=self._response_format(
+                    "math_claim",
+                    {
+                        "type": "object",
+                        "properties": {
+                            "claim_text": {"type": "string"},
+                            "confidence": {"type": "number"},
+                            "variables": self._variables_schema(),
+                            "pattern_hints": {
+                                "type": "array",
+                                "items": {"type": "string"},
                             },
-                            "required": ["claim_text", "confidence", "variables", "pattern_hints", "reasoning"],
-                            "additionalProperties": False
-                        }
-                    }
-                }
+                            "reasoning": {"type": "string"},
+                        },
+                        "required": [
+                            "claim_text",
+                            "confidence",
+                            "variables",
+                            "pattern_hints",
+                            "reasoning",
+                        ],
+                        "additionalProperties": False,
+                    },
+                ),
             )
 
-            import json
-            result = json.loads(response.choices[0].message.content)
+            result = self._normalize_claim_payload(
+                self._parse_response_content(response.choices[0].message.content),
+                category,
+            )
 
             claim = FormalizableClaim(
                 category=category,
@@ -381,38 +635,54 @@ class OpenAIClaimExtractor:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": LOGIC_AGENT_INSTRUCTIONS},
+                    {
+                        "role": "system",
+                        "content": self._instruction_text(
+                            LOGIC_AGENT_INSTRUCTIONS
+                        ),
+                    },
                     {
                         "role": "user",
-                        "content": f"Extract {category.value} claim from: {text}"
+                        "content": self._user_prompt(
+                            f"Extract {category.value} claim from: {text}",
+                            (
+                                "claim_text (string), confidence (number), "
+                                "variables (object), pattern_hints "
+                                "(array of strings), reasoning (string)"
+                            ),
+                        ),
                     }
                 ],
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "logic_claim",
-                        "strict": True,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "claim_text": {"type": "string"},
-                                "confidence": {"type": "number"},
-                                "variables": {"type": "object"},
-                                "pattern_hints": {
-                                    "type": "array",
-                                    "items": {"type": "string"}
-                                },
-                                "reasoning": {"type": "string"}
+                response_format=self._response_format(
+                    "logic_claim",
+                    {
+                        "type": "object",
+                        "properties": {
+                            "claim_text": {"type": "string"},
+                            "confidence": {"type": "number"},
+                            "variables": self._variables_schema(),
+                            "pattern_hints": {
+                                "type": "array",
+                                "items": {"type": "string"},
                             },
-                            "required": ["claim_text", "confidence", "variables", "pattern_hints", "reasoning"],
-                            "additionalProperties": False
-                        }
-                    }
-                }
+                            "reasoning": {"type": "string"},
+                        },
+                        "required": [
+                            "claim_text",
+                            "confidence",
+                            "variables",
+                            "pattern_hints",
+                            "reasoning",
+                        ],
+                        "additionalProperties": False,
+                    },
+                ),
             )
 
-            import json
-            result = json.loads(response.choices[0].message.content)
+            result = self._normalize_claim_payload(
+                self._parse_response_content(response.choices[0].message.content),
+                category,
+            )
 
             claim = FormalizableClaim(
                 category=category,
@@ -452,36 +722,56 @@ class OpenAIClaimExtractor:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": ALGORITHM_AGENT_INSTRUCTIONS},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "algorithm_claim",
-                        "strict": True,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "claim_text": {"type": "string"},
-                                "confidence": {"type": "number"},
-                                "variables": {"type": "object"},
-                                "pattern_hints": {
-                                    "type": "array",
-                                    "items": {"type": "string"}
-                                },
-                                "function_name": {"type": ["string", "null"]},
-                                "reasoning": {"type": "string"}
-                            },
-                            "required": ["claim_text", "confidence", "variables", "pattern_hints", "reasoning"],
-                            "additionalProperties": False
-                        }
+                    {
+                        "role": "system",
+                        "content": self._instruction_text(
+                            ALGORITHM_AGENT_INSTRUCTIONS
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": self._user_prompt(
+                            prompt,
+                            (
+                                "claim_text (string), confidence (number), "
+                                "variables (object), pattern_hints "
+                                "(array of strings), function_name "
+                                "(string or null), reasoning (string)"
+                            ),
+                        ),
                     }
-                }
+                ],
+                response_format=self._response_format(
+                    "algorithm_claim",
+                    {
+                        "type": "object",
+                        "properties": {
+                            "claim_text": {"type": "string"},
+                            "confidence": {"type": "number"},
+                            "variables": self._variables_schema(),
+                            "pattern_hints": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "function_name": {"type": ["string", "null"]},
+                            "reasoning": {"type": "string"},
+                        },
+                        "required": [
+                            "claim_text",
+                            "confidence",
+                            "variables",
+                            "pattern_hints",
+                            "reasoning",
+                        ],
+                        "additionalProperties": False,
+                    },
+                ),
             )
 
-            import json
-            result = json.loads(response.choices[0].message.content)
+            result = self._normalize_claim_payload(
+                self._parse_response_content(response.choices[0].message.content),
+                category,
+            )
 
             claim = FormalizableClaim(
                 category=category,
