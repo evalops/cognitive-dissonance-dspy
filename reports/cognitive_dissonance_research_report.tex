@@ -112,7 +112,7 @@
 \textbf{Email} & \texttt{jonathan@evalops.dev} \\
 \textbf{Organization} & EvalOps \\
 \textbf{Prepared} & 2026-04-07 \\
-\textbf{Study source revision} & \texttt{d11d492-dirty} \\
+\textbf{Study source revision} & \texttt{56d718c-dirty} \\
 \textbf{Document type} & Experimental technical report \\
 \end{tabularx}
 
@@ -147,41 +147,52 @@ executed on 2026-04-07.}
 This report evaluates the current state of Cognitive Dissonance DSPy as a
 research artifact. The central question is whether a multi-agent LLM system can
 resolve formalizable disagreements through proof instead of through debate or
-confidence aggregation. To answer that question, I ran a curated symbolic
-verification benchmark, a live natural-language extraction benchmark against an
-OpenAI-compatible endpoint, and a small stability check.
+confidence aggregation. To answer that question, I ran three experiments: an
+expanded symbolic verification benchmark, a live natural-language extraction
+benchmark against an OpenAI-compatible endpoint, and a harder paraphrase stress
+benchmark designed to defeat the repository's deterministic normalization
+rules.
 
-The main result is that the current pipeline saturates the repository's
-internal benchmark once Coq is available locally. Direct pattern matching
-translates only 25\% of the formalizable natural-language cases, while the
-current extraction pipeline reaches 100\% canonicalization accuracy on the same
-set. With \texttt{coqc} and \texttt{coqchk} installed, the formal benchmark
-becomes 16/16 decisive and the formalizable slice of the live extraction
-benchmark becomes 12/12 decisive. Six of those 12 extraction cases are
-machine-checked locally, while the remainder resolve through SMT proofs or
-decisive refutations. The strongest conclusion is therefore no longer ``proof
-is still the bottleneck on this benchmark,'' but rather ``the benchmark is no
-longer hard enough to be the main source of uncertainty.''
+The results separate into an easy story and a hard story. On the easy internal
+benchmark, direct translation from raw natural language succeeds on only 22.2\%
+of the formalizable cases, but deterministic canonicalization plus proof
+resolve all 27 formalizable cases decisively. On that benchmark, the provider's
+measured role is mostly triaging the 8 unformalizable controls. On the harder
+paraphrase benchmark, deterministic-only extraction fails completely, while
+provider-backed extraction lifts exact canonicalization to 70.6\%, decisive
+coverage to 76.5\%, and decisive accuracy to 70.6\% on formalizable cases. The
+same stress benchmark also exposes two important failure modes: stable false
+negatives on quantified or implication paraphrases, and silent correction of at
+least one false claim into a different true canonical fact. With
+\texttt{coqc} and \texttt{coqchk} installed locally, the symbolic benchmark
+saturates at 45/45 decisive outcomes. The strongest conclusion is therefore
+methodological: proof-first routing is credible on canonical claims, but model-
+driven extraction still requires exact-match auditing and harder benchmarks.
 \end{abstract}
 
 \section*{Executive Summary}
 
 \begin{summarybox}
 \begin{itemize}
-  \item \textbf{Direct finding.} On the curated extraction benchmark, direct
-  translation succeeds on only 3 of 12 formalizable natural-language claims,
-  while the extraction pipeline produces exact canonical forms for all 12.
-  \item \textbf{Coq-enabled result.} With local \texttt{coqc} and
-  \texttt{coqchk} available, the symbolic benchmark reaches 16/16 decisive
-  outcomes and the formalizable extraction slice reaches 12/12 decisive
-  outcomes.
-  \item \textbf{Evidence mix.} Those decisive outcomes are not all equivalent:
-  the formal benchmark contains 3 machine-checked cases, while the extraction
-  benchmark contains 6 machine-checked cases, 3 SMT proofs, and 3 decisive
-  refutations.
-  \item \textbf{Research implication.} The system's key value today is honest
-  evidence typing: SMT-backed, derived, machine-checked, and inconclusive
-  outcomes are kept distinct rather than merged into a single ``proved'' label.
+  \item \textbf{Symbolic verification baseline.} The symbolic benchmark now
+  contains 45 claims across arithmetic, number theory, inequalities, and
+  quantified logic, and both hybrid conditions reach 100.0\% decisive coverage
+  and 100.0\% decisive accuracy with 13 machine-checked cases.
+  \item \textbf{Easy extraction benchmark.} The main natural-language
+  benchmark contains 35 cases, including 27 formalizable claims and 8
+  unformalizable controls. Direct translation succeeds on only 6 of the 27
+  formalizable cases, while extraction plus proof resolves all 27 decisively.
+  \item \textbf{Provider provenance result.} All 27 formalizable cases in the
+  easy benchmark are handled by deterministic canonicalization before any
+  provider call. On that benchmark, the provider is mostly doing subjective
+  triage.
+  \item \textbf{Hard paraphrase result.} On a 19-case paraphrase stress slice,
+  deterministic-only extraction reaches 0.0\% exact canonicalization on the 17
+  formalizable cases, while provider-backed extraction reaches 70.6\% exact
+  canonicalization and 70.6\% decisive accuracy.
+  \item \textbf{Methodological result.} The harder benchmark shows why exact-
+  match auditing matters: the provider can miss formalizable claims and can
+  silently rewrite a false claim into a different true canonical statement.
 \end{itemize}
 \end{summarybox}
 
@@ -192,7 +203,7 @@ longer hard enough to be the main source of uncertainty.''
 
 \section{Objective}
 
-Most multi-agent systems handle disagreement with prompts, debate, voting, or
+Most multi-agent systems handle disagreement with prompting, debate, voting, or
 confidence aggregation. Those strategies are appropriate when the disagreement
 is subjective. They are weaker when the disputed claim is formalizable.
 
@@ -203,21 +214,27 @@ If a claim can be translated into a formal object, attempt proof before
 arbitration.
 \end{quote}
 
-The goal of this study was not to restate the architecture, but to run real
-experiments and determine what the system currently does, what it does not yet
-do, and where the next research effort should go.
+The goal of this study was not to restate the architecture, but to run a
+larger benchmark, measure which subsystem is actually doing the work, and
+rewrite the repository narrative around the observed results rather than around
+older claims.
 
 \section{Research Questions}
 
-The study focused on three practical questions.
+The study focused on five practical questions.
 
 \begin{enumerate}
   \item \textbf{RQ1:} Does necessity-enhanced verification materially improve
-  symbolic claim handling?
-  \item \textbf{RQ2:} Does the OpenAI-compatible extraction pipeline improve
+  symbolic claim handling on the expanded benchmark?
+  \item \textbf{RQ2:} Does structured extraction and canonicalization improve
   translation success over direct pattern matching on natural-language claims?
   \item \textbf{RQ3:} After successful extraction, how much of the remaining
   problem is still in proof rather than extraction?
+  \item \textbf{RQ4:} On the enlarged benchmark, how much of the extraction
+  result truly depends on the provider rather than deterministic
+  canonicalization?
+  \item \textbf{RQ5:} On paraphrases that defeat deterministic rules, how much
+  lift does provider-backed extraction add, and what failure modes remain?
 \end{enumerate}
 
 \section{Experimental Setup}
@@ -225,10 +242,10 @@ The study focused on three practical questions.
 \subsection{Code and Provenance}
 
 All study artifacts were generated by \nolinkurl{research/run_study.py}. The
-study metadata recorded the source revision as \texttt{d11d492-dirty}, meaning
-the experiments were run on top of commit \texttt{d11d492} with local
-uncommitted modifications that are part of the final repository state produced
-by this work. The exact experiment outputs are stored in:
+study metadata recorded the source revision as \texttt{56d718c-dirty}, meaning
+the experiments were run on top of commit \texttt{56d718c} with local
+uncommitted modifications that correspond to the benchmark expansion and report
+rewrite described here. The exact experiment outputs are stored in:
 
 \begin{itemize}
   \item \nolinkurl{research/results/study_results.json}
@@ -251,8 +268,9 @@ Study date & 2026-04-07 \\
 \bottomrule
 \end{longtable}
 
-This matters because the local study now exercises the full proof pipeline
-rather than falling back to an SMT-only or no-Coq configuration.
+The presence of both \texttt{coqc} and \texttt{coqchk} matters. Earlier study
+iterations without local Coq availability produced materially weaker end-to-end
+results. This report reflects the Coq-enabled environment.
 
 \subsection{Evidence Policy}
 
@@ -261,20 +279,20 @@ outcomes.
 
 \begin{itemize}
   \item \textbf{Decisive:} statuses strong enough to resolve truth or falsity
-  directly, such as \texttt{smt\_proved} and \texttt{smt\_refuted}.
-  \item \textbf{Optimistic:} statuses that include derived support such as
-  \texttt{derived\_proved} and \texttt{derived\_refuted}. These do not count as
-  decisive evidence.
+  directly, such as \texttt{machine\_checked}, \texttt{smt\_proved},
+  \texttt{refuted}, and \texttt{smt\_refuted}.
+  \item \textbf{Optimistic:} statuses that include derived support. These do
+  not count as decisive ground truth.
 \end{itemize}
 
-This distinction is not bookkeeping. It is the central epistemic discipline of
-the project.
+This distinction is not bookkeeping. It is the core epistemic discipline of the
+project.
 
-\section{Benchmarks}
+\section{Benchmark Design}
 
 \subsection{Formal Verification Benchmark}
 
-The symbolic benchmark contains 16 claims across seven families:
+The symbolic benchmark contains 45 claims across 10 families:
 
 \begin{itemize}
   \item arithmetic
@@ -284,6 +302,9 @@ The symbolic benchmark contains 16 claims across seven families:
   \item Fibonacci
   \item GCD
   \item inequalities
+  \item implication
+  \item universal quantification
+  \item existential quantification
 \end{itemize}
 
 Each family includes true and false examples. The benchmark compares two
@@ -296,59 +317,102 @@ conditions:
 
 \subsection{Extraction Benchmark}
 
-The natural-language benchmark contains 16 cases:
+The natural-language benchmark contains 35 cases:
 
 \begin{itemize}
-  \item 12 formalizable utterances
-  \item 4 unformalizable subjective controls
+  \item 27 formalizable utterances
+  \item 8 unformalizable subjective controls
 \end{itemize}
 
-The extraction study compares:
+The study measures:
 
 \begin{itemize}
   \item direct translation from raw natural language
-  \item the structured extraction pipeline followed by translation and proof
+  \item structured extraction followed by translation and proof
+  \item the provenance of extraction itself: deterministic fast-path versus
+  provider-involved routing
 \end{itemize}
 
-\subsection{Stability Check}
+\subsection{Paraphrase Stress Benchmark}
 
-A small repeated-measures check runs extraction twice on four representative
-cases:
+The harder paraphrase benchmark contains 19 cases:
+
+\begin{itemize}
+  \item 17 formalizable paraphrases written to evade deterministic fast-path
+  normalization
+  \item 2 unformalizable subjective controls
+\end{itemize}
+
+These cases intentionally include:
+
+\begin{itemize}
+  \item arithmetic and multiplication phrased as ``adding'' or ``the product
+  of''
+  \item subtraction phrased as ``subtracting five from twelve''
+  \item number words such as ``forty-two'' and ``one hundred twenty''
+  \item quantified and implication paraphrases such as ``there is an x greater
+  than zero'' and ``any n is equal to itself''
+\end{itemize}
+
+The benchmark compares:
+
+\begin{itemize}
+  \item deterministic-only extraction with provider access disabled
+  \item provider-enabled extraction at temperature 0.0
+\end{itemize}
+
+\subsection{Stability Checks}
+
+A repeated-measures check runs extraction twice on 6 representative cases:
 
 \begin{itemize}
   \item arithmetic true
-  \item factorial true
-  \item implication
+  \item factorial base case
+  \item inequality false
+  \item implication false
+  \item existential true
   \item subjective control
 \end{itemize}
 
-This is not a full calibration study. It is only a basic check for
-deterministic behavior at temperature 0.0.
+This is not a full calibration study. It is only a basic check for stable
+temperature-0.0 behavior on representative inputs.
+
+A separate failure probe runs 5 hard paraphrase cases over 10 repeated trials to
+measure whether the observed failure modes are stable, unstable, or silently
+wrong.
 
 \section{Results}
 
 \subsection{RQ1: Necessity and Symbolic Verification}
 
 \begin{center}
-\begin{tabular}{lrrrr}
+\footnotesize
+\begin{tabular}{lrrrrr}
 \toprule
-\textbf{Condition} & \textbf{Cases} & \textbf{Decisive cov.} & \textbf{Decisive acc.} & \textbf{Optimistic acc.} \\
+\textbf{Condition} & \textbf{Cases} & \textbf{Dec. cov.} & \textbf{Dec. acc.} & \textbf{M-check} & \textbf{Mean time} \\
 \midrule
-Hybrid + necessity & 16 & 100.0\% & 100.0\% & 100.0\% \\
-Hybrid without necessity & 16 & 100.0\% & 100.0\% & 100.0\% \\
+Hybrid + necessity & 45 & 100.0\% & 100.0\% & 13 & 133.4\,ms \\
+Hybrid without necessity & 45 & 100.0\% & 100.0\% & 13 & 133.3\,ms \\
 \bottomrule
 \end{tabular}
+\normalsize
 \end{center}
 
-Mean proof time was approximately 154.0\,ms in both conditions on this
-benchmark. Both conditions also produced 3 machine-checked positive cases:
-factorial, Fibonacci, and GCD.
+The decisive status mix for the symbolic benchmark is the same in both
+conditions:
 
-\textbf{Interpretation.} With Coq available locally, the symbolic benchmark is
-fully decisive in both conditions. Necessity therefore has no measurable effect
-on headline accuracy or coverage on this suite. That is not evidence that
-necessity is unhelpful in general; it is evidence that this benchmark no longer
-separates the two conditions.
+\begin{itemize}
+  \item 13 \texttt{machine\_checked}
+  \item 10 \texttt{smt\_proved}
+  \item 21 \texttt{refuted}
+  \item 1 \texttt{smt\_refuted}
+\end{itemize}
+
+\textbf{Interpretation.} With Coq available locally, the expanded symbolic
+benchmark is fully decisive in both conditions. Necessity therefore has no
+measurable effect on headline accuracy or coverage on this suite. That does not
+show necessity is unhelpful in general; it shows that the current benchmark no
+longer separates the two conditions.
 
 \subsection{RQ2: Extraction Versus Direct Translation}
 
@@ -357,28 +421,28 @@ separates the two conditions.
 \toprule
 \textbf{Metric} & \textbf{Result} \\
 \midrule
-Formalizable natural-language cases & 12 \\
-Direct translator success & 25.0\% \\
-Extractor formalizability accuracy (all 16 cases) & 100.0\% \\
+Formalizable natural-language cases & 27 \\
+Direct translator success & 22.2\% \\
+Extractor formalizability accuracy (all 35 cases) & 100.0\% \\
 Extractor exact canonical match (formalizable cases) & 100.0\% \\
 Translation success after extraction & 100.0\% \\
 End-to-end decisive coverage after extraction & 100.0\% \\
-Machine-checked formalizable cases after extraction & 6 \\
-Mean extraction latency & 2747\,ms/case \\
+End-to-end decisive accuracy after extraction & 100.0\% \\
+Machine-checked formalizable cases after extraction & 7 \\
+Mean extraction latency & 476.5\,ms/case \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Interpretation.} On the curated benchmark, the extraction pipeline now
-completely solves the canonicalization problem. Every formalizable
-natural-language case was converted into the exact canonical claim expected by
-the benchmark, all four subjective controls were rejected, and every
-formalizable case reached a decisive downstream result.
+\textbf{Interpretation.} Direct translation still fails on most raw natural
+language inputs. Only 6 of the 27 formalizable cases translate directly, while
+extraction plus proof resolves all 27 decisively. The extraction pipeline
+therefore still matters on the expanded benchmark, but its useful work is now
+mostly deterministic canonicalization rather than provider reasoning.
 
 \subsection{RQ3: Proof After Successful Extraction}
 
-After perfect canonicalization on the benchmark, decisive proof coverage no
-longer remains limited:
+After successful extraction, decisive proof coverage no longer remains limited:
 
 \begin{itemize}
   \item end-to-end decisive coverage on formalizable extraction cases:
@@ -387,101 +451,206 @@ longer remains limited:
   100.0\%
 \end{itemize}
 
-In concrete terms, all 12 formalizable natural-language cases were resolved
-decisively after extraction. The evidence mix is:
+The evidence mix on the 27 formalizable natural-language cases is:
 
 \begin{itemize}
-  \item \textbf{machine-checked:} factorial, Fibonacci, GCD, implication,
-  universal quantification, and existential quantification
-  \item \textbf{SMT-proved:} arithmetic true, multiplication true, and
-  inequality true
-  \item \textbf{decisive refutations:} arithmetic false, subtraction false,
-  and inequality false
+  \item 7 \texttt{machine\_checked}
+  \item 7 \texttt{smt\_proved}
+  \item 13 \texttt{refuted}
 \end{itemize}
 
-\textbf{Interpretation.} On the current internal suite, proof is no longer the
+\textbf{Interpretation.} On the easy internal suite, proof is no longer the
 measured bottleneck once Coq is installed locally. The remaining limitation is
-that this benchmark is now too easy relative to the repository's current
-capability.
+not unresolved proof coverage on these canonical claims; it is whether harder
+language preserves the same extraction behavior.
+
+\subsection{RQ4: What Still Depends on the Provider on the Easy Suite?}
+
+The extraction provenance instrumentation shows the following split across the
+35-case natural-language benchmark:
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+\textbf{Extraction mode} & \textbf{Count} \\
+\midrule
+Deterministic fast-path on formalizable cases & 27 \\
+Provider extraction on formalizable cases & 0 \\
+Provider triage on unformalizable controls & 8 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Interpretation.} The benchmark no longer supports the strong claim that
+provider extraction is the key enabler of formalizable claim normalization.
+Instead, the measured result is that deterministic canonicalization handles all
+formalizable cases in the current suite, while the provider is mainly used to
+classify subjective controls as unformalizable.
+
+\subsection{RQ5: Hard Paraphrases and Provider Failure Modes}
+
+\begin{center}
+\footnotesize
+\begin{tabular}{lrr}
+\toprule
+\textbf{Metric} & \textbf{Det.-only} & \textbf{Provider} \\
+\midrule
+Direct translator success & 5.9\% & 5.9\% \\
+Formalizability accuracy & 10.5\% & 78.9\% \\
+Category accuracy & 0.0\% & 76.5\% \\
+Exact canonical match & 0.0\% & 70.6\% \\
+Translation success after extraction & 0.0\% & 76.5\% \\
+Decisive coverage & 0.0\% & 76.5\% \\
+Decisive accuracy & 0.0\% & 70.6\% \\
+Machine-checked cases & 0 & 3 \\
+Mean extraction latency & 0.03\,ms & 2998.2\,ms \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{center}
+
+The provider-enabled stress run also records:
+
+\begin{itemize}
+  \item 4 formalizable false negatives
+  \item 1 semantic-drift case
+  \item 1 decisive error caused by semantic drift
+\end{itemize}
+
+\textbf{Interpretation.} This benchmark is the first one in the repository
+where provider extraction adds essential lift rather than just triaging
+subjective controls. That lift is real. However, the provider is still not
+reliable enough to trust without literal-match auditing. The hard cases now
+separate three distinct failure modes: rejection of formalizable logic
+paraphrases, unstable behavior on some false arithmetic claims, and stable but
+wrong silent correction on at least one subtraction paraphrase.
 
 \subsection{Stability}
 
-The repeated extraction check reached a 100.0\% stable-case rate over 4 cases
+The repeated extraction check reached a 100.0\% stable-case rate over 6 cases
 and 2 trials per case. This is a small result, but it suggests that the
-pipeline is operationally stable under deterministic decoding on the chosen
-provider and model.
+temperature-0.0 extraction pipeline behaves deterministically on the selected
+inputs.
+
+The harder failure probe reached only an 80.0\% stable-case rate over 5 cases
+and 10 trials per case. One false arithmetic paraphrase flipped between correct
+formalization and outright rejection. Another false subtraction paraphrase was
+stable but always wrong: it was rewritten into a different true subtraction
+fact. The quantified and implication paraphrases were stable false negatives.
 
 \section{Findings}
 
-\subsection{Finding 1: Extraction Was the First Bottleneck}
+\subsection{Finding 1: The Easy Benchmarks Now Act As Calibration Baselines}
 
-The benchmark data shows a clean before-and-after story. Direct translation from
-raw natural language succeeded on only 3 of 12 formalizable cases. The
-extraction pipeline pushed that to 12 of 12. That closes one important gap.
+The enlarged symbolic benchmark reaches 45/45 decisive outcomes in both
+conditions, and the easy natural-language benchmark reaches 27/27 decisive
+outcomes on its formalizable slice. These suites are still useful, but they now
+function more as calibration baselines than as discriminating research tests.
 
-With local Coq available, however, the end-to-end problem disappears on this
-suite. That means the benchmark has become a confirmation harness rather than a
-stress test.
+\subsection{Finding 2: Deterministic Canonicalization, Not the Provider, Drives the Easy Suite}
 
-\subsection{Finding 2: This Benchmark No Longer Separates Necessity from Non-Necessity}
+This is the most important change from earlier report drafts. The expanded
+study now shows that all 27 formalizable natural-language cases are handled by
+deterministic canonicalization. The provider remains useful, but its measured
+role on this benchmark is primarily triaging the 8 unformalizable controls.
 
-Both symbolic benchmark conditions now reach 100\% decisive coverage and 100\%
-decisive accuracy. That means this benchmark can no longer tell us whether
-necessity provides unique value under harder conditions. A stronger ablation
-needs harder recursive and logical cases.
+\subsection{Finding 3: Provider Extraction Adds Real Lift on Harder Paraphrases}
 
-\subsection{Finding 3: Evidence Strength Still Varies Even When Accuracy Saturates}
+The paraphrase stress benchmark reverses the easy-suite conclusion. Once the
+cases stop matching deterministic rules, provider-backed extraction becomes
+necessary for any success at all. It lifts exact canonicalization from 0.0\% to
+70.6\% and decisive coverage from 0.0\% to 76.5\% on formalizable cases.
 
-The current extraction benchmark resolves all 12 formalizable cases decisively,
-but only 6 of those are machine-checked. The rest are SMT proofs or decisive
-refutations. That distinction matters because a 100\% headline number can hide
-different levels of evidential strength.
+\subsection{Finding 4: Provider Lift Is Real, But Silent Correction Is a Major Risk}
 
-\subsection{Finding 4: The Proof-Status Model Is Working as Intended}
+The stress benchmark shows that high-level correctness metrics are not enough.
+At least one false claim is silently rewritten into a different true canonical
+statement, which then proves successfully. That is worse than a clean false
+negative because it creates a false appearance of precise extraction.
 
-The repository does not flatten derived support into decisive proof. That
-decision now has experimental value: without it, the study would overstate the
-system's capability. With it, the study can say something precise:
+\subsection{Finding 5: Necessity Still Does Not Separate the Symbolic Conditions}
+
+The expanded symbolic suite adds quantified logic and more number-theoretic
+cases, but the headline result does not change: necessity and non-necessity
+conditions still tie. The benchmark is therefore no longer useful for making a
+novelty claim about necessity-based reasoning.
+
+\subsection{Finding 6: Evidence Strength Still Varies Even When Accuracy Saturates}
+
+The extraction benchmark resolves all 27 formalizable cases decisively, but
+only 7 are machine-checked. The remainder are solver-backed proofs or decisive
+refutations. The high headline number therefore still hides materially different
+levels of evidential strength.
+
+\subsection{Finding 7: The Honest Research Claim Is Methodological}
+
+The strongest defensible contribution is not ``we built theorem-proving
+agents.'' It is closer to this:
 
 \begin{quote}
-This benchmark is solved, but only part of it is machine-checked.
+Explicit evidence typing and proof-first resolution can prevent a
+multi-agent system from overstating certainty on formalizable disagreements,
+even when the benchmark itself saturates.
 \end{quote}
 
 \section{Threats to Validity}
 
 \subsection{Small Internal Benchmark}
 
-The benchmark set is small and authored within the project. That makes it
-useful for engineering truth, but weak for strong claims about generalization.
+The benchmark set is still small and repository-authored. It is useful for
+engineering truth, but weak for strong claims about open-domain generalization.
 
-\subsection{Local Coq Availability Changes the Result Materially}
+\subsection{Benchmark-Aware Iteration}
+
+This work used observed benchmark failures to improve the system and rerun the
+study. That is the correct engineering loop, but it also means the final
+results are partially the product of targeted iteration against the benchmark's
+failure modes.
+
+\subsection{Environment Sensitivity}
 
 Installing Coq locally turned the earlier partial results into full decisive
-coverage on this benchmark. That is useful, but it also means any report that
-ignores environment configuration would be misleading. The benchmark should be
-interpreted together with the local proof-toolchain state.
+coverage on this benchmark. Any report that ignores proof-toolchain
+availability would therefore be misleading.
 
-\subsection{Provider Dependence}
+\subsection{Limited Language Breadth}
 
-The live extraction results depend on one provider configuration on one date:
-OpenRouter-compatible routing with \texttt{openai/gpt-4.1-mini} at temperature
-0.0. Different models or provider settings could behave differently.
+The formalizable natural-language suite is now dominated by claims that the
+repository can canonicalize deterministically. That is good for reproducibility
+and bad for making a broad model-centric extraction claim.
 
-\subsection{Benchmark-Aware Improvement}
+\subsection{Stress Benchmark Size}
 
-This work used the observed failures to improve the system and rerun the study.
-That is the correct engineering loop, but it also means the final benchmark
-results are partially the result of targeted iteration against the benchmark's
-failure modes.
+The paraphrase stress benchmark exposes more realistic failure modes, but it is
+still small. The provider-risk story is therefore credible as an internal
+finding, not yet as a broad statistical claim.
+
+\subsection{Provider Dependence Persists for Subjective Triage}
+
+Although the provider no longer carries the formalizable slice on this suite,
+the unformalizable control performance still depends on one provider
+configuration on one date: OpenRouter-compatible routing with
+\texttt{openai/gpt-4.1-mini} at temperature 0.0.
+
+\subsection{Provider Behavior May Drift Over Time}
+
+The same provider-backed extraction path showed instability on at least one hard
+paraphrase over repeated temperature-0.0 trials. This means future runs may
+shift even without code changes.
 
 \section{Reproducibility}
 
 The study can be reproduced from repository-local artifacts.
 
-Current local validation status after installing Coq:
-\texttt{248 passed, 1 skipped} from
-\texttt{.venv/bin/python -m pytest -q}, plus a passing live provider-backed
-integration test against the configured OpenAI-compatible endpoint.
+The key generated artifacts are:
+
+\begin{itemize}
+  \item \nolinkurl{research/benchmarks/formal_verification_benchmark.json}
+  \item \nolinkurl{research/benchmarks/extraction_benchmark.json}
+  \item \nolinkurl{research/benchmarks/extraction_paraphrase_stress_benchmark.json}
+  \item \nolinkurl{research/results/study_results.json}
+  \item \nolinkurl{research/results/study_summary.md}
+\end{itemize}
 
 \subsection{Commands}
 
@@ -491,91 +660,97 @@ integration test against the configured OpenAI-compatible endpoint.
 
 \begin{calloutbox}
 \texttt{OPENAI\_API\_KEY=... OPENAI\_BASE\_URL=... OPENAI\_MODEL=...}\\
-\texttt{.venv/bin/python research/run\_study.py --temperature 0.0 --stability-trials 2}
+\texttt{.venv/bin/python research/run\_study.py --temperature 0.0}\\
+\texttt{\hspace*{1.5em}--stability-trials 2 --stress-trials 10}
 \end{calloutbox}
 
 \begin{calloutbox}
 \texttt{.venv/bin/python -m pytest -q}
 \end{calloutbox}
 
-\subsection{Artifacts}
-
-\begin{itemize}
-  \item \nolinkurl{research/benchmarks/formal_verification_benchmark.json}
-  \item \nolinkurl{research/benchmarks/extraction_benchmark.json}
-  \item \nolinkurl{research/results/study_results.json}
-  \item \nolinkurl{research/results/study_summary.md}
-\end{itemize}
+\begin{calloutbox}
+\texttt{tectonic --outdir reports reports/cognitive\_dissonance\_research\_report.tex}
+\end{calloutbox}
 
 \section{Conclusion}
 
-This repository now supports a defensible experimental claim:
+This repository now supports a narrower but more honest experimental claim:
 
 \begin{quote}
 On a small internal benchmark with Coq installed locally, Cognitive Dissonance
-DSPy can canonicalize formalizable natural-language disagreements and resolve
-them decisively end to end.
+DSPy resolves canonical formalizable disagreements decisively end to end, and
+provider-backed extraction adds real lift on harder paraphrases, but only under
+exact-match auditing because silent correction remains a live failure mode.
 \end{quote}
 
-That is stronger than the earlier no-Coq result, but it does not mean the
-general problem is solved. The next research task is no longer ``fix the
-current benchmark,'' but ``build a benchmark that is difficult enough to
-measure where the pipeline still fails, while continuing to report evidence
-strength honestly.''
+That is a credible systems result and a credible methodological result. It is
+not yet a strong standalone novelty claim about open-ended theorem-proving
+agents. The next research task is therefore no longer ``fix the current
+benchmark.'' It is:
+
+\begin{enumerate}
+  \item expand the harder benchmark with broader paraphrase variation, more
+  quantification, and less rule-aligned phrasing
+  \item compare proof-first routing against debate, voting, and confidence
+  arbitration baselines
+  \item keep measuring evidence strength and literal extraction fidelity
+  separately from headline accuracy
+\end{enumerate}
 
 \section{References}
 
 \begin{thebibliography}{99}
 \small
+\sloppy
 
 \bibitem{study_runner}
 EvalOps. \emph{Study runner}. Repository artifact,
-\nolinkurl{research/run_study.py}, source revision \texttt{d11d492-dirty},
+\nolinkurl{research/run_study.py}, source revision \texttt{56d718c-dirty},
 2026.
 
 \bibitem{study_results}
 EvalOps. \emph{Generated study results}. Repository artifact,
 \nolinkurl{research/results/study_results.json}, source revision
-\texttt{d11d492-dirty}, 2026.
+\texttt{56d718c-dirty}, 2026.
 
 \bibitem{study_summary}
 EvalOps. \emph{Generated study summary}. Repository artifact,
 \nolinkurl{research/results/study_summary.md}, source revision
-\texttt{d11d492-dirty}, 2026.
+\texttt{56d718c-dirty}, 2026.
 
 \bibitem{readme}
 EvalOps. \emph{Repository README}. Repository artifact, \nolinkurl{README.md},
-source revision \texttt{d11d492-dirty}, 2026.
+source revision \texttt{56d718c-dirty}, 2026.
 
 \bibitem{types}
 EvalOps. \emph{Proof status model}. Repository artifact,
 \nolinkurl{formal_verification/types.py}, source revision
-\texttt{d11d492-dirty}, 2026.
+\texttt{56d718c-dirty}, 2026.
 
 \bibitem{detector}
 EvalOps. \emph{Formal verification detector}. Repository artifact,
 \nolinkurl{formal_verification/detector.py}, source revision
-\texttt{d11d492-dirty}, 2026.
+\texttt{56d718c-dirty}, 2026.
 
 \bibitem{openai_agents}
 EvalOps. \emph{OpenAI-compatible extraction pipeline}. Repository artifact,
 \nolinkurl{formal_verification/openai_agents.py}, source revision
-\texttt{d11d492-dirty}, 2026.
+\texttt{56d718c-dirty}, 2026.
 
 \bibitem{necessity_prover}
 EvalOps. \emph{Necessity-based proof layer}. Repository artifact,
 \nolinkurl{formal_verification/necessity_prover.py}, source revision
-\texttt{d11d492-dirty}, 2026.
+\texttt{56d718c-dirty}, 2026.
 
 \bibitem{translator}
 EvalOps. \emph{Claim translator}. Repository artifact,
 \nolinkurl{formal_verification/translator.py}, source revision
-\texttt{d11d492-dirty}, 2026.
+\texttt{56d718c-dirty}, 2026.
 
 \bibitem{z3_prover}
 EvalOps. \emph{Hybrid and SMT proving}. Repository artifact,
 \nolinkurl{formal_verification/z3_prover.py}, source revision
-\texttt{d11d492-dirty}, 2026.
+\texttt{56d718c-dirty}, 2026.
 
 \end{thebibliography}
 

@@ -241,8 +241,10 @@ class TestOpenAIClaimExtractor:
             math_response,
         ]
 
-        extractor = OpenAIClaimExtractor()
-        result = extractor.extract_claim("two plus two equals four")
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
 
         assert result.is_formalizable
         assert result.claim is not None
@@ -283,8 +285,10 @@ class TestOpenAIClaimExtractor:
             math_response,
         ]
 
-        extractor = OpenAIClaimExtractor()
-        result = extractor.extract_claim("two plus two equals four")
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
 
         assert result.is_formalizable
         assert result.claim is not None
@@ -322,8 +326,10 @@ class TestOpenAIClaimExtractor:
             math_response,
         ]
 
-        extractor = OpenAIClaimExtractor()
-        result = extractor.extract_claim("two plus two equals four")
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
 
         assert result.is_formalizable
         assert result.claim is not None
@@ -364,8 +370,10 @@ class TestOpenAIClaimExtractor:
             math_response,
         ]
 
-        extractor = OpenAIClaimExtractor()
-        result = extractor.extract_claim("two plus two equals four")
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
 
         assert result.is_formalizable
         assert result.claim is not None
@@ -407,8 +415,10 @@ class TestOpenAIClaimExtractor:
             math_response,
         ]
 
-        extractor = OpenAIClaimExtractor()
-        result = extractor.extract_claim("two plus two equals four")
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
 
         assert result.is_formalizable
         assert result.claim is not None
@@ -450,8 +460,10 @@ class TestOpenAIClaimExtractor:
             math_response,
         ]
 
-        extractor = OpenAIClaimExtractor()
-        result = extractor.extract_claim("three times four is twelve")
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that three times four is twelve."
+        )
 
         assert result.is_formalizable
         assert result.claim is not None
@@ -462,38 +474,7 @@ class TestOpenAIClaimExtractor:
     def test_rule_based_claim_preserves_stated_false_math_claim(
         self, mock_openai_class
     ):
-        """Extractor should not silently rewrite a false claim into a true one."""
-        mock_client = MagicMock()
-        mock_openai_class.return_value = mock_client
-
-        triage_response = MagicMock()
-        triage_response.choices = [MagicMock()]
-        triage_response.choices[0].message.content = json.dumps(
-            {
-                "is_formalizable": True,
-                "category": "subtraction",
-                "reasoning": "Math claim",
-                "suggestion": "",
-            }
-        )
-
-        math_response = MagicMock()
-        math_response.choices = [MagicMock()]
-        math_response.choices[0].message.content = json.dumps(
-            {
-                "claim_text": "10 - 3 = 7",
-                "confidence": 0.95,
-                "variables": {"left": "10", "right": "3", "result": "7"},
-                "pattern_hints": ["subtraction"],
-                "reasoning": "Extracted subtraction claim",
-            }
-        )
-
-        mock_client.chat.completions.create.side_effect = [
-            triage_response,
-            math_response,
-        ]
-
+        """Deterministic extraction should preserve obvious false math claims."""
         extractor = OpenAIClaimExtractor()
         result = extractor.extract_claim("Ten minus three equals eight.")
 
@@ -501,6 +482,7 @@ class TestOpenAIClaimExtractor:
         assert result.claim is not None
         assert result.claim.category == ClaimCategory.SUBTRACTION
         assert result.claim.claim_text == "10 - 3 = 8"
+        mock_openai_class.assert_not_called()
 
     @patch("formal_verification.openai_agents.OpenAI")
     def test_uses_json_object_for_compatible_provider(self, mock_openai_class):
@@ -541,7 +523,9 @@ class TestOpenAIClaimExtractor:
             base_url="https://openrouter.ai/api/v1",
             model="openai/gpt-4.1-mini",
         )
-        result = extractor.extract_claim("two plus two equals four")
+        result = extractor.extract_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
 
         assert result.is_formalizable
         create_calls = mock_client.chat.completions.create.call_args_list
@@ -568,7 +552,7 @@ class TestOpenAIClaimExtractor:
 
         mock_client.chat.completions.create.return_value = triage_response
 
-        extractor = OpenAIClaimExtractor()
+        extractor = OpenAIClaimExtractor(api_key="test-key")
         result = extractor.extract_claim("the code is elegant")
 
         assert not result.is_formalizable
@@ -577,23 +561,7 @@ class TestOpenAIClaimExtractor:
 
     @patch("formal_verification.openai_agents.OpenAI")
     def test_rule_based_rescue_for_obvious_logic_claims(self, mock_openai_class):
-        """Rule-based normalization should rescue simple logic claims."""
-        mock_client = MagicMock()
-        mock_openai_class.return_value = mock_client
-
-        triage_response = MagicMock()
-        triage_response.choices = [MagicMock()]
-        triage_response.choices[0].message.content = json.dumps(
-            {
-                "is_formalizable": False,
-                "category": "unformalizable",
-                "reasoning": "Could not classify",
-                "suggestion": "",
-            }
-        )
-
-        mock_client.chat.completions.create.return_value = triage_response
-
+        """Rule-based normalization should bypass provider calls for simple logic."""
         extractor = OpenAIClaimExtractor()
         result = extractor.extract_claim(
             "If x is greater than 5, then x is greater than 3."
@@ -603,26 +571,11 @@ class TestOpenAIClaimExtractor:
         assert result.claim is not None
         assert result.claim.category == ClaimCategory.LOGIC_IMPLICATION
         assert result.claim.claim_text == "if x > 5 then x > 3"
+        mock_openai_class.assert_not_called()
 
     @patch("formal_verification.openai_agents.OpenAI")
     def test_rule_based_rescue_for_unsupported_logic_category(self, mock_openai_class):
-        """Unsupported provider category labels should still allow rescue."""
-        mock_client = MagicMock()
-        mock_openai_class.return_value = mock_client
-
-        triage_response = MagicMock()
-        triage_response.choices = [MagicMock()]
-        triage_response.choices[0].message.content = json.dumps(
-            {
-                "is_formalizable": True,
-                "category": "logic",
-                "reasoning": "General logic claim",
-                "suggestion": "",
-            }
-        )
-
-        mock_client.chat.completions.create.return_value = triage_response
-
+        """Deterministic normalization should also handle quantified logic."""
         extractor = OpenAIClaimExtractor()
         result = extractor.extract_claim("For all n, n plus zero equals n.")
 
@@ -630,6 +583,44 @@ class TestOpenAIClaimExtractor:
         assert result.claim is not None
         assert result.claim.category == ClaimCategory.LOGIC_FORALL
         assert result.claim.claim_text == "forall n, n + 0 = n"
+        mock_openai_class.assert_not_called()
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_rule_based_handles_hyphenated_number_words(self, mock_openai_class):
+        """Hyphenated number words should not require provider extraction."""
+        extractor = OpenAIClaimExtractor()
+        result = extractor.extract_claim("Seven times six is forty-two.")
+
+        assert result.is_formalizable
+        assert result.claim is not None
+        assert result.claim.category == ClaimCategory.MULTIPLICATION
+        assert result.claim.claim_text == "7 * 6 = 42"
+        mock_openai_class.assert_not_called()
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_initializes_without_provider_client_when_api_key_missing(
+        self, mock_openai_class
+    ):
+        """Missing credentials should leave the extractor in deterministic mode."""
+        extractor = OpenAIClaimExtractor()
+
+        assert extractor.client is None
+        mock_openai_class.assert_not_called()
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_non_rule_based_claim_without_credentials_returns_clear_failure(
+        self, mock_openai_class
+    ):
+        """Claims needing provider routing should fail clearly without a key."""
+        extractor = OpenAIClaimExtractor()
+        result = extractor.extract_claim(
+            "Please formalize the statement that the code is elegant."
+        )
+
+        assert not result.is_formalizable
+        assert result.claim is None
+        assert "credentials" in result.reasoning.lower()
+        mock_openai_class.assert_not_called()
 
 
 class TestHybridResolver:
@@ -697,8 +688,13 @@ class TestHybridResolver:
         }
 
         # Test
-        resolver = HybridCognitiveDissonanceResolver(use_guardrails=False)
-        analysis = resolver.analyze_claim("2 + 2 = 4")
+        resolver = HybridCognitiveDissonanceResolver(
+            openai_api_key="test-key",
+            use_guardrails=False,
+        )
+        analysis = resolver.analyze_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
 
         assert analysis.is_formalizable
         assert analysis.formalized_claim is not None

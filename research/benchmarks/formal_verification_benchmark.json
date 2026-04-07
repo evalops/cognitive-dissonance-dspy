@@ -12,6 +12,18 @@
     "expected_truth": false
   },
   {
+    "id": "arith_true_alt",
+    "claim_text": "4 + 5 = 9",
+    "family": "arithmetic",
+    "expected_truth": true
+  },
+  {
+    "id": "arith_false_alt",
+    "claim_text": "4 + 5 = 10",
+    "family": "arithmetic",
+    "expected_truth": false
+  },
+  {
     "id": "mult_true",
     "claim_text": "3 * 4 = 12",
     "family": "multiplication",
@@ -20,6 +32,18 @@
   {
     "id": "mult_false",
     "claim_text": "3 * 4 = 11",
+    "family": "multiplication",
+    "expected_truth": false
+  },
+  {
+    "id": "mult_true_alt",
+    "claim_text": "7 * 6 = 42",
+    "family": "multiplication",
+    "expected_truth": true
+  },
+  {
+    "id": "mult_false_alt",
+    "claim_text": "7 * 6 = 41",
     "family": "multiplication",
     "expected_truth": false
   },
@@ -36,6 +60,18 @@
     "expected_truth": false
   },
   {
+    "id": "sub_true_alt",
+    "claim_text": "12 - 5 = 7",
+    "family": "subtraction",
+    "expected_truth": true
+  },
+  {
+    "id": "sub_false_alt",
+    "claim_text": "12 - 5 = 8",
+    "family": "subtraction",
+    "expected_truth": false
+  },
+  {
     "id": "factorial_true",
     "claim_text": "factorial 5 = 120",
     "family": "factorial",
@@ -46,6 +82,24 @@
     "claim_text": "factorial 6 = 100",
     "family": "factorial",
     "expected_truth": false
+  },
+  {
+    "id": "factorial_true_alt",
+    "claim_text": "factorial 4 = 24",
+    "family": "factorial",
+    "expected_truth": true
+  },
+  {
+    "id": "factorial_false_alt",
+    "claim_text": "factorial 4 = 23",
+    "family": "factorial",
+    "expected_truth": false
+  },
+  {
+    "id": "factorial_base_true",
+    "claim_text": "factorial 0 = 1",
+    "family": "factorial",
+    "expected_truth": true
   },
   {
     "id": "fibonacci_true",
@@ -60,6 +114,18 @@
     "expected_truth": false
   },
   {
+    "id": "fibonacci_true_alt",
+    "claim_text": "fibonacci 6 = 8",
+    "family": "fibonacci",
+    "expected_truth": true
+  },
+  {
+    "id": "fibonacci_false_alt",
+    "claim_text": "fibonacci 6 = 9",
+    "family": "fibonacci",
+    "expected_truth": false
+  },
+  {
     "id": "gcd_true",
     "claim_text": "gcd(12, 8) = 4",
     "family": "gcd",
@@ -68,6 +134,18 @@
   {
     "id": "gcd_false",
     "claim_text": "gcd(12, 8) = 6",
+    "family": "gcd",
+    "expected_truth": false
+  },
+  {
+    "id": "gcd_true_alt",
+    "claim_text": "gcd(18, 12) = 6",
+    "family": "gcd",
+    "expected_truth": true
+  },
+  {
+    "id": "gcd_false_alt",
+    "claim_text": "gcd(18, 12) = 3",
     "family": "gcd",
     "expected_truth": false
   },
@@ -93,6 +171,102 @@
     "id": "ineq_false_gte",
     "claim_text": "7 >= 10",
     "family": "inequality",
+    "expected_truth": false
+  },
+  {
+    "id": "ineq_true_lte",
+    "claim_text": "9 <= 9",
+    "family": "inequality",
+    "expected_truth": true
+  },
+  {
+    "id": "ineq_false_lte",
+    "claim_text": "9 <= 8",
+    "family": "inequality",
+    "expected_truth": false
+  },
+  {
+    "id": "ineq_true_gt",
+    "claim_text": "11 > 2",
+    "family": "inequality",
+    "expected_truth": true
+  },
+  {
+    "id": "ineq_false_gt",
+    "claim_text": "2 > 11",
+    "family": "inequality",
+    "expected_truth": false
+  },
+  {
+    "id": "implication_true",
+    "claim_text": "if x > 5 then x > 3",
+    "family": "logic_implication",
+    "expected_truth": true
+  },
+  {
+    "id": "implication_false",
+    "claim_text": "if x > 5 then x > 7",
+    "family": "logic_implication",
+    "expected_truth": false
+  },
+  {
+    "id": "implication_true_alt",
+    "claim_text": "if x > 10 then x > 0",
+    "family": "logic_implication",
+    "expected_truth": true
+  },
+  {
+    "id": "implication_false_alt",
+    "claim_text": "if x > 10 then x > 20",
+    "family": "logic_implication",
+    "expected_truth": false
+  },
+  {
+    "id": "forall_true",
+    "claim_text": "forall n, n + 0 = n",
+    "family": "logic_forall",
+    "expected_truth": true
+  },
+  {
+    "id": "forall_false",
+    "claim_text": "forall x, x > 0",
+    "family": "logic_forall",
+    "expected_truth": false
+  },
+  {
+    "id": "forall_true_alt",
+    "claim_text": "forall n, n = n",
+    "family": "logic_forall",
+    "expected_truth": true
+  },
+  {
+    "id": "forall_false_alt",
+    "claim_text": "forall n, n > n",
+    "family": "logic_forall",
+    "expected_truth": false
+  },
+  {
+    "id": "exists_true",
+    "claim_text": "exists x such that x > 0",
+    "family": "logic_exists",
+    "expected_truth": true
+  },
+  {
+    "id": "exists_true_alt",
+    "claim_text": "exists x such that x = x",
+    "family": "logic_exists",
+    "expected_truth": true
+  },
+  {
+    "id": "exists_false",
+    "claim_text": "exists x such that x > x",
+    "family": "logic_exists",
+    "expected_truth": false
+  },
+  {
+    "id": "exists_false_alt",
+    "claim_text": "exists x such that x < x",
+    "family": "logic_exists",
     "expected_truth": false
   }
 ]

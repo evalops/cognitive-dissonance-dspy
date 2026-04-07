@@ -204,6 +204,14 @@ class ClaimExtractionResult(BaseModel):
         reformulated to be formalizable""",
     )
 
+    extraction_mode: str = Field(
+        default="unknown",
+        description=(
+            "How the result was produced, for example rule_based, provider, "
+            "provider_triage, or provider_with_rule_correction"
+        ),
+    )
+
     original_text: str = Field(description="The original input text for reference")
 
 

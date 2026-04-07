@@ -261,6 +261,7 @@ def _run_extraction_benchmark(
         extracted_claim_text = None
         extracted_category = None
         extracted_formalizable = False
+        extraction_mode = None
         exact_match = False
         category_correct = False
         translation_success_after_extraction = False
@@ -268,6 +269,7 @@ def _run_extraction_benchmark(
 
         if extracted is not None:
             extracted_formalizable = bool(extracted.is_formalizable)
+            extraction_mode = extracted.extraction_mode
             if extracted.claim is not None:
                 extracted_claim_text = extracted.claim.claim_text
                 extracted_category = extracted.claim.category.value
@@ -297,6 +299,7 @@ def _run_extraction_benchmark(
                 "baseline_translation_success": baseline_translation_success,
                 "extraction_time_ms": extraction_time_ms,
                 "extraction_error": extraction_error,
+                "extraction_mode": extraction_mode,
                 "extracted_formalizable": extracted_formalizable,
                 "extracted_category": extracted_category,
                 "extracted_claim_text": extracted_claim_text,
@@ -341,6 +344,30 @@ def _run_extraction_benchmark(
             "extractor_exact_match_rate_formalizable": _aggregate_boolean_rate(
                 [case["exact_match"] for case in cases if case["expected_formalizable"]]
             ),
+            "formalizable_false_negative_count": sum(
+                1
+                for case in cases
+                if case["expected_formalizable"] and not case["extracted_formalizable"]
+            ),
+            "semantic_drift_count_formalizable": sum(
+                1
+                for case in cases
+                if (
+                    case["expected_formalizable"]
+                    and case["extracted_formalizable"]
+                    and not case["exact_match"]
+                )
+            ),
+            "semantic_drift_decisive_error_count_formalizable": sum(
+                1
+                for case in cases
+                if (
+                    case["expected_formalizable"]
+                    and case["extracted_formalizable"]
+                    and not case["exact_match"]
+                    and not case["end_to_end_decisive_correct"]
+                )
+            ),
             "translation_success_rate_after_extraction_formalizable": (
                 _aggregate_boolean_rate(
                     [
@@ -369,6 +396,37 @@ def _run_extraction_benchmark(
                 for case in cases
                 if case["expected_formalizable"] and case["proof"]["machine_checked"]
             ),
+            "rule_based_case_count_formalizable": sum(
+                1
+                for case in cases
+                if (
+                    case["expected_formalizable"]
+                    and case["extraction_mode"] == "rule_based"
+                )
+            ),
+            "provider_case_count_formalizable": sum(
+                1
+                for case in cases
+                if (
+                    case["expected_formalizable"]
+                    and case["extraction_mode"] == "provider"
+                )
+            ),
+            "provider_corrected_case_count_formalizable": sum(
+                1
+                for case in cases
+                if (
+                    case["expected_formalizable"]
+                    and case["extraction_mode"] == "provider_with_rule_correction"
+                )
+            ),
+            "extraction_mode_counts": dict(
+                Counter(
+                    case["extraction_mode"]
+                    for case in cases
+                    if case["extraction_mode"] is not None
+                )
+            ),
             "status_counts_formalizable": dict(
                 Counter(
                     case["proof"]["status"]
@@ -386,18 +444,51 @@ def _run_extraction_benchmark(
     }
 
 
-def _run_stability_check(
+def _build_deterministic_only_extractor() -> OpenAIClaimExtractor:
+    """Instantiate an extractor with provider credentials/environment disabled."""
+    credential_keys = (
+        "OPENAI_API_KEY",
+        "OPENAI_BASE_URL",
+        "OPENAI_APP_NAME",
+        "OPENAI_SITE_URL",
+    )
+    backup = {key: os.environ.pop(key, None) for key in credential_keys}
+    try:
+        return OpenAIClaimExtractor()
+    finally:
+        for key, value in backup.items():
+            if value is not None:
+                os.environ[key] = value
+
+
+def _run_extraction_benchmark_conditions(
+    benchmark: list[dict[str, Any]],
+    *,
+    extractors: dict[str, OpenAIClaimExtractor],
+    benchmark_name: str,
+) -> dict[str, Any]:
+    """Run the same extraction benchmark under multiple extractor conditions."""
+    return {
+        "benchmark_name": benchmark_name,
+        "num_cases": len(benchmark),
+        "formalizable_case_count": sum(
+            1 for entry in benchmark if entry["expected_formalizable"]
+        ),
+        "conditions": {
+            name: _run_extraction_benchmark(benchmark, extractor=extractor)
+            for name, extractor in extractors.items()
+        },
+    }
+
+
+def _run_selected_stability_check(
     benchmark: list[dict[str, Any]],
     *,
     extractor: OpenAIClaimExtractor,
     trials: int,
+    selected_ids: list[str],
 ) -> dict[str, Any]:
-    selected_ids = [
-        "nl_arith_true",
-        "nl_factorial_true",
-        "nl_implication_true",
-        "nl_subjective_code",
-    ]
+    """Run repeated extraction on a selected subset of benchmark entries."""
     selected = [entry for entry in benchmark if entry["id"] in selected_ids]
     results = []
 
@@ -440,10 +531,34 @@ def _run_stability_check(
     }
 
 
+def _run_stability_check(
+    benchmark: list[dict[str, Any]],
+    *,
+    extractor: OpenAIClaimExtractor,
+    trials: int,
+) -> dict[str, Any]:
+    selected_ids = [
+        "nl_arith_true",
+        "nl_factorial_base_true",
+        "nl_ineq_alt_false",
+        "nl_implication_false",
+        "nl_exists_true",
+        "nl_subjective_design",
+    ]
+    return _run_selected_stability_check(
+        benchmark,
+        extractor=extractor,
+        trials=trials,
+        selected_ids=selected_ids,
+    )
+
+
 def _results_summary(study: dict[str, Any]) -> str:
     fv = study["formal_verification_benchmark"]["conditions"]
     extraction = study.get("extraction_benchmark")
+    stress = study.get("extraction_paraphrase_stress_benchmark")
     stability = study.get("stability_check")
+    stress_failure_probe = study.get("stress_failure_probe")
 
     with_necessity = fv["hybrid_with_necessity"]["metrics"]
     without_necessity = fv["hybrid_without_necessity"]["metrics"]
@@ -461,10 +576,23 @@ def _results_summary(study: dict[str, Any]) -> str:
             "symbolic claim performance?"
         ),
         (
-            "2. Does structured OpenAI-compatible extraction improve "
+            "2. Does structured extraction and canonicalization improve "
             "translation success over direct pattern matching?"
         ),
-        ("3. How much end-to-end proof coverage remains after successful extraction?"),
+        (
+            "3. How much end-to-end proof coverage remains after "
+            "successful extraction on the easy suite?"
+        ),
+        (
+            "4. On the easy benchmark, how much of the extraction result "
+            "truly depends on the provider rather than deterministic "
+            "canonicalization?"
+        ),
+        (
+            "5. On paraphrases that defeat deterministic rules, how much "
+            "lift does provider-backed extraction add and what failure "
+            "modes remain?"
+        ),
         "",
         "## Formal Verification Benchmark",
         "",
@@ -539,6 +667,64 @@ def _results_summary(study: dict[str, Any]) -> str:
                     "- Machine-checked formalizable cases after extraction: "
                     f"`{metrics['machine_checked_count_formalizable']}`"
                 ),
+                (
+                    "- Formalizable cases handled by deterministic fast-path "
+                    f"normalization: `{metrics['rule_based_case_count_formalizable']}`"
+                ),
+                (
+                    "- Formalizable cases requiring provider extraction: "
+                    f"`{metrics['provider_case_count_formalizable']}`"
+                ),
+                (
+                    "- Formalizable cases corrected back to the literal claim "
+                    f"after provider output: "
+                    f"`{metrics['provider_corrected_case_count_formalizable']}`"
+                ),
+                (
+                    "- Mean extraction latency across all cases: "
+                    f"`{metrics['mean_extraction_time_ms']:.1f} ms`"
+                ),
+                "",
+            ]
+        )
+
+    if stress is not None:
+        det_metrics = stress["conditions"]["deterministic_only"]["metrics"]
+        provider_metrics = stress["conditions"]["provider_enabled"]["metrics"]
+        lines.extend(
+            [
+                "## Paraphrase Stress Benchmark",
+                "",
+                f"- Cases: `{stress['num_cases']}`",
+                (
+                    "- Deterministic-only exact canonical match on formalizable "
+                    "claims: "
+                    f"`{det_metrics['extractor_exact_match_rate_formalizable']:.1%}`"
+                ),
+                (
+                    "- Provider exact canonical match on formalizable claims: "
+                    f"`{provider_metrics['extractor_exact_match_rate_formalizable']:.1%}`"
+                ),
+                (
+                    "- Provider end-to-end decisive accuracy on formalizable claims: "
+                    f"`{provider_metrics['end_to_end_decisive_accuracy_formalizable']:.1%}`"
+                ),
+                (
+                    "- Provider end-to-end decisive coverage on formalizable claims: "
+                    f"`{provider_metrics['end_to_end_decisive_coverage_formalizable']:.1%}`"
+                ),
+                (
+                    "- Provider formalizable false negatives: "
+                    f"`{provider_metrics['formalizable_false_negative_count']}`"
+                ),
+                (
+                    "- Provider semantic-drift cases: "
+                    f"`{provider_metrics['semantic_drift_count_formalizable']}`"
+                ),
+                (
+                    "- Provider semantic-drift decisive errors: "
+                    f"`{provider_metrics['semantic_drift_decisive_error_count_formalizable']}`"
+                ),
                 "",
             ]
         )
@@ -557,6 +743,20 @@ def _results_summary(study: dict[str, Any]) -> str:
             ]
         )
 
+    if stress_failure_probe is not None:
+        lines.extend(
+            [
+                "## Stress Failure Probe",
+                "",
+                (
+                    f"- Stable case rate across "
+                    f"`{stress_failure_probe['trials_per_case']}` trials: "
+                    f"`{stress_failure_probe['stable_case_rate']:.1%}`"
+                ),
+                "",
+            ]
+        )
+
     lines.extend(
         [
             "## Interpretation",
@@ -567,7 +767,7 @@ def _results_summary(study: dict[str, Any]) -> str:
             ),
             (
                 "- The extraction benchmark isolates whether "
-                "provider-backed normalization actually expands "
+                "structured extraction and canonicalization actually expand "
                 "proof-ready coverage."
             ),
         ]
@@ -584,12 +784,53 @@ def _results_summary(study: dict[str, Any]) -> str:
                 "verification both saturate; the main remaining limitation is "
                 "benchmark breadth rather than measured pipeline accuracy."
             )
+            if metrics["rule_based_case_count_formalizable"]:
+                lines.append(
+                    "- Most formalizable benchmark cases now resolve through "
+                    "deterministic canonicalization before any provider call, "
+                    "so the main provider contribution on this suite is "
+                    "unformalizable triage rather than core normalization."
+                )
         else:
             lines.append(
                 "- Any gap between extraction success and decisive proof "
                 "coverage indicates that translation/proof support, not "
                 "extraction alone, is the dominant remaining bottleneck."
             )
+
+    if stress is not None:
+        provider_metrics = stress["conditions"]["provider_enabled"]["metrics"]
+        if provider_metrics["formalizable_false_negative_count"]:
+            lines.append(
+                "- The paraphrase stress slice shows that provider-backed "
+                "extraction does add coverage beyond deterministic rules, but "
+                "it still misses some clearly formalizable logic paraphrases."
+            )
+        if (
+            provider_metrics["extractor_exact_match_rate_formalizable"]
+            > stress["conditions"]["deterministic_only"]["metrics"][
+                "extractor_exact_match_rate_formalizable"
+            ]
+        ):
+            lines.append(
+                "- Provider-backed extraction adds real lift on the harder "
+                "paraphrase slice, but it does not saturate that benchmark."
+            )
+        if provider_metrics["semantic_drift_decisive_error_count_formalizable"]:
+            lines.append(
+                "- More importantly, the provider can silently rewrite false "
+                "claims into true canonical forms. Exact-match tracking is "
+                "therefore necessary, not optional."
+            )
+    if (
+        stress_failure_probe is not None
+        and stress_failure_probe["stable_case_rate"] < 1.0
+    ):
+        lines.append(
+            "- The hardest stress failures are not all stable. At least one "
+            "false arithmetic paraphrase flips between correct extraction and "
+            "rejection across repeated temperature-0 runs."
+        )
 
     lines.extend(
         [
@@ -605,6 +846,9 @@ def run_study(args: argparse.Namespace) -> dict[str, Any]:
 
     formal_benchmark = _load_json(BENCHMARKS_DIR / "formal_verification_benchmark.json")
     extraction_benchmark = _load_json(BENCHMARKS_DIR / "extraction_benchmark.json")
+    stress_benchmark = _load_json(
+        BENCHMARKS_DIR / "extraction_paraphrase_stress_benchmark.json"
+    )
 
     study: dict[str, Any] = {
         "meta": {
@@ -633,18 +877,43 @@ def run_study(args: argparse.Namespace) -> dict[str, Any]:
             site_url=os.getenv("OPENAI_SITE_URL"),
             temperature=args.temperature,
         )
+        deterministic_extractor = _build_deterministic_only_extractor()
         study["extraction_benchmark"] = _run_extraction_benchmark(
             extraction_benchmark,
             extractor=extractor,
+        )
+        study["extraction_paraphrase_stress_benchmark"] = (
+            _run_extraction_benchmark_conditions(
+                stress_benchmark,
+                extractors={
+                    "deterministic_only": deterministic_extractor,
+                    "provider_enabled": extractor,
+                },
+                benchmark_name="extraction_paraphrase_stress_benchmark",
+            )
         )
         study["stability_check"] = _run_stability_check(
             extraction_benchmark,
             extractor=extractor,
             trials=args.stability_trials,
         )
+        study["stress_failure_probe"] = _run_selected_stability_check(
+            stress_benchmark,
+            extractor=extractor,
+            trials=args.stress_trials,
+            selected_ids=[
+                "stress_add_false",
+                "stress_sub_false",
+                "stress_implication_true",
+                "stress_exists_true",
+                "stress_forall_true",
+            ],
+        )
     else:
         study["extraction_benchmark"] = None
+        study["extraction_paraphrase_stress_benchmark"] = None
         study["stability_check"] = None
+        study["stress_failure_probe"] = None
 
     json_path = RESULTS_DIR / "study_results.json"
     summary_path = RESULTS_DIR / "study_summary.md"
@@ -672,6 +941,12 @@ def main() -> None:
         type=int,
         default=2,
         help="Number of repeated extraction trials for the stability check",
+    )
+    parser.add_argument(
+        "--stress-trials",
+        type=int,
+        default=5,
+        help="Number of repeated extraction trials for the stress failure probe",
     )
     args = parser.parse_args()
     study = run_study(args)

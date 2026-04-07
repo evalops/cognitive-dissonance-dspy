@@ -5,15 +5,19 @@
 [![Coq](https://img.shields.io/badge/Coq-8.18+-orange.svg)](https://coq.inria.fr/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repository studies a specific question: when multiple LLM agents disagree
+This repository studies a narrow question: when multiple LLM agents disagree
 about a claim that is formalizable, can the system resolve that disagreement by
 proof instead of by debate?
 
-On the current internal benchmark, the answer is "yes." Once Coq is available
-locally, the extraction and verification pipeline reaches full decisive
-coverage on the curated suite. The important caveat is that the benchmark is
-small and repository-authored, so the remaining research problem is breadth and
-external validity, not benchmark accuracy on this suite.
+The current answer is narrower and more interesting than "we built theorem-
+proving agents." On an easy internal benchmark, deterministic canonicalization
+plus the proof stack saturate the formalizable slice once Coq is available
+locally. On a harder paraphrase stress benchmark, provider-backed extraction
+adds real lift beyond deterministic rules, but only reaches 70.6% exact
+canonicalization and 70.6% end-to-end decisive accuracy on formalizable cases,
+with both false negatives and silent semantic drift. The honest result is that
+easy extraction is solved here, while harder paraphrase handling is still the
+limiting factor.
 
 ## Current Result Snapshot
 
@@ -23,6 +27,7 @@ Primary artifact paths:
 - `research/run_study.py`
 - `research/benchmarks/formal_verification_benchmark.json`
 - `research/benchmarks/extraction_benchmark.json`
+- `research/benchmarks/extraction_paraphrase_stress_benchmark.json`
 - `research/results/study_results.json`
 - `research/results/study_summary.md`
 - `reports/cognitive_dissonance_research_report.tex`
@@ -37,92 +42,140 @@ Experimental setup:
 
 ### Formal Verification Benchmark
 
-Curated symbolic benchmark: 16 cases across arithmetic, multiplication,
-subtraction, factorial, Fibonacci, GCD, and inequalities.
+Curated symbolic benchmark: 45 cases across arithmetic, multiplication,
+subtraction, factorial, Fibonacci, GCD, inequalities, implication, universal
+quantification, and existential quantification.
 
 | Condition | Decisive Coverage | Overall Decisive Accuracy | Machine-Checked Cases | Mean Proof Time |
 | --- | ---: | ---: | ---: | ---: |
-| Hybrid + necessity | 100.0% | 100.0% | 3 | 154.0 ms |
-| Hybrid without necessity | 100.0% | 100.0% | 3 | 154.0 ms |
+| Hybrid + necessity | 100.0% | 100.0% | 13 | 133.4 ms |
+| Hybrid without necessity | 100.0% | 100.0% | 13 | 133.3 ms |
 
 Interpretation:
-- On this Coq-enabled local run, the symbolic benchmark is fully decisive.
-- Three positive cases are machine-checked locally: `factorial`, `fibonacci`,
-  and `gcd`.
-- Necessity does not improve headline accuracy on this suite once Coq is
-  available, because both conditions already saturate the benchmark.
+- The expanded symbolic benchmark is fully decisive in both conditions.
+- Thirteen positive cases are machine-checked locally.
+- Necessity still does not separate the two conditions on this suite, which
+  means the benchmark is no longer useful for that ablation.
 
-### Extraction Benchmark
+### Main Extraction Benchmark
 
-Curated natural-language benchmark: 16 cases total.
-- 12 formalizable cases
-- 4 unformalizable control cases
+Curated natural-language benchmark: 35 cases total.
+- 27 formalizable cases
+- 8 unformalizable subjective controls
 
 | Metric | Result |
 | --- | ---: |
-| Direct translator success on formalizable NL claims | 25.0% |
+| Direct translator success on formalizable NL claims | 22.2% |
 | Extractor formalizability accuracy | 100.0% |
 | Extractor exact canonical match on formalizable claims | 100.0% |
 | Translation success after extraction | 100.0% |
 | End-to-end decisive proof coverage after extraction | 100.0% |
 | End-to-end decisive accuracy after extraction | 100.0% |
-| Machine-checked formalizable cases after extraction | 6 |
-| Mean extraction latency | 2747 ms/case |
+| Machine-checked formalizable cases after extraction | 7 |
+| Formalizable cases handled by deterministic fast-path normalization | 27 |
+| Formalizable cases requiring provider extraction | 0 |
+| Mean extraction latency | 476.5 ms/case |
 
 Interpretation:
-- The extraction pipeline now solves the normalization problem on the curated
-  benchmark.
-- With Coq available locally, the extraction-plus-proof pipeline is decisive on
-  all 12 formalizable natural-language cases in the suite.
-- The evidence mix still matters: 6 of those 12 formalizable cases are
-  machine-checked, 3 are `smt_proved`, and 3 are decisive refutations that are
-  not machine-checked.
+- Direct translation still fails on most raw natural-language formalizable
+  claims: only 6 of 27 succeed without structured extraction.
+- Every formalizable benchmark case is now canonicalized deterministically into
+  translator-compatible form before any provider call.
+- The provider is still used for the 8 unformalizable controls, which it
+  rejected correctly on this run.
+- The decisive evidence mix on the formalizable slice is 7 `machine_checked`,
+  7 `smt_proved`, and 13 `refuted`.
 
-### Stability Check
+### Paraphrase Stress Benchmark
 
-Repeated extraction on 4 representative cases over 2 trials per case:
+Harder natural-language paraphrase benchmark: 19 cases total.
+- 17 formalizable cases written to defeat the repository's deterministic
+  fast-path rules
+- 2 unformalizable subjective controls
+
+| Metric | Deterministic Only | Provider Enabled |
+| --- | ---: | ---: |
+| Direct translator success on formalizable NL claims | 5.9% | 5.9% |
+| Extractor formalizability accuracy | 10.5% | 78.9% |
+| Extractor category accuracy on formalizable claims | 0.0% | 76.5% |
+| Exact canonical match on formalizable claims | 0.0% | 70.6% |
+| Translation success after extraction | 0.0% | 76.5% |
+| End-to-end decisive proof coverage | 0.0% | 76.5% |
+| End-to-end decisive accuracy | 0.0% | 70.6% |
+| Machine-checked formalizable cases | 0 | 3 |
+| Mean extraction latency | 0.03 ms/case | 2998.2 ms/case |
+
+Interpretation:
+- This benchmark is the first one in the repository where the provider is doing
+  essential extraction work rather than just triaging subjective controls.
+- Provider-backed extraction adds large lift over deterministic-only routing,
+  but it still misses 4 of the 17 clearly formalizable claims.
+- It also silently rewrites at least one false claim into a different true
+  canonical claim, so exact-match auditing is mandatory.
+
+### Stability And Failure Probe
+
+Repeated extraction on 6 representative cases over 2 trials per case:
 - Stable case rate: 100.0%
 
 The checked cases covered:
 - arithmetic true claim
-- factorial true claim
-- implication claim
+- factorial base-case claim
+- inequality false claim
+- implication false claim
+- existential true claim
 - unformalizable subjective claim
+
+Repeated extraction on 5 hard paraphrase failures over 10 trials per case:
+- Stable case rate: 80.0%
+- One false arithmetic paraphrase flips between correct extraction and
+  rejection even at temperature 0.0.
+- Another false arithmetic paraphrase is stable but wrong: it is consistently
+  rewritten into a different true subtraction fact.
+- Three quantified or implication paraphrases are stable false negatives.
 
 ## Main Conclusions
 
-1. Extraction is no longer the primary problem on the current internal study.
-   The OpenAI-compatible extraction pipeline plus deterministic canonicalization
-   maps all 12 formalizable natural-language cases into translator-compatible
-   canonical forms.
-2. On the current internal benchmark, the full pipeline is now decisive after
-   Coq installation: symbolic verification is 16/16 decisive and the
-   formalizable natural-language slice is 12/12 decisive.
-3. Necessity is neutral on the headline metrics for this benchmark once Coq is
-   available, which suggests the next useful ablations need harder claims than
-   the current suite.
-4. The proof-status model is still doing the right thing. The system clearly
-   distinguishes SMT-proved, derived, machine-checked, and inconclusive
-   outcomes instead of flattening them into "proved."
+1. The easy internal extraction benchmark is no longer informative about
+   provider extraction. Deterministic canonicalization solves all 27
+   formalizable cases before any provider call.
+2. The harder paraphrase stress benchmark is the real signal. There, provider
+   extraction improves exact canonicalization from 0.0% to 70.6% and decisive
+   coverage from 0.0% to 76.5%.
+3. Provider lift is real, but reliability is not good enough to trust
+   unaudited. The current stress run includes 4 formalizable false negatives,
+   1 semantic-drift case, and 1 decisive error caused by silent correction.
+4. On canonical claims, the proof stack is strong. With Coq installed locally,
+   the symbolic benchmark is 45/45 decisive and the easy formalizable
+   natural-language slice is 27/27 decisive.
+5. Evidence typing still matters. The system distinguishes `machine_checked`,
+   `smt_proved`, `refuted`, and weaker statuses instead of flattening
+   everything into "proved."
 
 ## What This Repository Currently Does Well
 
 - Detects formalizable conflicts between agent claims.
-- Normalizes proof outcomes into explicit evidence-strength categories.
+- Canonicalizes obvious mathematical and logical claims deterministically.
+- Separates proof outcomes into explicit evidence-strength categories.
 - Uses `coqchk` before labeling a Coq proof as machine-checked.
 - Integrates Z3, Coq, necessity-based proving, proof repair, caching, and CI.
 - Provides a reproducible study harness rather than only narrative examples.
 
 ## What Is Still Limited
 
-- The benchmark suite is small and curated. These numbers are useful, but they
-  are not claims about open-domain performance.
-- The current benchmark is likely close to the repository's comfort zone after
-  targeted iteration, so it is no longer a strong stress test.
-- Only part of the decisive evidence is machine-checked. On the extraction
-  suite, the formalizable slice resolves via a mix of `machine_checked`,
-  `smt_proved`, and `refuted`.
-- The semantic bridge for subjective claims remains heuristic.
+- The benchmark suite is still small and repository-authored. These results are
+  useful, but they are not claims about open-domain performance.
+- The main extraction benchmark is now too aligned with repository rules to say
+  much about model-driven extraction.
+- The harder paraphrase benchmark is still small. It shows the right failure
+  modes, but it is not yet broad enough to support a strong novelty claim.
+- Only 7 of the 27 decisive easy-suite extraction cases and 3 of the 17 stress
+  cases are `machine_checked`; the rest are solver-backed proofs or decisive
+  refutations.
+- Provider-backed extraction can silently rewrite false claims into different
+  true ones, which means exact-match auditing is not optional.
+- The next missing work is broader paraphrase coverage, comparative baselines,
+  and calibration-oriented evaluation of evidence-status reporting.
 
 ## Reproducing The Study
 
@@ -144,7 +197,8 @@ export OPENAI_SITE_URL=https://evalops.dev
 .venv/bin/python research/run_study.py \
   --model "$OPENAI_MODEL" \
   --temperature 0.0 \
-  --stability-trials 2
+  --stability-trials 2 \
+  --stress-trials 10
 ```
 
 ### Tests
@@ -152,8 +206,6 @@ export OPENAI_SITE_URL=https://evalops.dev
 ```bash
 .venv/bin/python -m pytest -q
 ```
-
-Current local result with Coq installed: `248 passed, 1 skipped`
 
 ### Report build
 
@@ -172,7 +224,7 @@ This project intentionally does not treat all successes as equivalent.
 - `derived_refuted`: structured refutation, not machine-checked
 - `inconclusive`: no trustworthy deterministic result
 
-That distinction is the core research claim of this repository: a proof-shaped
+That distinction is the core epistemic claim of this repository: a proof-shaped
 artifact is not the same thing as ground truth.
 
 ## Repository Layout

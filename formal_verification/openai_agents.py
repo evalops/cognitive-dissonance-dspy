@@ -60,6 +60,19 @@ NUMBER_WORDS = {
     "twelve": "12",
 }
 
+TENS_WORDS = {
+    "twenty": 20,
+    "thirty": 30,
+    "forty": 40,
+    "fifty": 50,
+    "sixty": 60,
+    "seventy": 70,
+    "eighty": 80,
+    "ninety": 90,
+}
+
+TOKEN_PATTERN = r"[\w-]+(?:\s+[\w-]+)*"
+
 
 # Agent instructions for different specializations
 TRIAGE_AGENT_INSTRUCTIONS = """You are a Claim Triage Agent for formal verification.
@@ -242,23 +255,42 @@ class OpenAIClaimExtractor:
         if resolved_site_url:
             default_headers["HTTP-Referer"] = resolved_site_url
 
-        client_kwargs: dict[str, Any] = {
-            "api_key": api_key or os.getenv("OPENAI_API_KEY")
-        }
+        resolved_api_key = api_key or os.getenv("OPENAI_API_KEY")
+        client_kwargs: dict[str, Any] = {}
         resolved_base_url = base_url or os.getenv("OPENAI_BASE_URL")
+        if resolved_api_key:
+            client_kwargs["api_key"] = resolved_api_key
         if resolved_base_url:
             client_kwargs["base_url"] = resolved_base_url
         if default_headers:
             client_kwargs["default_headers"] = default_headers
 
-        self.client = OpenAI(**client_kwargs)
+        self.client = OpenAI(**client_kwargs) if resolved_api_key else None
         self.model = model
         self.temperature = temperature
         self.translator = ClaimTranslator()
         self._uses_compatible_base_url = bool(
             resolved_base_url and "api.openai.com" not in resolved_base_url
         )
-        logger.info(f"Initialized OpenAIClaimExtractor with model {model}")
+        if self.client is None:
+            logger.info(
+                "Initialized OpenAIClaimExtractor with model %s "
+                "in deterministic-only mode",
+                model,
+            )
+        else:
+            logger.info(
+                "Initialized OpenAIClaimExtractor with model %s",
+                model,
+            )
+
+    def _require_client(self) -> OpenAI:
+        """Return the configured client or raise a clear error."""
+        if self.client is None:
+            raise RuntimeError(
+                "OPENAI_API_KEY is required for provider-backed extraction"
+            )
+        return self.client
 
     @staticmethod
     def _normalize_category(raw_category: Any) -> str:
@@ -437,6 +469,17 @@ class OpenAIClaimExtractor:
             return normalized
         if normalized in NUMBER_WORDS:
             return NUMBER_WORDS[normalized]
+        compound_parts = re.split(r"[-\s]+", normalized)
+        if compound_parts and compound_parts[0] in TENS_WORDS:
+            value = TENS_WORDS[compound_parts[0]]
+            if len(compound_parts) == 1:
+                return str(value)
+            if (
+                len(compound_parts) == 2
+                and compound_parts[1] in NUMBER_WORDS
+                and int(NUMBER_WORDS[compound_parts[1]]) < 10
+            ):
+                return str(value + int(NUMBER_WORDS[compound_parts[1]]))
         if re.fullmatch(r"[a-zA-Z_]\w*", normalized):
             return normalized
         return None
@@ -444,6 +487,7 @@ class OpenAIClaimExtractor:
     def _canonicalize_predicate(self, text: str) -> str | None:
         """Normalize simple arithmetic and inequality predicates."""
         normalized = self._normalize_rule_text(text)
+        token_pattern = TOKEN_PATTERN
         symbolic_match = re.fullmatch(
             r"([a-zA-Z_]\w*|\d+)\s*(<=|>=|<|>|=)\s*([a-zA-Z_]\w*|\d+)",
             normalized,
@@ -455,9 +499,19 @@ class OpenAIClaimExtractor:
             )
 
         arithmetic_patterns = [
-            (r"(\w+)\s+plus\s+(\w+)\s+(?:equals|is)\s+(\w+)", "+"),
-            (r"(\w+)\s+minus\s+(\w+)\s+(?:equals|is)\s+(\w+)", "-"),
-            (r"(\w+)\s+(?:times|multiplied by)\s+(\w+)\s+(?:equals|is)\s+(\w+)", "*"),
+            (
+                rf"({token_pattern})\s+plus\s+({token_pattern})\s+(?:equals|is)\s+({token_pattern})",
+                "+",
+            ),
+            (
+                rf"({token_pattern})\s+minus\s+({token_pattern})\s+(?:equals|is)\s+({token_pattern})",
+                "-",
+            ),
+            (
+                rf"({token_pattern})\s+(?:times|multiplied by)\s+"
+                rf"({token_pattern})\s+(?:equals|is)\s+({token_pattern})",
+                "*",
+            ),
         ]
         for pattern, operator in arithmetic_patterns:
             match = re.fullmatch(pattern, normalized)
@@ -470,10 +524,18 @@ class OpenAIClaimExtractor:
                 return f"{left} {operator} {right} = {result}"
 
         inequality_patterns = [
-            (r"(\w+)\s+is\s+greater\s+than\s+or\s+equal\s+to\s+(\w+)", ">="),
-            (r"(\w+)\s+is\s+less\s+than\s+or\s+equal\s+to\s+(\w+)", "<="),
-            (r"(\w+)\s+is\s+greater\s+than\s+(\w+)", ">"),
-            (r"(\w+)\s+is\s+less\s+than\s+(\w+)", "<"),
+            (
+                rf"({token_pattern})\s+is\s+greater\s+than\s+or\s+equal\s+to\s+"
+                rf"({token_pattern})",
+                ">=",
+            ),
+            (
+                rf"({token_pattern})\s+is\s+less\s+than\s+or\s+equal\s+to\s+"
+                rf"({token_pattern})",
+                "<=",
+            ),
+            (rf"({token_pattern})\s+is\s+greater\s+than\s+({token_pattern})", ">"),
+            (rf"({token_pattern})\s+is\s+less\s+than\s+({token_pattern})", "<"),
         ]
         for pattern, operator in inequality_patterns:
             match = re.fullmatch(pattern, normalized)
@@ -535,20 +597,22 @@ class OpenAIClaimExtractor:
     def _rule_based_claim(self, text: str) -> FormalizableClaim | None:
         """Use lightweight deterministic normalization for obvious claim forms."""
         normalized = self._normalize_rule_text(text)
+        token_pattern = TOKEN_PATTERN
 
         arithmetic_patterns = [
             (
-                r"(\w+)\s+plus\s+(\w+)\s+(?:equals|is)\s+(\w+)",
+                rf"({token_pattern})\s+plus\s+({token_pattern})\s+(?:equals|is)\s+({token_pattern})",
                 ClaimCategory.ARITHMETIC,
                 "+",
             ),
             (
-                r"(\w+)\s+(?:times|multiplied by)\s+(\w+)\s+(?:equals|is)\s+(\w+)",
+                rf"({token_pattern})\s+(?:times|multiplied by)\s+"
+                rf"({token_pattern})\s+(?:equals|is)\s+({token_pattern})",
                 ClaimCategory.MULTIPLICATION,
                 "*",
             ),
             (
-                r"(\w+)\s+minus\s+(\w+)\s+(?:equals|is)\s+(\w+)",
+                rf"({token_pattern})\s+minus\s+({token_pattern})\s+(?:equals|is)\s+({token_pattern})",
                 ClaimCategory.SUBTRACTION,
                 "-",
             ),
@@ -572,17 +636,17 @@ class OpenAIClaimExtractor:
 
         function_patterns = [
             (
-                r"(?:the\s+)?factorial(?:\s+of)?\s+(\w+)\s+(?:equals|is)\s+(\w+)",
+                rf"(?:the\s+)?factorial(?:\s+of)?\s+({token_pattern})\s+(?:equals|is)\s+({token_pattern})",
                 ClaimCategory.FACTORIAL,
                 "factorial {input} = {output}",
             ),
             (
-                r"fibonacci(?:\s+of)?\s+(\w+)\s+(?:equals|is)\s+(\w+)",
+                rf"fibonacci(?:\s+of)?\s+({token_pattern})\s+(?:equals|is)\s+({token_pattern})",
                 ClaimCategory.FIBONACCI,
                 "fibonacci {input} = {output}",
             ),
             (
-                r"(?:the\s+)?gcd(?:\s+of)?\s+(\w+)\s+(?:and|,)\s+(\w+)\s+(?:equals|is)\s+(\w+)",
+                rf"(?:the\s+)?gcd(?:\s+of)?\s+({token_pattern})\s+(?:and|,)\s+({token_pattern})\s+(?:equals|is)\s+({token_pattern})",
                 ClaimCategory.GCD,
                 "gcd({a}, {b}) = {result}",
             ),
@@ -623,10 +687,18 @@ class OpenAIClaimExtractor:
                     )
 
         inequality_patterns = [
-            (r"(\w+)\s+is\s+greater\s+than\s+or\s+equal\s+to\s+(\w+)", ">="),
-            (r"(\w+)\s+is\s+less\s+than\s+or\s+equal\s+to\s+(\w+)", "<="),
-            (r"(\w+)\s+is\s+greater\s+than\s+(\w+)", ">"),
-            (r"(\w+)\s+is\s+less\s+than\s+(\w+)", "<"),
+            (
+                rf"({token_pattern})\s+is\s+greater\s+than\s+or\s+equal\s+to\s+"
+                rf"({token_pattern})",
+                ">=",
+            ),
+            (
+                rf"({token_pattern})\s+is\s+less\s+than\s+or\s+equal\s+to\s+"
+                rf"({token_pattern})",
+                "<=",
+            ),
+            (rf"({token_pattern})\s+is\s+greater\s+than\s+({token_pattern})", ">"),
+            (rf"({token_pattern})\s+is\s+less\s+than\s+({token_pattern})", "<"),
         ]
         for pattern, operator in inequality_patterns:
             match = re.fullmatch(pattern, normalized)
@@ -706,23 +778,41 @@ class OpenAIClaimExtractor:
         """
         logger.debug(f"Extracting claim from: {text[:100]}...")
 
+        rule_based_claim = self._rule_based_claim(text)
+        if rule_based_claim is not None and self.validate_against_translator(
+            rule_based_claim,
+            code_context,
+        ):
+            return ClaimExtractionResult(
+                claim=rule_based_claim,
+                is_formalizable=True,
+                reasoning=rule_based_claim.reasoning,
+                extraction_mode="rule_based",
+                original_text=text,
+            )
+
+        if self.client is None:
+            return ClaimExtractionResult(
+                claim=None,
+                is_formalizable=False,
+                reasoning=(
+                    "OpenAI-compatible API credentials are required for "
+                    "non-deterministic extraction."
+                ),
+                extraction_mode="unavailable",
+                original_text=text,
+            )
+
         # Step 1: Triage - determine if formalizable and categorize
         triage_result = self._triage_claim(text)
 
         if not triage_result["is_formalizable"]:
-            rule_based_claim = self._rule_based_claim(text)
-            if rule_based_claim is not None:
-                return ClaimExtractionResult(
-                    claim=rule_based_claim,
-                    is_formalizable=True,
-                    reasoning=rule_based_claim.reasoning,
-                    original_text=text,
-                )
             return ClaimExtractionResult(
                 claim=None,
                 is_formalizable=False,
                 reasoning=triage_result["reasoning"],
                 alternative_formulation=triage_result.get("suggestion"),
+                extraction_mode="provider_triage",
                 original_text=text,
             )
 
@@ -738,12 +828,14 @@ class OpenAIClaimExtractor:
                     claim=rule_based_claim,
                     is_formalizable=True,
                     reasoning=rule_based_claim.reasoning,
+                    extraction_mode="provider_with_rule_correction",
                     original_text=text,
                 )
             return ClaimExtractionResult(
                 claim=None,
                 is_formalizable=False,
                 reasoning=f"Category {raw_category} not yet supported",
+                extraction_mode="provider_triage",
                 original_text=text,
             )
 
@@ -782,12 +874,14 @@ class OpenAIClaimExtractor:
                 claim=None,
                 is_formalizable=False,
                 reasoning=f"Category {category} not yet supported",
+                extraction_mode="provider_triage",
                 original_text=text,
             )
 
-        rule_based_claim = self._rule_based_claim(text)
+        extraction_mode = "provider"
         if claim is None and rule_based_claim is not None:
             claim = rule_based_claim
+            extraction_mode = "provider_with_rule_correction"
         elif (
             claim is not None
             and rule_based_claim is not None
@@ -796,6 +890,7 @@ class OpenAIClaimExtractor:
             # For simple canonicalizable claims, preserve the literal claim the
             # user stated instead of a provider-normalized "corrected" variant.
             claim = rule_based_claim
+            extraction_mode = "provider_with_rule_correction"
 
         if claim is None:
             if rule_based_claim is None:
@@ -803,15 +898,18 @@ class OpenAIClaimExtractor:
                     claim=None,
                     is_formalizable=False,
                     reasoning=f"Unable to extract a canonical {category.value} claim",
+                    extraction_mode="provider_failed",
                     original_text=text,
                 )
             claim = rule_based_claim
+            extraction_mode = "provider_with_rule_correction"
 
         if not self.validate_against_translator(claim, code_context):
             if rule_based_claim is not None and self.validate_against_translator(
                 rule_based_claim, code_context
             ):
                 claim = rule_based_claim
+                extraction_mode = "provider_with_rule_correction"
             else:
                 return ClaimExtractionResult(
                     claim=None,
@@ -819,6 +917,7 @@ class OpenAIClaimExtractor:
                     reasoning=(
                         "Extracted claim did not match a supported translator pattern"
                     ),
+                    extraction_mode="provider_failed",
                     original_text=text,
                 )
 
@@ -826,13 +925,14 @@ class OpenAIClaimExtractor:
             claim=claim,
             is_formalizable=True,
             reasoning=claim.reasoning,
+            extraction_mode=extraction_mode,
             original_text=text,
         )
 
     def _triage_claim(self, text: str) -> dict[str, Any]:
         """Triage a claim to determine if it's formalizable."""
         try:
-            response = self.client.chat.completions.create(
+            response = self._require_client().chat.completions.create(
                 model=self.model,
                 **self._completion_kwargs(),
                 messages=[
@@ -892,7 +992,7 @@ class OpenAIClaimExtractor:
     ) -> FormalizableClaim | None:
         """Extract a mathematical claim using the math specialist agent."""
         try:
-            response = self.client.chat.completions.create(
+            response = self._require_client().chat.completions.create(
                 model=self.model,
                 **self._completion_kwargs(),
                 messages=[
@@ -964,7 +1064,7 @@ class OpenAIClaimExtractor:
     ) -> FormalizableClaim | None:
         """Extract a logical claim using the logic specialist agent."""
         try:
-            response = self.client.chat.completions.create(
+            response = self._require_client().chat.completions.create(
                 model=self.model,
                 **self._completion_kwargs(),
                 messages=[
@@ -1040,7 +1140,7 @@ class OpenAIClaimExtractor:
             if code_context:
                 prompt += f"\n\nCode context:\n{code_context}"
 
-            response = self.client.chat.completions.create(
+            response = self._require_client().chat.completions.create(
                 model=self.model,
                 **self._completion_kwargs(),
                 messages=[

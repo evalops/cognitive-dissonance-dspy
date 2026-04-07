@@ -15,7 +15,8 @@
         "extracted_claim_text": "2 + 2 = 4",
         "extracted_formalizable": true,
         "extraction_error": null,
-        "extraction_time_ms": 3681.7673339974135,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.4839579341933131,
         "formalizable_correct": true,
         "id": "nl_arith_true",
         "proof": {
@@ -26,7 +27,7 @@
           "ground_truth_strength": false,
           "machine_checked": false,
           "optimistic_label": true,
-          "proof_time_ms": 0.8578300476074219,
+          "proof_time_ms": 0.4248619079589844,
           "proven": true,
           "prover_name": "z3",
           "status": "smt_proved"
@@ -47,7 +48,8 @@
         "extracted_claim_text": "2 + 2 = 5",
         "extracted_formalizable": true,
         "extraction_error": null,
-        "extraction_time_ms": 6015.393167035654,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06312504410743713,
         "formalizable_correct": true,
         "id": "nl_arith_false",
         "proof": {
@@ -58,12 +60,78 @@
           "ground_truth_strength": false,
           "machine_checked": false,
           "optimistic_label": false,
-          "proof_time_ms": 344.0549373626709,
+          "proof_time_ms": 344.027042388916,
           "proven": false,
           "prover_name": "coq",
           "status": "refuted"
         },
         "text": "Two plus two equals five.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "4 + 5 = 9",
+        "expected_category": "arithmetic",
+        "expected_formalizable": true,
+        "expected_truth": true,
+        "extracted_category": "arithmetic",
+        "extracted_claim_text": "4 + 5 = 9",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06866699550300837,
+        "formalizable_correct": true,
+        "id": "nl_arith_alt_true",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": true,
+          "definitive_disproof": false,
+          "error_message": null,
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": true,
+          "proof_time_ms": 0.43392181396484375,
+          "proven": true,
+          "prover_name": "z3",
+          "status": "smt_proved"
+        },
+        "text": "Four plus five equals nine.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "4 + 5 = 10",
+        "expected_category": "arithmetic",
+        "expected_formalizable": true,
+        "expected_truth": false,
+        "extracted_category": "arithmetic",
+        "extracted_claim_text": "4 + 5 = 10",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06750004831701517,
+        "formalizable_correct": true,
+        "id": "nl_arith_alt_false",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": false,
+          "definitive_disproof": true,
+          "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 6, characters 2-13:\nError: Unable to unify \"10\" with \"4 + 5\".\n\n",
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": false,
+          "proof_time_ms": 160.48789024353027,
+          "proven": false,
+          "prover_name": "coq",
+          "status": "refuted"
+        },
+        "text": "Four plus five equals ten.",
         "translation_success_after_extraction": true
       },
       {
@@ -79,7 +147,8 @@
         "extracted_claim_text": "3 * 4 = 12",
         "extracted_formalizable": true,
         "extraction_error": null,
-        "extraction_time_ms": 3387.9395419498906,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.23695803247392178,
         "formalizable_correct": true,
         "id": "nl_mult_true",
         "proof": {
@@ -90,12 +159,78 @@
           "ground_truth_strength": false,
           "machine_checked": false,
           "optimistic_label": true,
-          "proof_time_ms": 0.701904296875,
+          "proof_time_ms": 0.3612041473388672,
           "proven": true,
           "prover_name": "z3",
           "status": "smt_proved"
         },
         "text": "Three times four is twelve.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "7 * 6 = 42",
+        "expected_category": "multiplication",
+        "expected_formalizable": true,
+        "expected_truth": true,
+        "extracted_category": "multiplication",
+        "extracted_claim_text": "7 * 6 = 42",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.12091605458408594,
+        "formalizable_correct": true,
+        "id": "nl_mult_alt_true",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": true,
+          "definitive_disproof": false,
+          "error_message": null,
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": true,
+          "proof_time_ms": 0.33211708068847656,
+          "proven": true,
+          "prover_name": "z3",
+          "status": "smt_proved"
+        },
+        "text": "Seven times six is forty-two.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "7 * 6 = 41",
+        "expected_category": "multiplication",
+        "expected_formalizable": true,
+        "expected_truth": false,
+        "extracted_category": "multiplication",
+        "extracted_claim_text": "7 * 6 = 41",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06312504410743713,
+        "formalizable_correct": true,
+        "id": "nl_mult_alt_false",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": false,
+          "definitive_disproof": true,
+          "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 6, characters 2-13:\nError: Unable to unify \"41\" with \"7 * 6\".\n\n",
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": false,
+          "proof_time_ms": 145.9941864013672,
+          "proven": false,
+          "prover_name": "coq",
+          "status": "refuted"
+        },
+        "text": "Seven times six is forty-one.",
         "translation_success_after_extraction": true
       },
       {
@@ -111,7 +246,8 @@
         "extracted_claim_text": "10 - 3 = 8",
         "extracted_formalizable": true,
         "extraction_error": null,
-        "extraction_time_ms": 1863.031500019133,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.22733304649591446,
         "formalizable_correct": true,
         "id": "nl_sub_false",
         "proof": {
@@ -122,12 +258,78 @@
           "ground_truth_strength": false,
           "machine_checked": false,
           "optimistic_label": false,
-          "proof_time_ms": 143.3420181274414,
+          "proof_time_ms": 143.33319664001465,
           "proven": false,
           "prover_name": "coq",
           "status": "refuted"
         },
         "text": "Ten minus three equals eight.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "12 - 5 = 7",
+        "expected_category": "subtraction",
+        "expected_formalizable": true,
+        "expected_truth": true,
+        "extracted_category": "subtraction",
+        "extracted_claim_text": "12 - 5 = 7",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06341608241200447,
+        "formalizable_correct": true,
+        "id": "nl_sub_alt_true",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": true,
+          "definitive_disproof": false,
+          "error_message": null,
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": true,
+          "proof_time_ms": 0.3457069396972656,
+          "proven": true,
+          "prover_name": "z3",
+          "status": "smt_proved"
+        },
+        "text": "Twelve minus five equals seven.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "12 - 5 = 8",
+        "expected_category": "subtraction",
+        "expected_formalizable": true,
+        "expected_truth": false,
+        "extracted_category": "subtraction",
+        "extracted_claim_text": "12 - 5 = 8",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06312504410743713,
+        "formalizable_correct": true,
+        "id": "nl_sub_alt_false",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": false,
+          "definitive_disproof": true,
+          "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 6, characters 2-13:\nError: Unable to unify \"8\" with \"12 - 5\".\n\n",
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": false,
+          "proof_time_ms": 147.1548080444336,
+          "proven": false,
+          "prover_name": "coq",
+          "status": "refuted"
+        },
+        "text": "Twelve minus five equals eight.",
         "translation_success_after_extraction": true
       },
       {
@@ -143,7 +345,8 @@
         "extracted_claim_text": "factorial 5 = 120",
         "extracted_formalizable": true,
         "extraction_error": null,
-        "extraction_time_ms": 2974.2431670892984,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.2531670033931732,
         "formalizable_correct": true,
         "id": "nl_factorial_true",
         "proof": {
@@ -154,7 +357,7 @@
           "ground_truth_strength": true,
           "machine_checked": true,
           "optimistic_label": true,
-          "proof_time_ms": 145.97511291503906,
+          "proof_time_ms": 145.9338665008545,
           "proven": true,
           "prover_name": "coq",
           "status": "machine_checked"
@@ -175,7 +378,8 @@
         "extracted_claim_text": "fibonacci 8 = 21",
         "extracted_formalizable": true,
         "extraction_error": null,
-        "extraction_time_ms": 3000.433959066868,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.25625003036111593,
         "formalizable_correct": true,
         "id": "nl_fibonacci_true",
         "proof": {
@@ -186,12 +390,111 @@
           "ground_truth_strength": true,
           "machine_checked": true,
           "optimistic_label": true,
-          "proof_time_ms": 144.6359157562256,
+          "proof_time_ms": 144.6070671081543,
           "proven": true,
           "prover_name": "coq",
           "status": "machine_checked"
         },
         "text": "Fibonacci of 8 equals 21.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "factorial 4 = 23",
+        "expected_category": "factorial",
+        "expected_formalizable": true,
+        "expected_truth": false,
+        "extracted_category": "factorial",
+        "extracted_claim_text": "factorial 4 = 23",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06379198748618364,
+        "formalizable_correct": true,
+        "id": "nl_factorial_false",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": false,
+          "definitive_disproof": true,
+          "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 13, characters 2-13:\nError: Unable to unify \"23\" with \"24\".\n\n",
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": false,
+          "proof_time_ms": 139.28699493408203,
+          "proven": false,
+          "prover_name": "coq",
+          "status": "refuted"
+        },
+        "text": "The factorial of 4 is 23.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "factorial 0 = 1",
+        "expected_category": "factorial",
+        "expected_formalizable": true,
+        "expected_truth": true,
+        "extracted_category": "factorial",
+        "extracted_claim_text": "factorial 0 = 1",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06824999582022429,
+        "formalizable_correct": true,
+        "id": "nl_factorial_base_true",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": true,
+          "definitive_disproof": false,
+          "error_message": null,
+          "ground_truth_strength": true,
+          "machine_checked": true,
+          "optimistic_label": true,
+          "proof_time_ms": 137.64405250549316,
+          "proven": true,
+          "prover_name": "coq",
+          "status": "machine_checked"
+        },
+        "text": "The factorial of 0 is 1.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "fibonacci 6 = 9",
+        "expected_category": "fibonacci",
+        "expected_formalizable": true,
+        "expected_truth": false,
+        "extracted_category": "fibonacci",
+        "extracted_claim_text": "fibonacci 6 = 9",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06412493530660868,
+        "formalizable_correct": true,
+        "id": "nl_fibonacci_false",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": false,
+          "definitive_disproof": true,
+          "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 14, characters 2-13:\nError: Unable to unify \"9\" with \"8\".\n\n",
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": false,
+          "proof_time_ms": 179.5940399169922,
+          "proven": false,
+          "prover_name": "coq",
+          "status": "refuted"
+        },
+        "text": "Fibonacci of 6 equals 9.",
         "translation_success_after_extraction": true
       },
       {
@@ -207,7 +510,8 @@
         "extracted_claim_text": "gcd(12, 8) = 4",
         "extracted_formalizable": true,
         "extraction_error": null,
-        "extraction_time_ms": 3929.1391659062356,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.28641708195209503,
         "formalizable_correct": true,
         "id": "nl_gcd_true",
         "proof": {
@@ -218,12 +522,45 @@
           "ground_truth_strength": true,
           "machine_checked": true,
           "optimistic_label": true,
-          "proof_time_ms": 153.05304527282715,
+          "proof_time_ms": 153.0148983001709,
           "proven": true,
           "prover_name": "coq",
           "status": "machine_checked"
         },
         "text": "The gcd of 12 and 8 is 4.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "gcd(18, 12) = 3",
+        "expected_category": "gcd",
+        "expected_formalizable": true,
+        "expected_truth": false,
+        "extracted_category": "gcd",
+        "extracted_claim_text": "gcd(18, 12) = 3",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.07154198829084635,
+        "formalizable_correct": true,
+        "id": "nl_gcd_false",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": false,
+          "definitive_disproof": true,
+          "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 9, characters 2-13:\nError: Unable to unify \"3\" with \"6\".\n\n",
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": false,
+          "proof_time_ms": 146.467924118042,
+          "proven": false,
+          "prover_name": "coq",
+          "status": "refuted"
+        },
+        "text": "The gcd of 18 and 12 is 3.",
         "translation_success_after_extraction": true
       },
       {
@@ -239,7 +576,8 @@
         "extracted_claim_text": "3 < 5",
         "extracted_formalizable": true,
         "extraction_error": null,
-        "extraction_time_ms": 3695.305124972947,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.3741669934242964,
         "formalizable_correct": true,
         "id": "nl_ineq_true",
         "proof": {
@@ -250,7 +588,7 @@
           "ground_truth_strength": false,
           "machine_checked": false,
           "optimistic_label": true,
-          "proof_time_ms": 0.4029273986816406,
+          "proof_time_ms": 0.3464221954345703,
           "proven": true,
           "prover_name": "z3",
           "status": "smt_proved"
@@ -271,7 +609,8 @@
         "extracted_claim_text": "7 >= 10",
         "extracted_formalizable": true,
         "extraction_error": null,
-        "extraction_time_ms": 4350.200625020079,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06562506314367056,
         "formalizable_correct": true,
         "id": "nl_ineq_false",
         "proof": {
@@ -282,12 +621,78 @@
           "ground_truth_strength": false,
           "machine_checked": false,
           "optimistic_label": false,
-          "proof_time_ms": 155.20286560058594,
+          "proof_time_ms": 155.19952774047852,
           "proven": false,
           "prover_name": "coq",
           "status": "refuted"
         },
         "text": "Seven is greater than or equal to ten.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "9 <= 9",
+        "expected_category": "inequality",
+        "expected_formalizable": true,
+        "expected_truth": true,
+        "extracted_category": "inequality",
+        "extracted_claim_text": "9 <= 9",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06454193498939276,
+        "formalizable_correct": true,
+        "id": "nl_ineq_alt_true",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": true,
+          "definitive_disproof": false,
+          "error_message": null,
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": true,
+          "proof_time_ms": 0.34737586975097656,
+          "proven": true,
+          "prover_name": "z3",
+          "status": "smt_proved"
+        },
+        "text": "9 is less than or equal to 9.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "2 > 11",
+        "expected_category": "inequality",
+        "expected_formalizable": true,
+        "expected_truth": false,
+        "extracted_category": "inequality",
+        "extracted_claim_text": "2 > 11",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06179208867251873,
+        "formalizable_correct": true,
+        "id": "nl_ineq_alt_false",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": false,
+          "definitive_disproof": true,
+          "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 3, characters 15-18:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Lia\" or the deprecated \"From Coq Require Lia\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 7, characters 2-5:\nError: Tactic failure:  Cannot find witness.\n\n",
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": false,
+          "proof_time_ms": 163.91491889953613,
+          "proven": false,
+          "prover_name": "coq",
+          "status": "refuted"
+        },
+        "text": "2 is greater than 11.",
         "translation_success_after_extraction": true
       },
       {
@@ -303,7 +708,8 @@
         "extracted_claim_text": "if x > 5 then x > 3",
         "extracted_formalizable": true,
         "extraction_error": null,
-        "extraction_time_ms": 1679.8321660608053,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.3131250850856304,
         "formalizable_correct": true,
         "id": "nl_implication_true",
         "proof": {
@@ -314,7 +720,7 @@
           "ground_truth_strength": true,
           "machine_checked": true,
           "optimistic_label": true,
-          "proof_time_ms": 166.94259643554688,
+          "proof_time_ms": 166.88871383666992,
           "proven": true,
           "prover_name": "coq",
           "status": "machine_checked"
@@ -335,7 +741,8 @@
         "extracted_claim_text": "forall n, n + 0 = n",
         "extracted_formalizable": true,
         "extraction_error": null,
-        "extraction_time_ms": 1859.0102079324424,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.18037494737654924,
         "formalizable_correct": true,
         "id": "nl_forall_true",
         "proof": {
@@ -346,12 +753,78 @@
           "ground_truth_strength": true,
           "machine_checked": true,
           "optimistic_label": true,
-          "proof_time_ms": 151.06916427612305,
+          "proof_time_ms": 151.0622501373291,
           "proven": true,
           "prover_name": "coq",
           "status": "machine_checked"
         },
         "text": "For all n, n plus zero equals n.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": true,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "if x > 10 then x > 20",
+        "expected_category": "logic_implication",
+        "expected_formalizable": true,
+        "expected_truth": false,
+        "extracted_category": "logic_implication",
+        "extracted_claim_text": "if x > 10 then x > 20",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.07354107219725847,
+        "formalizable_correct": true,
+        "id": "nl_implication_false",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": false,
+          "definitive_disproof": true,
+          "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 3, characters 15-18:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Lia\" or the deprecated \"From Coq Require Lia\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 2-5:\nError: Tactic failure:  Cannot find witness.\n\n",
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": false,
+          "proof_time_ms": 155.35593032836914,
+          "proven": false,
+          "prover_name": "coq",
+          "status": "refuted"
+        },
+        "text": "If x is greater than 10, then x is greater than 20.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": true,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "forall n, n > n",
+        "expected_category": "logic_forall",
+        "expected_formalizable": true,
+        "expected_truth": false,
+        "extracted_category": "logic_forall",
+        "extracted_claim_text": "forall n, n > n",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06716698408126831,
+        "formalizable_correct": true,
+        "id": "nl_forall_false",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": false,
+          "definitive_disproof": true,
+          "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 0-4:\nError:  (in proof forall_claim): Attempt to save an incomplete proof\n(there are remaining open goals).\n\n",
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": false,
+          "proof_time_ms": 140.6400203704834,
+          "proven": false,
+          "prover_name": "coq",
+          "status": "refuted"
+        },
+        "text": "For all n, n is greater than n.",
         "translation_success_after_extraction": true
       },
       {
@@ -367,7 +840,8 @@
         "extracted_claim_text": "exists x such that x > 0",
         "extracted_formalizable": true,
         "extraction_error": null,
-        "extraction_time_ms": 1455.2315409528092,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.22050004918128252,
         "formalizable_correct": true,
         "id": "nl_exists_true",
         "proof": {
@@ -378,12 +852,45 @@
           "ground_truth_strength": true,
           "machine_checked": true,
           "optimistic_label": true,
-          "proof_time_ms": 149.7359275817871,
+          "proof_time_ms": 149.735689163208,
           "proven": true,
           "prover_name": "coq",
           "status": "machine_checked"
         },
         "text": "There exists x such that x is greater than zero.",
+        "translation_success_after_extraction": true
+      },
+      {
+        "baseline_translation_success": true,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": true,
+        "expected_canonical_claim": "exists x such that x > x",
+        "expected_category": "logic_exists",
+        "expected_formalizable": true,
+        "expected_truth": false,
+        "extracted_category": "logic_exists",
+        "extracted_claim_text": "exists x such that x > x",
+        "extracted_formalizable": true,
+        "extraction_error": null,
+        "extraction_mode": "rule_based",
+        "extraction_time_ms": 0.06904103793203831,
+        "formalizable_correct": true,
+        "id": "nl_exists_false",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": false,
+          "definitive_disproof": true,
+          "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 0-4:\nError:  (in proof exists_claim): Attempt to save an incomplete proof\n(there are remaining open goals).\n\n",
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": false,
+          "proof_time_ms": 139.52016830444336,
+          "proven": false,
+          "prover_name": "coq",
+          "status": "refuted"
+        },
+        "text": "There exists x such that x is greater than x.",
         "translation_success_after_extraction": true
       },
       {
@@ -399,7 +906,8 @@
         "extracted_claim_text": null,
         "extracted_formalizable": false,
         "extraction_error": null,
-        "extraction_time_ms": 1433.2302080001682,
+        "extraction_mode": "provider_triage",
+        "extraction_time_ms": 1766.6205000132322,
         "formalizable_correct": true,
         "id": "nl_subjective_code",
         "proof": {
@@ -430,7 +938,8 @@
         "extracted_claim_text": null,
         "extracted_formalizable": false,
         "extraction_error": null,
-        "extraction_time_ms": 1546.6607920825481,
+        "extraction_mode": "provider_triage",
+        "extraction_time_ms": 1268.9560829894617,
         "formalizable_correct": true,
         "id": "nl_subjective_speed",
         "proof": {
@@ -461,7 +970,8 @@
         "extracted_claim_text": null,
         "extracted_formalizable": false,
         "extraction_error": null,
-        "extraction_time_ms": 1587.8236249554902,
+        "extraction_mode": "provider_triage",
+        "extraction_time_ms": 1771.4031250216067,
         "formalizable_correct": true,
         "id": "nl_subjective_users",
         "proof": {
@@ -492,7 +1002,8 @@
         "extracted_claim_text": null,
         "extracted_formalizable": false,
         "extraction_error": null,
-        "extraction_time_ms": 1495.5961249070242,
+        "extraction_mode": "provider_triage",
+        "extraction_time_ms": 1450.170083087869,
         "formalizable_correct": true,
         "id": "nl_subjective_quality",
         "proof": {
@@ -509,27 +1020,1464 @@
         },
         "text": "This is industry-grade engineering.",
         "translation_success_after_extraction": false
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": false,
+        "expected_canonical_claim": null,
+        "expected_category": "unformalizable",
+        "expected_formalizable": false,
+        "expected_truth": null,
+        "extracted_category": null,
+        "extracted_claim_text": null,
+        "extracted_formalizable": false,
+        "extraction_error": null,
+        "extraction_mode": "provider_triage",
+        "extraction_time_ms": 1892.89112505503,
+        "formalizable_correct": true,
+        "id": "nl_subjective_design",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": null,
+          "definitive_disproof": false,
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": null,
+          "proof_time_ms": 0.0,
+          "proven": false,
+          "prover_name": null,
+          "status": null
+        },
+        "text": "The API design feels intuitive.",
+        "translation_success_after_extraction": false
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": false,
+        "expected_canonical_claim": null,
+        "expected_category": "unformalizable",
+        "expected_formalizable": false,
+        "expected_truth": null,
+        "extracted_category": null,
+        "extracted_claim_text": null,
+        "extracted_formalizable": false,
+        "extraction_error": null,
+        "extraction_mode": "provider_triage",
+        "extraction_time_ms": 1350.0690829241648,
+        "formalizable_correct": true,
+        "id": "nl_subjective_maintainability",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": null,
+          "definitive_disproof": false,
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": null,
+          "proof_time_ms": 0.0,
+          "proven": false,
+          "prover_name": null,
+          "status": null
+        },
+        "text": "This architecture is future-proof.",
+        "translation_success_after_extraction": false
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": false,
+        "expected_canonical_claim": null,
+        "expected_category": "unformalizable",
+        "expected_formalizable": false,
+        "expected_truth": null,
+        "extracted_category": null,
+        "extracted_claim_text": null,
+        "extracted_formalizable": false,
+        "extraction_error": null,
+        "extraction_mode": "provider_triage",
+        "extraction_time_ms": 2032.3468329152092,
+        "formalizable_correct": true,
+        "id": "nl_subjective_reliability",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": null,
+          "definitive_disproof": false,
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": null,
+          "proof_time_ms": 0.0,
+          "proven": false,
+          "prover_name": null,
+          "status": null
+        },
+        "text": "This proof strategy feels robust.",
+        "translation_success_after_extraction": false
+      },
+      {
+        "baseline_translation_success": false,
+        "category_correct": true,
+        "end_to_end_decisive_correct": true,
+        "exact_match": false,
+        "expected_canonical_claim": null,
+        "expected_category": "unformalizable",
+        "expected_formalizable": false,
+        "expected_truth": null,
+        "extracted_category": null,
+        "extracted_claim_text": null,
+        "extracted_formalizable": false,
+        "extraction_error": null,
+        "extraction_mode": "provider_triage",
+        "extraction_time_ms": 5140.78833302483,
+        "formalizable_correct": true,
+        "id": "nl_subjective_clarity",
+        "proof": {
+          "assumptions_present": false,
+          "decisive_label": null,
+          "definitive_disproof": false,
+          "ground_truth_strength": false,
+          "machine_checked": false,
+          "optimistic_label": null,
+          "proof_time_ms": 0.0,
+          "proven": false,
+          "prover_name": null,
+          "status": null
+        },
+        "text": "The implementation is pleasantly readable.",
+        "translation_success_after_extraction": false
       }
     ],
-    "formalizable_case_count": 12,
+    "formalizable_case_count": 27,
     "metrics": {
-      "baseline_translation_success_rate_formalizable": 0.25,
+      "baseline_translation_success_rate_formalizable": 0.2222222222222222,
       "end_to_end_decisive_accuracy_formalizable": 1.0,
       "end_to_end_decisive_coverage_formalizable": 1.0,
       "error_count": 0,
+      "extraction_mode_counts": {
+        "provider_triage": 8,
+        "rule_based": 27
+      },
       "extractor_category_accuracy_formalizable": 1.0,
       "extractor_exact_match_rate_formalizable": 1.0,
       "extractor_formalizable_accuracy": 1.0,
-      "machine_checked_count_formalizable": 6,
-      "mean_extraction_time_ms": 2747.1773906218004,
+      "formalizable_false_negative_count": 0,
+      "machine_checked_count_formalizable": 7,
+      "mean_extraction_time_ms": 476.49304876104,
+      "provider_case_count_formalizable": 0,
+      "provider_corrected_case_count_formalizable": 0,
+      "rule_based_case_count_formalizable": 27,
+      "semantic_drift_count_formalizable": 0,
+      "semantic_drift_decisive_error_count_formalizable": 0,
       "status_counts_formalizable": {
-        "machine_checked": 6,
-        "refuted": 3,
-        "smt_proved": 3
+        "machine_checked": 7,
+        "refuted": 13,
+        "smt_proved": 7
       },
       "translation_success_rate_after_extraction_formalizable": 1.0
     },
-    "num_cases": 16
+    "num_cases": 35
+  },
+  "extraction_paraphrase_stress_benchmark": {
+    "benchmark_name": "extraction_paraphrase_stress_benchmark",
+    "conditions": {
+      "deterministic_only": {
+        "benchmark_name": "extraction_benchmark",
+        "cases": [
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "4 + 5 = 9",
+            "expected_category": "arithmetic",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.07974996697157621,
+            "formalizable_correct": false,
+            "id": "stress_add_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "Adding four and five yields nine.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "4 + 5 = 10",
+            "expected_category": "arithmetic",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.027540954761207104,
+            "formalizable_correct": false,
+            "id": "stress_add_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "Adding four and five yields ten.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "7 * 6 = 42",
+            "expected_category": "multiplication",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.025333953090012074,
+            "formalizable_correct": false,
+            "id": "stress_mult_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "The product of seven and six is forty-two.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "7 * 6 = 41",
+            "expected_category": "multiplication",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.023875036276876926,
+            "formalizable_correct": false,
+            "id": "stress_mult_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "The product of seven and six is forty-one.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "12 - 5 = 7",
+            "expected_category": "subtraction",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.023250002413988113,
+            "formalizable_correct": false,
+            "id": "stress_sub_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "Subtracting five from twelve gives seven.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "12 - 5 = 8",
+            "expected_category": "subtraction",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.022916938178241253,
+            "formalizable_correct": false,
+            "id": "stress_sub_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "Subtracting five from twelve gives eight.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "factorial 5 = 120",
+            "expected_category": "factorial",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.023499946109950542,
+            "formalizable_correct": false,
+            "id": "stress_factorial_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "Five factorial equals one hundred twenty.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "factorial 4 = 23",
+            "expected_category": "factorial",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.02150004729628563,
+            "formalizable_correct": false,
+            "id": "stress_factorial_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "Four factorial equals twenty-three.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "fibonacci 8 = 21",
+            "expected_category": "fibonacci",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.0226249685510993,
+            "formalizable_correct": false,
+            "id": "stress_fibonacci_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "The eighth Fibonacci number is twenty-one.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "fibonacci 6 = 9",
+            "expected_category": "fibonacci",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.02062495332211256,
+            "formalizable_correct": false,
+            "id": "stress_fibonacci_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "The sixth Fibonacci number is nine.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "gcd(12, 8) = 4",
+            "expected_category": "gcd",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.02679100725799799,
+            "formalizable_correct": false,
+            "id": "stress_gcd_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "The greatest common divisor of twelve and eight is four.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "gcd(18, 12) = 3",
+            "expected_category": "gcd",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.027582980692386627,
+            "formalizable_correct": false,
+            "id": "stress_gcd_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "The greatest common divisor of eighteen and twelve is three.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "9 <= 9",
+            "expected_category": "inequality",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.017915968783199787,
+            "formalizable_correct": false,
+            "id": "stress_ineq_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "Nine is no greater than nine.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "2 > 11",
+            "expected_category": "inequality",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.020583043806254864,
+            "formalizable_correct": false,
+            "id": "stress_ineq_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "Two is strictly larger than eleven.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": true,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "if x > 5 then x > 3",
+            "expected_category": "logic_implication",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.027125002816319466,
+            "formalizable_correct": false,
+            "id": "stress_implication_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "If x exceeds five, then x exceeds three.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "exists x such that x > 0",
+            "expected_category": "logic_exists",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.021332991309463978,
+            "formalizable_correct": false,
+            "id": "stress_exists_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "There is an x greater than zero.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "forall n, n = n",
+            "expected_category": "logic_forall",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.01583306584507227,
+            "formalizable_correct": false,
+            "id": "stress_forall_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "Any n is equal to itself.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": false,
+            "expected_canonical_claim": null,
+            "expected_category": "unformalizable",
+            "expected_formalizable": false,
+            "expected_truth": null,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.02162496093660593,
+            "formalizable_correct": true,
+            "id": "stress_subjective_clean",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "This code path feels clean and robust.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": false,
+            "expected_canonical_claim": null,
+            "expected_category": "unformalizable",
+            "expected_formalizable": false,
+            "expected_truth": null,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "unavailable",
+            "extraction_time_ms": 0.02174999099224806,
+            "formalizable_correct": true,
+            "id": "stress_subjective_ergonomic",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "The interface seems delightfully ergonomic.",
+            "translation_success_after_extraction": false
+          }
+        ],
+        "formalizable_case_count": 17,
+        "metrics": {
+          "baseline_translation_success_rate_formalizable": 0.058823529411764705,
+          "end_to_end_decisive_accuracy_formalizable": 0.0,
+          "end_to_end_decisive_coverage_formalizable": 0.0,
+          "error_count": 0,
+          "extraction_mode_counts": {
+            "unavailable": 19
+          },
+          "extractor_category_accuracy_formalizable": 0.0,
+          "extractor_exact_match_rate_formalizable": 0.0,
+          "extractor_formalizable_accuracy": 0.10526315789473684,
+          "formalizable_false_negative_count": 17,
+          "machine_checked_count_formalizable": 0,
+          "mean_extraction_time_ms": 0.025866093653205195,
+          "provider_case_count_formalizable": 0,
+          "provider_corrected_case_count_formalizable": 0,
+          "rule_based_case_count_formalizable": 0,
+          "semantic_drift_count_formalizable": 0,
+          "semantic_drift_decisive_error_count_formalizable": 0,
+          "status_counts_formalizable": {},
+          "translation_success_rate_after_extraction_formalizable": 0.0
+        },
+        "num_cases": 19
+      },
+      "provider_enabled": {
+        "benchmark_name": "extraction_benchmark",
+        "cases": [
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": true,
+            "expected_canonical_claim": "4 + 5 = 9",
+            "expected_category": "arithmetic",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": "arithmetic",
+            "extracted_claim_text": "4 + 5 = 9",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 5393.36679095868,
+            "formalizable_correct": true,
+            "id": "stress_add_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.45561790466308594,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            },
+            "text": "Adding four and five yields nine.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "4 + 5 = 10",
+            "expected_category": "arithmetic",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "provider_triage",
+            "extraction_time_ms": 1969.4470409303904,
+            "formalizable_correct": false,
+            "id": "stress_add_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "Adding four and five yields ten.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": true,
+            "expected_canonical_claim": "7 * 6 = 42",
+            "expected_category": "multiplication",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": "multiplication",
+            "extracted_claim_text": "7 * 6 = 42",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 3185.658833011985,
+            "formalizable_correct": true,
+            "id": "stress_mult_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.49591064453125,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            },
+            "text": "The product of seven and six is forty-two.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": true,
+            "expected_canonical_claim": "7 * 6 = 41",
+            "expected_category": "multiplication",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": "multiplication",
+            "extracted_claim_text": "7 * 6 = 41",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 2843.246959033422,
+            "formalizable_correct": true,
+            "id": "stress_mult_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 6, characters 2-13:\nError: Unable to unify \"41\" with \"7 * 6\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 146.01492881774902,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            },
+            "text": "The product of seven and six is forty-one.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": true,
+            "expected_canonical_claim": "12 - 5 = 7",
+            "expected_category": "subtraction",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": "subtraction",
+            "extracted_claim_text": "12 - 5 = 7",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 5268.372541060671,
+            "formalizable_correct": true,
+            "id": "stress_sub_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.7340908050537109,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            },
+            "text": "Subtracting five from twelve gives seven.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "12 - 5 = 8",
+            "expected_category": "subtraction",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": "subtraction",
+            "extracted_claim_text": "12 - 5 = 7",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 4125.590875046328,
+            "formalizable_correct": true,
+            "id": "stress_sub_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.5450248718261719,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            },
+            "text": "Subtracting five from twelve gives eight.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": true,
+            "expected_canonical_claim": "factorial 5 = 120",
+            "expected_category": "factorial",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": "factorial",
+            "extracted_claim_text": "factorial 5 = 120",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 3967.726583010517,
+            "formalizable_correct": true,
+            "id": "stress_factorial_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 145.98894119262695,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            },
+            "text": "Five factorial equals one hundred twenty.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": true,
+            "expected_canonical_claim": "factorial 4 = 23",
+            "expected_category": "factorial",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": "factorial",
+            "extracted_claim_text": "factorial 4 = 23",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 3520.62033303082,
+            "formalizable_correct": true,
+            "id": "stress_factorial_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 13, characters 2-13:\nError: Unable to unify \"23\" with \"24\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 139.33205604553223,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            },
+            "text": "Four factorial equals twenty-three.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": true,
+            "expected_canonical_claim": "fibonacci 8 = 21",
+            "expected_category": "fibonacci",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": "fibonacci",
+            "extracted_claim_text": "fibonacci 8 = 21",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 3798.551916028373,
+            "formalizable_correct": true,
+            "id": "stress_fibonacci_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 144.61803436279297,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            },
+            "text": "The eighth Fibonacci number is twenty-one.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": true,
+            "expected_canonical_claim": "fibonacci 6 = 9",
+            "expected_category": "fibonacci",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": "fibonacci",
+            "extracted_claim_text": "fibonacci 6 = 9",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 3394.0534160938114,
+            "formalizable_correct": true,
+            "id": "stress_fibonacci_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 14, characters 2-13:\nError: Unable to unify \"9\" with \"8\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 179.6278953552246,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            },
+            "text": "The sixth Fibonacci number is nine.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": true,
+            "expected_canonical_claim": "gcd(12, 8) = 4",
+            "expected_category": "gcd",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": "gcd",
+            "extracted_claim_text": "gcd(12, 8) = 4",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 3141.4486669236794,
+            "formalizable_correct": true,
+            "id": "stress_gcd_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 153.0468463897705,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            },
+            "text": "The greatest common divisor of twelve and eight is four.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": true,
+            "expected_canonical_claim": "gcd(18, 12) = 3",
+            "expected_category": "gcd",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": "gcd",
+            "extracted_claim_text": "gcd(18, 12) = 3",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 2938.141790917143,
+            "formalizable_correct": true,
+            "id": "stress_gcd_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 9, characters 2-13:\nError: Unable to unify \"3\" with \"6\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 146.4838981628418,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            },
+            "text": "The greatest common divisor of eighteen and twelve is three.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": true,
+            "expected_canonical_claim": "9 <= 9",
+            "expected_category": "inequality",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": "inequality",
+            "extracted_claim_text": "9 <= 9",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 3544.734916999005,
+            "formalizable_correct": true,
+            "id": "stress_ineq_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.8080005645751953,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            },
+            "text": "Nine is no greater than nine.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": true,
+            "expected_canonical_claim": "2 > 11",
+            "expected_category": "inequality",
+            "expected_formalizable": true,
+            "expected_truth": false,
+            "extracted_category": "inequality",
+            "extracted_claim_text": "2 > 11",
+            "extracted_formalizable": true,
+            "extraction_error": null,
+            "extraction_mode": "provider",
+            "extraction_time_ms": 3056.5229170024395,
+            "formalizable_correct": true,
+            "id": "stress_ineq_false",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 3, characters 15-18:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Lia\" or the deprecated \"From Coq Require Lia\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 7, characters 2-5:\nError: Tactic failure:  Cannot find witness.\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 163.9559268951416,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            },
+            "text": "Two is strictly larger than eleven.",
+            "translation_success_after_extraction": true
+          },
+          {
+            "baseline_translation_success": true,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "if x > 5 then x > 3",
+            "expected_category": "logic_implication",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "provider_triage",
+            "extraction_time_ms": 1232.4207089841366,
+            "formalizable_correct": false,
+            "id": "stress_implication_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "If x exceeds five, then x exceeds three.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "exists x such that x > 0",
+            "expected_category": "logic_exists",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "provider_triage",
+            "extraction_time_ms": 2762.639791937545,
+            "formalizable_correct": false,
+            "id": "stress_exists_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "There is an x greater than zero.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": false,
+            "end_to_end_decisive_correct": false,
+            "exact_match": false,
+            "expected_canonical_claim": "forall n, n = n",
+            "expected_category": "logic_forall",
+            "expected_formalizable": true,
+            "expected_truth": true,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "provider_triage",
+            "extraction_time_ms": 1662.5964579870924,
+            "formalizable_correct": false,
+            "id": "stress_forall_true",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "Any n is equal to itself.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": false,
+            "expected_canonical_claim": null,
+            "expected_category": "unformalizable",
+            "expected_formalizable": false,
+            "expected_truth": null,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "provider_triage",
+            "extraction_time_ms": 1394.3977499147877,
+            "formalizable_correct": true,
+            "id": "stress_subjective_clean",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "This code path feels clean and robust.",
+            "translation_success_after_extraction": false
+          },
+          {
+            "baseline_translation_success": false,
+            "category_correct": true,
+            "end_to_end_decisive_correct": true,
+            "exact_match": false,
+            "expected_canonical_claim": null,
+            "expected_category": "unformalizable",
+            "expected_formalizable": false,
+            "expected_truth": null,
+            "extracted_category": null,
+            "extracted_claim_text": null,
+            "extracted_formalizable": false,
+            "extraction_error": null,
+            "extraction_mode": "provider_triage",
+            "extraction_time_ms": 1443.0967909283936,
+            "formalizable_correct": true,
+            "id": "stress_subjective_ergonomic",
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": null,
+              "definitive_disproof": false,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": null,
+              "proof_time_ms": 0.0,
+              "proven": false,
+              "prover_name": null,
+              "status": null
+            },
+            "text": "The interface seems delightfully ergonomic.",
+            "translation_success_after_extraction": false
+          }
+        ],
+        "formalizable_case_count": 17,
+        "metrics": {
+          "baseline_translation_success_rate_formalizable": 0.058823529411764705,
+          "end_to_end_decisive_accuracy_formalizable": 0.7058823529411765,
+          "end_to_end_decisive_coverage_formalizable": 0.7647058823529411,
+          "error_count": 0,
+          "extraction_mode_counts": {
+            "provider": 13,
+            "provider_triage": 6
+          },
+          "extractor_category_accuracy_formalizable": 0.7647058823529411,
+          "extractor_exact_match_rate_formalizable": 0.7058823529411765,
+          "extractor_formalizable_accuracy": 0.7894736842105263,
+          "formalizable_false_negative_count": 4,
+          "machine_checked_count_formalizable": 3,
+          "mean_extraction_time_ms": 3086.4544778841696,
+          "provider_case_count_formalizable": 13,
+          "provider_corrected_case_count_formalizable": 0,
+          "rule_based_case_count_formalizable": 0,
+          "semantic_drift_count_formalizable": 1,
+          "semantic_drift_decisive_error_count_formalizable": 1,
+          "status_counts_formalizable": {
+            "machine_checked": 3,
+            "refuted": 5,
+            "smt_proved": 5
+          },
+          "translation_success_rate_after_extraction_formalizable": 0.7647058823529411
+        },
+        "num_cases": 19
+      }
+    },
+    "formalizable_case_count": 17,
+    "num_cases": 19
   },
   "formal_verification_benchmark": {
     "benchmark_name": "formal_verification_benchmark",
@@ -551,7 +2499,7 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": true,
-              "proof_time_ms": 0.6740093231201172,
+              "proof_time_ms": 0.7090568542480469,
               "proven": true,
               "prover_name": "z3",
               "status": "smt_proved"
@@ -572,7 +2520,49 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": false,
-              "proof_time_ms": 344.022274017334,
+              "proof_time_ms": 344.0239429473877,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "4 + 5 = 9",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "arithmetic",
+            "id": "arith_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.3230571746826172,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            }
+          },
+          {
+            "claim_text": "4 + 5 = 10",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "arithmetic",
+            "id": "arith_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 6, characters 2-13:\nError: Unable to unify \"10\" with \"4 + 5\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 160.48789024353027,
               "proven": false,
               "prover_name": "coq",
               "status": "refuted"
@@ -593,7 +2583,7 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": true,
-              "proof_time_ms": 0.3261566162109375,
+              "proof_time_ms": 0.4062652587890625,
               "proven": true,
               "prover_name": "z3",
               "status": "smt_proved"
@@ -614,7 +2604,49 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": false,
-              "proof_time_ms": 141.43824577331543,
+              "proof_time_ms": 141.44182205200195,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "7 * 6 = 42",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "multiplication",
+            "id": "mult_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.3647804260253906,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            }
+          },
+          {
+            "claim_text": "7 * 6 = 41",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "multiplication",
+            "id": "mult_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 6, characters 2-13:\nError: Unable to unify \"41\" with \"7 * 6\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 145.9968090057373,
               "proven": false,
               "prover_name": "coq",
               "status": "refuted"
@@ -635,7 +2667,7 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": true,
-              "proof_time_ms": 0.2579689025878906,
+              "proof_time_ms": 0.438690185546875,
               "proven": true,
               "prover_name": "z3",
               "status": "smt_proved"
@@ -656,7 +2688,49 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": false,
-              "proof_time_ms": 143.32914352416992,
+              "proof_time_ms": 143.33796501159668,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "12 - 5 = 7",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "subtraction",
+            "id": "sub_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.3502368927001953,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            }
+          },
+          {
+            "claim_text": "12 - 5 = 8",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "subtraction",
+            "id": "sub_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 6, characters 2-13:\nError: Unable to unify \"8\" with \"12 - 5\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 147.15576171875,
               "proven": false,
               "prover_name": "coq",
               "status": "refuted"
@@ -677,7 +2751,7 @@
               "ground_truth_strength": true,
               "machine_checked": true,
               "optimistic_label": true,
-              "proof_time_ms": 146.02208137512207,
+              "proof_time_ms": 146.0280418395996,
               "proven": true,
               "prover_name": "coq",
               "status": "machine_checked"
@@ -698,10 +2772,73 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": false,
-              "proof_time_ms": 193.96209716796875,
+              "proof_time_ms": 193.96543502807617,
               "proven": false,
               "prover_name": "coq",
               "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "factorial 4 = 24",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "factorial",
+            "id": "factorial_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 149.24907684326172,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "factorial 4 = 23",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "factorial",
+            "id": "factorial_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 13, characters 2-13:\nError: Unable to unify \"23\" with \"24\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 139.29009437561035,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "factorial 0 = 1",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "factorial",
+            "id": "factorial_base_true",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 137.64619827270508,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
             }
           },
           {
@@ -740,7 +2877,49 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": false,
-              "proof_time_ms": 148.40102195739746,
+              "proof_time_ms": 148.4079360961914,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "fibonacci 6 = 8",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "fibonacci",
+            "id": "fibonacci_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 166.9139862060547,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "fibonacci 6 = 9",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "fibonacci",
+            "id": "fibonacci_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 14, characters 2-13:\nError: Unable to unify \"9\" with \"8\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 179.5961856842041,
               "proven": false,
               "prover_name": "coq",
               "status": "refuted"
@@ -761,7 +2940,7 @@
               "ground_truth_strength": true,
               "machine_checked": true,
               "optimistic_label": true,
-              "proof_time_ms": 153.01513671875,
+              "proof_time_ms": 153.0148983001709,
               "proven": true,
               "prover_name": "coq",
               "status": "machine_checked"
@@ -782,7 +2961,49 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": false,
-              "proof_time_ms": 149.4619846343994,
+              "proof_time_ms": 149.46460723876953,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "gcd(18, 12) = 6",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "gcd",
+            "id": "gcd_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 177.717924118042,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "gcd(18, 12) = 3",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "gcd",
+            "id": "gcd_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 9, characters 2-13:\nError: Unable to unify \"3\" with \"6\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 146.467924118042,
               "proven": false,
               "prover_name": "coq",
               "status": "refuted"
@@ -803,7 +3024,7 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": true,
-              "proof_time_ms": 0.31113624572753906,
+              "proof_time_ms": 0.41985511779785156,
               "proven": true,
               "prover_name": "z3",
               "status": "smt_proved"
@@ -824,7 +3045,7 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": false,
-              "proof_time_ms": 743.0453300476074,
+              "proof_time_ms": 743.0472373962402,
               "proven": false,
               "prover_name": "coq",
               "status": "refuted"
@@ -845,7 +3066,7 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": true,
-              "proof_time_ms": 0.24700164794921875,
+              "proof_time_ms": 0.3619194030761719,
               "proven": true,
               "prover_name": "z3",
               "status": "smt_proved"
@@ -866,7 +3087,343 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": false,
-              "proof_time_ms": 155.19475936889648,
+              "proof_time_ms": 155.1976203918457,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "9 <= 9",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "inequality",
+            "id": "ineq_true_lte",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.3864765167236328,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            }
+          },
+          {
+            "claim_text": "9 <= 8",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "inequality",
+            "id": "ineq_false_lte",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 3, characters 15-18:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Lia\" or the deprecated \"From Coq Require Lia\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 7, characters 2-5:\nError: Tactic failure:  Cannot find witness.\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 171.86856269836426,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "11 > 2",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "inequality",
+            "id": "ineq_true_gt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.39505958557128906,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            }
+          },
+          {
+            "claim_text": "2 > 11",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "inequality",
+            "id": "ineq_false_gt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 3, characters 15-18:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Lia\" or the deprecated \"From Coq Require Lia\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 7, characters 2-5:\nError: Tactic failure:  Cannot find witness.\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 163.91372680664062,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "if x > 5 then x > 3",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "logic_implication",
+            "id": "implication_true",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 166.93568229675293,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "if x > 5 then x > 7",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "logic_implication",
+            "id": "implication_false",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 3, characters 15-18:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Lia\" or the deprecated \"From Coq Require Lia\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 2-5:\nError: Tactic failure:  Cannot find witness.\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 163.2552146911621,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "if x > 10 then x > 0",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "logic_implication",
+            "id": "implication_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 158.3418846130371,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "if x > 10 then x > 20",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "logic_implication",
+            "id": "implication_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 3, characters 15-18:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Lia\" or the deprecated \"From Coq Require Lia\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 2-5:\nError: Tactic failure:  Cannot find witness.\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 155.35497665405273,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "forall n, n + 0 = n",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "logic_forall",
+            "id": "forall_true",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 151.0610580444336,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "forall x, x > 0",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "logic_forall",
+            "id": "forall_false",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 0.7948875427246094,
+              "proven": false,
+              "prover_name": "z3",
+              "status": "smt_refuted"
+            }
+          },
+          {
+            "claim_text": "forall n, n = n",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "logic_forall",
+            "id": "forall_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 141.12162590026855,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "forall n, n > n",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "logic_forall",
+            "id": "forall_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 0-4:\nError:  (in proof forall_claim): Attempt to save an incomplete proof\n(there are remaining open goals).\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 140.6409740447998,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "exists x such that x > 0",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "logic_exists",
+            "id": "exists_true",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 149.73688125610352,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "exists x such that x = x",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "logic_exists",
+            "id": "exists_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 143.1558132171631,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "exists x such that x > x",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "logic_exists",
+            "id": "exists_false",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 0-4:\nError:  (in proof exists_claim): Attempt to save an incomplete proof\n(there are remaining open goals).\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 139.52207565307617,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "exists x such that x < x",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "logic_exists",
+            "id": "exists_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 0-4:\nError:  (in proof exists_claim): Attempt to save an incomplete proof\n(there are remaining open goals).\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 140.03801345825195,
               "proven": false,
               "prover_name": "coq",
               "status": "refuted"
@@ -875,58 +3432,74 @@
         ],
         "family_summary": {
           "arithmetic": {
-            "correct": 2,
-            "decisive": 2,
-            "total": 2
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
           },
           "factorial": {
-            "correct": 2,
-            "decisive": 2,
-            "total": 2
+            "correct": 5,
+            "decisive": 5,
+            "total": 5
           },
           "fibonacci": {
-            "correct": 2,
-            "decisive": 2,
-            "total": 2
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
           },
           "gcd": {
-            "correct": 2,
-            "decisive": 2,
-            "total": 2
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
           },
           "inequality": {
+            "correct": 8,
+            "decisive": 8,
+            "total": 8
+          },
+          "logic_exists": {
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
+          },
+          "logic_forall": {
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
+          },
+          "logic_implication": {
             "correct": 4,
             "decisive": 4,
             "total": 4
           },
           "multiplication": {
-            "correct": 2,
-            "decisive": 2,
-            "total": 2
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
           },
           "subtraction": {
-            "correct": 2,
-            "decisive": 2,
-            "total": 2
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
           }
         },
         "metrics": {
           "accuracy_given_decisive": 1.0,
           "accuracy_given_optimistic": 1.0,
-          "correct_case_count": 16,
+          "correct_case_count": 45,
           "decisive_coverage": 1.0,
-          "ground_truth_strength_count": 3,
-          "machine_checked_count": 3,
-          "mean_proof_time_ms": 154.0195792913437,
+          "ground_truth_strength_count": 13,
+          "machine_checked_count": 13,
+          "mean_proof_time_ms": 133.39895672268338,
           "optimistic_coverage": 1.0,
           "overall_decisive_accuracy": 1.0,
           "overall_optimistic_accuracy": 1.0,
           "status_counts": {
-            "machine_checked": 3,
-            "refuted": 8,
-            "smt_proved": 5
+            "machine_checked": 13,
+            "refuted": 21,
+            "smt_proved": 10,
+            "smt_refuted": 1
           },
-          "total_cases": 16
+          "total_cases": 45
         }
       },
       "hybrid_without_necessity": {
@@ -946,7 +3519,7 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": true,
-              "proof_time_ms": 0.31280517578125,
+              "proof_time_ms": 0.28514862060546875,
               "proven": true,
               "prover_name": "z3",
               "status": "smt_proved"
@@ -974,6 +3547,48 @@
             }
           },
           {
+            "claim_text": "4 + 5 = 9",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "arithmetic",
+            "id": "arith_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.31495094299316406,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            }
+          },
+          {
+            "claim_text": "4 + 5 = 10",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "arithmetic",
+            "id": "arith_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 6, characters 2-13:\nError: Unable to unify \"10\" with \"4 + 5\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 160.46905517578125,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
             "claim_text": "3 * 4 = 12",
             "decisive_correct": true,
             "expected_truth": true,
@@ -988,7 +3603,7 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": true,
-              "proof_time_ms": 0.2827644348144531,
+              "proof_time_ms": 0.2930164337158203,
               "proven": true,
               "prover_name": "z3",
               "status": "smt_proved"
@@ -1016,6 +3631,48 @@
             }
           },
           {
+            "claim_text": "7 * 6 = 42",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "multiplication",
+            "id": "mult_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.3077983856201172,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            }
+          },
+          {
+            "claim_text": "7 * 6 = 41",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "multiplication",
+            "id": "mult_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 6, characters 2-13:\nError: Unable to unify \"41\" with \"7 * 6\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 145.9789276123047,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
             "claim_text": "10 - 3 = 7",
             "decisive_correct": true,
             "expected_truth": true,
@@ -1030,7 +3687,7 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": true,
-              "proof_time_ms": 0.2238750457763672,
+              "proof_time_ms": 0.2951622009277344,
               "proven": true,
               "prover_name": "z3",
               "status": "smt_proved"
@@ -1052,6 +3709,48 @@
               "machine_checked": false,
               "optimistic_label": false,
               "proof_time_ms": 143.31507682800293,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "12 - 5 = 7",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "subtraction",
+            "id": "sub_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.2849102020263672,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            }
+          },
+          {
+            "claim_text": "12 - 5 = 8",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "subtraction",
+            "id": "sub_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 6, characters 2-13:\nError: Unable to unify \"8\" with \"12 - 5\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 147.13788032531738,
               "proven": false,
               "prover_name": "coq",
               "status": "refuted"
@@ -1100,6 +3799,69 @@
             }
           },
           {
+            "claim_text": "factorial 4 = 24",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "factorial",
+            "id": "factorial_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 149.22308921813965,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "factorial 4 = 23",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "factorial",
+            "id": "factorial_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 13, characters 2-13:\nError: Unable to unify \"23\" with \"24\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 139.2660140991211,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "factorial 0 = 1",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "factorial",
+            "id": "factorial_base_true",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 137.62307167053223,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
             "claim_text": "fibonacci 8 = 21",
             "decisive_correct": true,
             "expected_truth": true,
@@ -1136,6 +3898,48 @@
               "machine_checked": false,
               "optimistic_label": false,
               "proof_time_ms": 148.38099479675293,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "fibonacci 6 = 8",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "fibonacci",
+            "id": "fibonacci_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 166.88895225524902,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "fibonacci 6 = 9",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "fibonacci",
+            "id": "fibonacci_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 14, characters 2-13:\nError: Unable to unify \"9\" with \"8\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 179.57305908203125,
               "proven": false,
               "prover_name": "coq",
               "status": "refuted"
@@ -1184,6 +3988,48 @@
             }
           },
           {
+            "claim_text": "gcd(18, 12) = 6",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "gcd",
+            "id": "gcd_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 177.69598960876465,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "gcd(18, 12) = 3",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "gcd",
+            "id": "gcd_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 9, characters 2-13:\nError: Unable to unify \"3\" with \"6\".\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 146.44789695739746,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
             "claim_text": "3 < 5",
             "decisive_correct": true,
             "expected_truth": true,
@@ -1198,7 +4044,7 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": true,
-              "proof_time_ms": 0.30303001403808594,
+              "proof_time_ms": 0.3173351287841797,
               "proven": true,
               "prover_name": "z3",
               "status": "smt_proved"
@@ -1240,7 +4086,7 @@
               "ground_truth_strength": false,
               "machine_checked": false,
               "optimistic_label": true,
-              "proof_time_ms": 0.3008842468261719,
+              "proof_time_ms": 0.2989768981933594,
               "proven": true,
               "prover_name": "z3",
               "status": "smt_proved"
@@ -1266,76 +4112,428 @@
               "prover_name": "coq",
               "status": "refuted"
             }
+          },
+          {
+            "claim_text": "9 <= 9",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "inequality",
+            "id": "ineq_true_lte",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.3237724304199219,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            }
+          },
+          {
+            "claim_text": "9 <= 8",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "inequality",
+            "id": "ineq_false_lte",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 3, characters 15-18:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Lia\" or the deprecated \"From Coq Require Lia\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 7, characters 2-5:\nError: Tactic failure:  Cannot find witness.\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 171.85473442077637,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "11 > 2",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "inequality",
+            "id": "ineq_true_gt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": true,
+              "proof_time_ms": 0.3712177276611328,
+              "proven": true,
+              "prover_name": "z3",
+              "status": "smt_proved"
+            }
+          },
+          {
+            "claim_text": "2 > 11",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "inequality",
+            "id": "ineq_false_gt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 3, characters 15-18:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Lia\" or the deprecated \"From Coq Require Lia\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 7, characters 2-5:\nError: Tactic failure:  Cannot find witness.\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 163.89894485473633,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "if x > 5 then x > 3",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "logic_implication",
+            "id": "implication_true",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 166.88084602355957,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "if x > 5 then x > 7",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "logic_implication",
+            "id": "implication_false",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 3, characters 15-18:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Lia\" or the deprecated \"From Coq Require Lia\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 2-5:\nError: Tactic failure:  Cannot find witness.\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 163.24591636657715,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "if x > 10 then x > 0",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "logic_implication",
+            "id": "implication_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 158.33306312561035,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "if x > 10 then x > 20",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "logic_implication",
+            "id": "implication_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 3, characters 15-18:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Lia\" or the deprecated \"From Coq Require Lia\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 2-5:\nError: Tactic failure:  Cannot find witness.\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 155.34591674804688,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "forall n, n + 0 = n",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "logic_forall",
+            "id": "forall_true",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 151.0481834411621,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "forall x, x > 0",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "logic_forall",
+            "id": "forall_false",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": null,
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 0.6361007690429688,
+              "proven": false,
+              "prover_name": "z3",
+              "status": "smt_refuted"
+            }
+          },
+          {
+            "claim_text": "forall n, n = n",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "logic_forall",
+            "id": "forall_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 141.1128044128418,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "forall n, n > n",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "logic_forall",
+            "id": "forall_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 0-4:\nError:  (in proof forall_claim): Attempt to save an incomplete proof\n(there are remaining open goals).\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 140.63191413879395,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "exists x such that x > 0",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "logic_exists",
+            "id": "exists_true",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 149.72591400146484,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "exists x such that x = x",
+            "decisive_correct": true,
+            "expected_truth": true,
+            "family": "logic_exists",
+            "id": "exists_true_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": true,
+              "definitive_disproof": false,
+              "error_message": null,
+              "ground_truth_strength": true,
+              "machine_checked": true,
+              "optimistic_label": true,
+              "proof_time_ms": 143.14603805541992,
+              "proven": true,
+              "prover_name": "coq",
+              "status": "machine_checked"
+            }
+          },
+          {
+            "claim_text": "exists x such that x > x",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "logic_exists",
+            "id": "exists_false",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 0-4:\nError:  (in proof exists_claim): Attempt to save an incomplete proof\n(there are remaining open goals).\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 139.5111083984375,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
+          },
+          {
+            "claim_text": "exists x such that x < x",
+            "decisive_correct": true,
+            "expected_truth": false,
+            "family": "logic_exists",
+            "id": "exists_false_alt",
+            "optimistic_correct": true,
+            "proof": {
+              "assumptions_present": false,
+              "decisive_label": false,
+              "definitive_disproof": true,
+              "error_message": "File \"./proof.v\", line 2, characters 15-20:\nWarning: Loading Stdlib without prefix is deprecated.\nUse \"From Stdlib Require Arith\" or the deprecated \"From Coq Require Arith\"\nfor compatibility with older Coq versions.\n[deprecated-missing-stdlib,deprecated-since-9.0,deprecated,default]\nFile \"./proof.v\", line 8, characters 0-4:\nError:  (in proof exists_claim): Attempt to save an incomplete proof\n(there are remaining open goals).\n\n",
+              "ground_truth_strength": false,
+              "machine_checked": false,
+              "optimistic_label": false,
+              "proof_time_ms": 140.02609252929688,
+              "proven": false,
+              "prover_name": "coq",
+              "status": "refuted"
+            }
           }
         ],
         "family_summary": {
           "arithmetic": {
-            "correct": 2,
-            "decisive": 2,
-            "total": 2
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
           },
           "factorial": {
-            "correct": 2,
-            "decisive": 2,
-            "total": 2
+            "correct": 5,
+            "decisive": 5,
+            "total": 5
           },
           "fibonacci": {
-            "correct": 2,
-            "decisive": 2,
-            "total": 2
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
           },
           "gcd": {
-            "correct": 2,
-            "decisive": 2,
-            "total": 2
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
           },
           "inequality": {
+            "correct": 8,
+            "decisive": 8,
+            "total": 8
+          },
+          "logic_exists": {
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
+          },
+          "logic_forall": {
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
+          },
+          "logic_implication": {
             "correct": 4,
             "decisive": 4,
             "total": 4
           },
           "multiplication": {
-            "correct": 2,
-            "decisive": 2,
-            "total": 2
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
           },
           "subtraction": {
-            "correct": 2,
-            "decisive": 2,
-            "total": 2
+            "correct": 4,
+            "decisive": 4,
+            "total": 4
           }
         },
         "metrics": {
           "accuracy_given_decisive": 1.0,
           "accuracy_given_optimistic": 1.0,
-          "correct_case_count": 16,
+          "correct_case_count": 45,
           "decisive_coverage": 1.0,
-          "ground_truth_strength_count": 3,
-          "machine_checked_count": 3,
-          "mean_proof_time_ms": 153.97663414478302,
+          "ground_truth_strength_count": 13,
+          "machine_checked_count": 13,
+          "mean_proof_time_ms": 133.35547977023654,
           "optimistic_coverage": 1.0,
           "overall_decisive_accuracy": 1.0,
           "overall_optimistic_accuracy": 1.0,
           "status_counts": {
-            "machine_checked": 3,
-            "refuted": 8,
-            "smt_proved": 5
+            "machine_checked": 13,
+            "refuted": 21,
+            "smt_proved": 10,
+            "smt_refuted": 1
           },
-          "total_cases": 16
+          "total_cases": 45
         }
       }
     },
-    "num_cases": 16
+    "num_cases": 45
   },
   "meta": {
-    "commit": "d11d492",
+    "commit": "56d718c",
     "dirty_worktree": true,
     "extraction_temperature": 0.0,
-    "generated_at": "2026-04-07T18:16:55Z",
+    "generated_at": "2026-04-07T20:58:39Z",
     "live_provider_enabled": true,
     "provider_base_url": "https://openrouter.ai/api/v1",
     "provider_model": "openai/gpt-4.1-mini",
-    "source_revision": "d11d492-dirty"
+    "source_revision": "56d718c-dirty"
   },
   "stability_check": {
     "cases": [
@@ -1357,43 +4555,77 @@
         ]
       },
       {
-        "id": "nl_factorial_true",
+        "id": "nl_factorial_base_true",
         "stable_across_trials": true,
-        "text": "The factorial of 5 is 120.",
+        "text": "The factorial of 0 is 1.",
         "trials": [
           {
             "category": "factorial",
-            "claim_text": "factorial 5 = 120",
+            "claim_text": "factorial 0 = 1",
             "is_formalizable": true
           },
           {
             "category": "factorial",
-            "claim_text": "factorial 5 = 120",
+            "claim_text": "factorial 0 = 1",
             "is_formalizable": true
           }
         ]
       },
       {
-        "id": "nl_implication_true",
+        "id": "nl_ineq_alt_false",
         "stable_across_trials": true,
-        "text": "If x is greater than 5, then x is greater than 3.",
+        "text": "2 is greater than 11.",
         "trials": [
           {
-            "category": "logic_implication",
-            "claim_text": "if x > 5 then x > 3",
+            "category": "inequality",
+            "claim_text": "2 > 11",
             "is_formalizable": true
           },
           {
-            "category": "logic_implication",
-            "claim_text": "if x > 5 then x > 3",
+            "category": "inequality",
+            "claim_text": "2 > 11",
             "is_formalizable": true
           }
         ]
       },
       {
-        "id": "nl_subjective_code",
+        "id": "nl_implication_false",
         "stable_across_trials": true,
-        "text": "The code is elegant.",
+        "text": "If x is greater than 10, then x is greater than 20.",
+        "trials": [
+          {
+            "category": "logic_implication",
+            "claim_text": "if x > 10 then x > 20",
+            "is_formalizable": true
+          },
+          {
+            "category": "logic_implication",
+            "claim_text": "if x > 10 then x > 20",
+            "is_formalizable": true
+          }
+        ]
+      },
+      {
+        "id": "nl_exists_true",
+        "stable_across_trials": true,
+        "text": "There exists x such that x is greater than zero.",
+        "trials": [
+          {
+            "category": "logic_exists",
+            "claim_text": "exists x such that x > 0",
+            "is_formalizable": true
+          },
+          {
+            "category": "logic_exists",
+            "claim_text": "exists x such that x > 0",
+            "is_formalizable": true
+          }
+        ]
+      },
+      {
+        "id": "nl_subjective_design",
+        "stable_across_trials": true,
+        "text": "The API design feels intuitive.",
         "trials": [
           {
             "category": null,
@@ -1408,8 +4640,300 @@
         ]
       }
     ],
-    "num_cases": 4,
+    "num_cases": 6,
     "stable_case_rate": 1.0,
     "trials_per_case": 2
+  },
+  "stress_failure_probe": {
+    "cases": [
+      {
+        "id": "stress_add_false",
+        "stable_across_trials": false,
+        "text": "Adding four and five yields ten.",
+        "trials": [
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": "arithmetic",
+            "claim_text": "4 + 5 = 10",
+            "is_formalizable": true
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": "arithmetic",
+            "claim_text": "4 + 5 = 10",
+            "is_formalizable": true
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          }
+        ]
+      },
+      {
+        "id": "stress_sub_false",
+        "stable_across_trials": true,
+        "text": "Subtracting five from twelve gives eight.",
+        "trials": [
+          {
+            "category": "subtraction",
+            "claim_text": "12 - 5 = 7",
+            "is_formalizable": true
+          },
+          {
+            "category": "subtraction",
+            "claim_text": "12 - 5 = 7",
+            "is_formalizable": true
+          },
+          {
+            "category": "subtraction",
+            "claim_text": "12 - 5 = 7",
+            "is_formalizable": true
+          },
+          {
+            "category": "subtraction",
+            "claim_text": "12 - 5 = 7",
+            "is_formalizable": true
+          },
+          {
+            "category": "subtraction",
+            "claim_text": "12 - 5 = 7",
+            "is_formalizable": true
+          },
+          {
+            "category": "subtraction",
+            "claim_text": "12 - 5 = 7",
+            "is_formalizable": true
+          },
+          {
+            "category": "subtraction",
+            "claim_text": "12 - 5 = 7",
+            "is_formalizable": true
+          },
+          {
+            "category": "subtraction",
+            "claim_text": "12 - 5 = 7",
+            "is_formalizable": true
+          },
+          {
+            "category": "subtraction",
+            "claim_text": "12 - 5 = 7",
+            "is_formalizable": true
+          },
+          {
+            "category": "subtraction",
+            "claim_text": "12 - 5 = 7",
+            "is_formalizable": true
+          }
+        ]
+      },
+      {
+        "id": "stress_implication_true",
+        "stable_across_trials": true,
+        "text": "If x exceeds five, then x exceeds three.",
+        "trials": [
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          }
+        ]
+      },
+      {
+        "id": "stress_exists_true",
+        "stable_across_trials": true,
+        "text": "There is an x greater than zero.",
+        "trials": [
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          }
+        ]
+      },
+      {
+        "id": "stress_forall_true",
+        "stable_across_trials": true,
+        "text": "Any n is equal to itself.",
+        "trials": [
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          },
+          {
+            "category": null,
+            "claim_text": null,
+            "is_formalizable": false
+          }
+        ]
+      }
+    ],
+    "num_cases": 5,
+    "stable_case_rate": 0.8,
+    "trials_per_case": 10
   }
 }
