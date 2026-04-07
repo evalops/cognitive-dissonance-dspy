@@ -32,10 +32,12 @@ class TestEndToEndPipeline:
         )
 
         # Mock DSPy configuration
-        with patch('dspy.configure'):
-            with patch('dspy.configure_cache', create=True):
-                with patch('dspy.LM'):
-                    config.setup_dspy()
+        with (
+            patch('dspy.configure'),
+            patch('dspy.configure_cache', create=True),
+            patch('dspy.LM'),
+        ):
+            config.setup_dspy()
 
         # Create resolver
         resolver = CognitiveDissonanceResolver(use_cot=False)
@@ -203,10 +205,12 @@ class TestExperimentIntegration:
         mock_gepa.return_value = mock_optimizer
 
         # Mock DSPy setup
-        with patch('dspy.configure'):
-            with patch('dspy.configure_cache', create=True):
-                with patch('dspy.LM'):
-                    results = cognitive_dissonance_experiment(config)
+        with (
+            patch('dspy.configure'),
+            patch('dspy.configure_cache', create=True),
+            patch('dspy.LM'),
+        ):
+            results = cognitive_dissonance_experiment(config)
 
         from cognitive_dissonance.experiment import ExperimentResults
         assert isinstance(results, ExperimentResults)
@@ -332,10 +336,12 @@ class TestLongRunningIntegration:
         mock_optimizer.compile = Mock(return_value=mock_compiled)
         mock_gepa.return_value = mock_optimizer
 
-        with patch('dspy.configure'):
-            with patch('dspy.configure_cache', create=True):
-                with patch('dspy.LM'):
-                    results = cognitive_dissonance_experiment(config)
+        with (
+            patch('dspy.configure'),
+            patch('dspy.configure_cache', create=True),
+            patch('dspy.LM'),
+        ):
+            results = cognitive_dissonance_experiment(config)
 
         assert len(results.rounds) == 3
 

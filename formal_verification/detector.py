@@ -305,17 +305,16 @@ class FormalVerificationConflictDetector:
                 logger.debug(f"Attempting repair for failed property: {spec.spec_text[:50]}...")
 
                 repaired_spec = self.proof_repairer.repair_failed_proof(result, spec)
-                if repaired_spec:
-                    if Z3_AVAILABLE and hasattr(self.prover, 'prove_claim'):
-                        repaired_result = self.prover.prove_claim(repaired_spec.claim.claim_text, code=code)
-                        if repaired_result.get('proven', False):
-                            result = self._proof_result_from_solver_dict(
-                                repaired_spec,
-                                repaired_result,
-                                f"Deep Analysis + Auto-Repair + {repaired_result.get('prover', 'unknown')}",
-                            )
-                            result.auto_repaired = True
-                            logger.info(f"Successfully repaired property: {spec.spec_text[:50]}...")
+                if repaired_spec and Z3_AVAILABLE and hasattr(self.prover, 'prove_claim'):
+                    repaired_result = self.prover.prove_claim(repaired_spec.claim.claim_text, code=code)
+                    if repaired_result.get('proven', False):
+                        result = self._proof_result_from_solver_dict(
+                            repaired_spec,
+                            repaired_result,
+                            f"Deep Analysis + Auto-Repair + {repaired_result.get('prover', 'unknown')}",
+                        )
+                        result.auto_repaired = True
+                        logger.info(f"Successfully repaired property: {spec.spec_text[:50]}...")
 
             verification_results.append(result)
 

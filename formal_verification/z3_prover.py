@@ -153,24 +153,25 @@ class Z3Translator:
         # Array bounds: "array[i] is safe when 0 <= i < length"
         if "safe" in claim.lower() and "array" in claim.lower():
             # Create array and index variables
-            A = Array('A', IntSort(), IntSort())
+            array_var = Array('array', IntSort(), IntSort())
             i = Int('i')
             length = Int('length')
 
             # Safety condition
+            _ = array_var
             return And(i >= 0, i < length)
 
         # Array sorted: "array is sorted"
         if "sorted" in claim.lower():
             # Create array
-            A = Array('A', IntSort(), IntSort())
+            array_var = Array('array', IntSort(), IntSort())
             length = Int('length')
 
             # Sorted property
             i = Int('i')
             return ForAll([i],
                 Implies(And(i >= 0, i < length - 1),
-                       A[i] <= A[i + 1]))
+                       array_var[i] <= array_var[i + 1]))
 
         return None
 

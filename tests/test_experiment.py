@@ -147,10 +147,12 @@ class TestCognitiveDissonanceExperiment:
         mock_config.setup_dspy = Mock()
 
         # Run experiment
-        with patch('cognitive_dissonance.experiment.evaluate', return_value=0.8):
-            with patch('cognitive_dissonance.experiment.agreement_rate', return_value=0.9):
-                with patch('cognitive_dissonance.experiment.analyze_errors', return_value={}):
-                    results = cognitive_dissonance_experiment(mock_config)
+        with (
+            patch('cognitive_dissonance.experiment.evaluate', return_value=0.8),
+            patch('cognitive_dissonance.experiment.agreement_rate', return_value=0.9),
+            patch('cognitive_dissonance.experiment.analyze_errors', return_value={}),
+        ):
+            results = cognitive_dissonance_experiment(mock_config)
 
         assert isinstance(results, ExperimentResults)
         assert len(results.rounds) == 1
@@ -166,25 +168,29 @@ class TestCognitiveDissonanceExperiment:
         mock_config.setup_dspy = Mock()
         mock_config_class.from_env.return_value = mock_config
 
-        with patch('cognitive_dissonance.experiment.get_dev_labeled', return_value=[]):
-            with patch('cognitive_dissonance.experiment.get_train_unlabeled', return_value=[]):
-                with pytest.raises(ValueError):  # Empty dataset should raise
-                    cognitive_dissonance_experiment()
+        with (
+            patch('cognitive_dissonance.experiment.get_dev_labeled', return_value=[]),
+            patch('cognitive_dissonance.experiment.get_train_unlabeled', return_value=[]),
+            pytest.raises(ValueError),
+        ):  # Empty dataset should raise
+            cognitive_dissonance_experiment()
 
     def test_experiment_with_overrides(self, mock_config):
         """Test experiment with parameter overrides."""
         mock_config.validate = Mock()
         mock_config.setup_dspy = Mock()
 
-        with patch('cognitive_dissonance.experiment.get_dev_labeled', return_value=[]):
-            with patch('cognitive_dissonance.experiment.get_train_unlabeled', return_value=[]):
-                with pytest.raises(ValueError):  # Empty dataset
-                    cognitive_dissonance_experiment(
-                        config=mock_config,
-                        rounds=3,
-                        use_cot=True,
-                        alpha_anchor=0.5
-                    )
+        with (
+            patch('cognitive_dissonance.experiment.get_dev_labeled', return_value=[]),
+            patch('cognitive_dissonance.experiment.get_train_unlabeled', return_value=[]),
+            pytest.raises(ValueError),
+        ):  # Empty dataset
+            cognitive_dissonance_experiment(
+                config=mock_config,
+                rounds=3,
+                use_cot=True,
+                alpha_anchor=0.5
+            )
 
         assert mock_config.rounds == 3
         assert mock_config.use_cot is True
@@ -284,9 +290,11 @@ class TestConfidenceAnalysis:
         mock_config.setup_dspy = Mock()
         mock_config_class.from_env.return_value = mock_config
 
-        with patch('cognitive_dissonance.experiment.get_dev_labeled', return_value=[]):
-            with patch('cognitive_dissonance.experiment.BootstrapFewShot'):
-                with patch('cognitive_dissonance.experiment.evaluate', return_value=0.5):
-                    results = run_confidence_analysis()
+        with (
+            patch('cognitive_dissonance.experiment.get_dev_labeled', return_value=[]),
+            patch('cognitive_dissonance.experiment.BootstrapFewShot'),
+            patch('cognitive_dissonance.experiment.evaluate', return_value=0.5),
+        ):
+            results = run_confidence_analysis()
 
         assert isinstance(results, dict)

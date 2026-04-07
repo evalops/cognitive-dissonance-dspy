@@ -145,7 +145,7 @@ def test_is_sorted():
         coq_spec = synthesizer._synthesize_coq_from_spec(spec)
         if coq_spec:
             lines = coq_spec.split('\n')
-            theorems = [l for l in lines if l.startswith('Theorem')]
+            theorems = [line for line in lines if line.startswith('Theorem')]
             print(f"  Generated {len(theorems)} Coq theorems")
 
         print()

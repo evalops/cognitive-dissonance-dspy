@@ -41,7 +41,7 @@ class ConflictAnalysis:
 
 
 class HybridCognitiveDissonanceResolver:
-    """Hybrid resolver that uses:
+    """Hybrid resolver that uses multiple extraction and proof backends.
 
     - OpenAI SDK for structured claim extraction
     - Guardrails for validation
@@ -321,10 +321,12 @@ class HybridCognitiveDissonanceResolver:
                 if claim1.variables.get('input') == claim2.variables.get('input'):
                     return claim1.variables.get('output') != claim2.variables.get('output')
 
-            elif claim1.category == ClaimCategory.GCD:
-                if (claim1.variables.get('a') == claim2.variables.get('a')
-                    and claim1.variables.get('b') == claim2.variables.get('b')):
-                    return claim1.variables.get('result') != claim2.variables.get('result')
+            elif (
+                claim1.category == ClaimCategory.GCD
+                and claim1.variables.get('a') == claim2.variables.get('a')
+                and claim1.variables.get('b') == claim2.variables.get('b')
+            ):
+                return claim1.variables.get('result') != claim2.variables.get('result')
 
         # For inequalities, check for direct contradictions
         elif claim1.category == ClaimCategory.INEQUALITY:

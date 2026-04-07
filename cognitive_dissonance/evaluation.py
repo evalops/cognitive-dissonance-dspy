@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import Callable
+from contextlib import suppress
 
 import dspy
 
@@ -174,10 +175,8 @@ def cross_validate(
 
         # Simple training: just warm up with training examples
         for example in train_data[:5]:  # Use first 5 for warmup
-            try:
+            with suppress(Exception):
                 _ = module(text1=example.text1, text2=example.text2)
-            except Exception:
-                pass
 
         # Evaluate on validation set
         fold_score = evaluate(module, val_data, metric=metric, display_progress=False)

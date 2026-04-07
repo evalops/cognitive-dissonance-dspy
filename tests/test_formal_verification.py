@@ -421,7 +421,7 @@ class TestFormalVerificationConflictDetector:
 
         assert rankings["alice"] == 1.0  # 100% accuracy
         assert rankings["bob"] == 0.0    # 0% accuracy
-        assert list(rankings.keys())[0] == "alice"  # Alice ranked first
+        assert next(iter(rankings)) == "alice"  # Alice ranked first
 
     def test_summary_generation(self):
         """Test analysis summary generation."""

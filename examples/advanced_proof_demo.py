@@ -162,7 +162,7 @@ def main():
     """Main entry point."""
     print("Starting Advanced Proof Capabilities Demo...\n")
 
-    success, failed = demonstrate_advanced_proofs()
+    success, _ = demonstrate_advanced_proofs()
 
     print(f"\n{'✅' if success > 5 else '⚠️'} Demo complete!")
 

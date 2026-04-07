@@ -130,11 +130,14 @@ class FormalizableClaim(BaseModel):
                     f"Forall claim must contain 'forall' or 'for all'. Got: {v}"
                 )
 
-        elif category == ClaimCategory.LOGIC_IMPLICATION:
-            if not re.search(r'if\s+.+\s+then|.+\s+implies\s+', v, re.IGNORECASE):
-                raise ValueError(
-                    f"Implication claim must contain 'if...then' or 'implies'. Got: {v}"
-                )
+        elif category == ClaimCategory.LOGIC_IMPLICATION and not re.search(
+            r'if\s+.+\s+then|.+\s+implies\s+',
+            v,
+            re.IGNORECASE,
+        ):
+            raise ValueError(
+                f"Implication claim must contain 'if...then' or 'implies'. Got: {v}"
+            )
 
         return v
 

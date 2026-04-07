@@ -71,10 +71,7 @@ class SecurityProperty:
 
 
 class DeepProgramAnalyzer:
-    """Advanced program analyzer that extracts complex software properties
-
-    for formal verification.
-    """
+    """Advanced program analyzer that extracts complex software properties."""
 
     def __init__(self):
         self.memory_patterns = self._initialize_memory_patterns()
@@ -174,24 +171,27 @@ class DeepProgramAnalyzer:
                         claims.append(claim)
 
             # Null pointer/None checks
-            if isinstance(node, ast.Compare):
+            if (
+                isinstance(node, ast.Compare)
+                and isinstance(node.left, ast.Name)
+                and len(node.ops) == 1
+                and isinstance(node.ops[0], ast.IsNot)
+                and len(node.comparators) == 1
+                and isinstance(node.comparators[0], ast.Constant)
+                and node.comparators[0].value is None
+            ):
                 # Look for "x is not None" patterns
-                if (isinstance(node.left, ast.Name) and
-                    len(node.ops) == 1 and isinstance(node.ops[0], ast.IsNot) and
-                    len(node.comparators) == 1 and isinstance(node.comparators[0], ast.Constant) and
-                    node.comparators[0].value is None):
+                var_name = node.left.id
+                line_num = getattr(node, 'lineno', 0)
 
-                    var_name = node.left.id
-                    line_num = getattr(node, 'lineno', 0)
-
-                    claim = Claim(
-                        agent_id="memory_analyzer",
-                        claim_text=f"Variable {var_name} is not None at line {line_num}",
-                        property_type=PropertyType.MEMORY_SAFETY,
-                        confidence=0.85,
-                        timestamp=0.0
-                    )
-                    claims.append(claim)
+                claim = Claim(
+                    agent_id="memory_analyzer",
+                    claim_text=f"Variable {var_name} is not None at line {line_num}",
+                    property_type=PropertyType.MEMORY_SAFETY,
+                    confidence=0.85,
+                    timestamp=0.0
+                )
+                claims.append(claim)
 
         return claims
 
@@ -288,18 +288,20 @@ class DeepProgramAnalyzer:
 
         for node in ast.walk(tree):
             # Look for lock operations
-            if isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Attribute):
-                    if node.func.attr in ['acquire', 'release']:
-                        line_num = getattr(node, 'lineno', 0)
-                        claim = Claim(
-                            agent_id="concurrency_analyzer",
-                            claim_text=f"Lock properly acquired and released at line {line_num}",
-                            property_type=PropertyType.CONCURRENCY,
-                            confidence=0.6,
-                            timestamp=0.0
-                        )
-                        claims.append(claim)
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr in ['acquire', 'release']
+            ):
+                line_num = getattr(node, 'lineno', 0)
+                claim = Claim(
+                    agent_id="concurrency_analyzer",
+                    claim_text=f"Lock properly acquired and released at line {line_num}",
+                    property_type=PropertyType.CONCURRENCY,
+                    confidence=0.6,
+                    timestamp=0.0
+                )
+                claims.append(claim)
 
             # Look for shared variable access
             if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
@@ -408,16 +410,19 @@ class DeepProgramAnalyzer:
                 line_num = getattr(node, 'lineno', 0)
 
                 # For loops over ranges/lists typically terminate
-                if isinstance(node.iter, ast.Call) and isinstance(node.iter.func, ast.Name):
-                    if node.iter.func.id == 'range':
-                        claim = Claim(
-                            agent_id="termination_analyzer",
-                            claim_text=f"For loop at line {line_num} terminates (finite range)",
-                            property_type=PropertyType.TERMINATION,
-                            confidence=0.9,
-                            timestamp=0.0
-                        )
-                        claims.append(claim)
+                if (
+                    isinstance(node.iter, ast.Call)
+                    and isinstance(node.iter.func, ast.Name)
+                    and node.iter.func.id == 'range'
+                ):
+                    claim = Claim(
+                        agent_id="termination_analyzer",
+                        claim_text=f"For loop at line {line_num} terminates (finite range)",
+                        property_type=PropertyType.TERMINATION,
+                        confidence=0.9,
+                        timestamp=0.0
+                    )
+                    claims.append(claim)
 
         return claims
 

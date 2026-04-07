@@ -139,14 +139,17 @@ class ClaimGuardrails:
                     suggestion="Use format: 'if x > 5 then x > 3'"
                 ))
 
-        elif claim.category == ClaimCategory.LOGIC_FORALL:
-            if not re.search(r'forall|for\s+all', claim.claim_text, re.IGNORECASE):
-                violations.append(GuardrailViolation(
-                    rule_name="forall_format",
-                    severity="error",
-                    message="Universal quantification must use 'forall'",
-                    suggestion="Use format: 'forall n, n + 0 = n'"
-                ))
+        elif claim.category == ClaimCategory.LOGIC_FORALL and not re.search(
+            r'forall|for\s+all',
+            claim.claim_text,
+            re.IGNORECASE,
+        ):
+            violations.append(GuardrailViolation(
+                rule_name="forall_format",
+                severity="error",
+                message="Universal quantification must use 'forall'",
+                suggestion="Use format: 'forall n, n + 0 = n'"
+            ))
 
         # Check for natural language artifacts that should be removed
         natural_language_artifacts = [
@@ -280,37 +283,41 @@ class ClaimGuardrails:
         violations = []
 
         # Low confidence for claims that should be certain
-        if claim.category in [
-            ClaimCategory.ARITHMETIC,
-            ClaimCategory.FACTORIAL,
-            ClaimCategory.INEQUALITY
-        ]:
-            if claim.confidence < 0.8:
-                violations.append(GuardrailViolation(
-                    rule_name="low_confidence_math",
-                    severity="warning",
-                    message=(
-                        f"Mathematical claim has low confidence ({claim.confidence:.2f}). "
-                        "These claims are typically verifiable with high confidence."
-                    ),
-                    suggestion="Review claim extraction quality"
-                ))
+        if (
+            claim.category in [
+                ClaimCategory.ARITHMETIC,
+                ClaimCategory.FACTORIAL,
+                ClaimCategory.INEQUALITY,
+            ]
+            and claim.confidence < 0.8
+        ):
+            violations.append(GuardrailViolation(
+                rule_name="low_confidence_math",
+                severity="warning",
+                message=(
+                    f"Mathematical claim has low confidence ({claim.confidence:.2f}). "
+                    "These claims are typically verifiable with high confidence."
+                ),
+                suggestion="Review claim extraction quality"
+            ))
 
         # Confidence too high for complex claims
-        if claim.category in [
-            ClaimCategory.MEMORY_SAFETY,
-            ClaimCategory.TIME_COMPLEXITY
-        ]:
-            if claim.confidence > 0.9:
-                violations.append(GuardrailViolation(
-                    rule_name="overconfident_complex",
-                    severity="warning",
-                    message=(
-                        f"Complex claim has very high confidence ({claim.confidence:.2f}). "
-                        "Memory safety and complexity claims are typically harder to verify."
-                    ),
-                    suggestion="Consider reducing confidence for complex claims"
-                ))
+        if (
+            claim.category in [
+                ClaimCategory.MEMORY_SAFETY,
+                ClaimCategory.TIME_COMPLEXITY,
+            ]
+            and claim.confidence > 0.9
+        ):
+            violations.append(GuardrailViolation(
+                rule_name="overconfident_complex",
+                severity="warning",
+                message=(
+                    f"Complex claim has very high confidence ({claim.confidence:.2f}). "
+                    "Memory safety and complexity claims are typically harder to verify."
+                ),
+                suggestion="Consider reducing confidence for complex claims"
+            ))
 
         return violations
 

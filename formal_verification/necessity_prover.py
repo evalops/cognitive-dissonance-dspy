@@ -200,10 +200,10 @@ class MathematicalStructureAnalyzer:
         if actual_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.INDUCTIVE,
-                ["Factorial definition: n! = n × (n-1)!", "Base case: 0! = 1! = 1"],
+                ["Factorial definition: n! = n * (n-1)!", "Base case: 0! = 1! = 1"],
                 [
                     "By induction on the factorial definition",
-                    f"factorial({n}) = {n} × factorial({n-1}) = ... = {actual_result}"
+                    f"factorial({n}) = {n} * factorial({n-1}) = ... = {actual_result}"
                 ],
                 1.0,
                 {"factorial_definition", "mathematical_induction"},
@@ -300,7 +300,7 @@ class MathematicalStructureAnalyzer:
                 ["Summation formula: ∑(i=1 to n) i = n(n+1)/2"],
                 [
                     "By the closed-form summation formula",
-                    f"sum(1 to {n}) = {n}×({n}+1)/2 = {expected_result}"
+                    f"sum(1 to {n}) = {n}*({n}+1)/2 = {expected_result}"
                 ],
                 1.0,
                 {"summation_formula", "arithmetic"},

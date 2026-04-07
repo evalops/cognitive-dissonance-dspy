@@ -13,11 +13,11 @@ from .types import Claim, FormalSpec, ProofResult, ProofStatus, PropertyType
 __version__ = "0.1.0"
 
 __all__ = [
-    "FormalVerificationConflictDetector",
+    "Claim",
     "ClaimTranslator",
     "CoqProver",
-    "Claim",
     "FormalSpec",
+    "FormalVerificationConflictDetector",
     "ProofResult",
     "ProofStatus",
     "PropertyType",

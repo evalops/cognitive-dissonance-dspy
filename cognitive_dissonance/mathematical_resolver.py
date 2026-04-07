@@ -426,6 +426,7 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
 
 
     def forward(self, text1: str, text2: str, code: str = "") -> ResolutionResult:
+        """Resolve two claims, using code context when available."""
         with self._forward_lock:
             self._invocation_counter += 1
             invocation_seed = self.random_seed + self._invocation_counter
