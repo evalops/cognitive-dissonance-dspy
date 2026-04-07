@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class NecessityType(Enum):
     """Types of mathematical necessity that drive proof construction."""
     DEFINITIONAL = "definitional"          # True by definition (0 + n = n)
-    STRUCTURAL = "structural"              # True by mathematical structure  
+    STRUCTURAL = "structural"              # True by mathematical structure
     COMPOSITIONAL = "compositional"        # True by composition of parts
     INDUCTIVE = "inductive"               # True by mathematical induction
     DEDUCTIVE = "deductive"               # True by logical deduction
@@ -52,7 +52,7 @@ class ProofStrategy:
 
 class MathematicalStructureAnalyzer:
     """Analyzes mathematical structures to identify proof necessities."""
-    
+
     def __init__(self):
         self.definitional_patterns = {
             # Additive identity
@@ -64,8 +64,8 @@ class MathematicalStructureAnalyzer:
                 {"additive_identity"},
                 "Theorem: ∀n, n + 0 = n. Proof: By additive identity axiom."
             ),
-            
-            # Multiplicative identity  
+
+            # Multiplicative identity
             r'(\w+)\s*\*\s*1\s*=\s*\1': NecessityEvidence(
                 NecessityType.DEFINITIONAL,
                 ["Multiplicative identity axiom"],
@@ -74,7 +74,7 @@ class MathematicalStructureAnalyzer:
                 {"multiplicative_identity"},
                 "Theorem: ∀n, n * 1 = n. Proof: By multiplicative identity axiom."
             ),
-            
+
             # Commutativity of addition
             r'(\w+)\s*\+\s*(\w+)\s*=\s*\2\s*\+\s*\1': NecessityEvidence(
                 NecessityType.STRUCTURAL,
@@ -84,38 +84,38 @@ class MathematicalStructureAnalyzer:
                 {"commutativity_addition"},
                 "Theorem: ∀a,b, a + b = b + a. Proof: By commutativity of addition."
             ),
-            
+
             # Basic arithmetic evaluation
             r'(\d+)\s*\+\s*(\d+)\s*=\s*(\d+)': self._arithmetic_necessity,
             r'(\d+)\s*\*\s*(\d+)\s*=\s*(\d+)': self._arithmetic_necessity,
             r'(\d+)\s*-\s*(\d+)\s*=\s*(\d+)': self._arithmetic_necessity,
-            
-            # Inequality evaluation  
+
+            # Inequality evaluation
             r'(\d+)\s*(<|>|<=|>=)\s*(\d+)': self._inequality_necessity,
         }
-        
+
         self.inductive_patterns = {
             # Factorial definition
             r'factorial\s*\(\s*(\d+)\s*\)\s*=\s*(\d+)': self._factorial_necessity,
-            # Fibonacci sequence  
+            # Fibonacci sequence
             r'fibonacci\s*\(\s*(\d+)\s*\)\s*=\s*(\d+)': self._fibonacci_necessity,
             # GCD computation
             r'gcd\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)\s*=\s*(\d+)': self._gcd_necessity,
             # Summation patterns
             r'sum\s*\(\s*1\s*to\s*(\d+)\s*\)\s*=\s*(\d+)': self._summation_necessity,
         }
-        
+
     def _arithmetic_necessity(self, match: re.Match, claim_text: str) -> NecessityEvidence:
         """Analyze necessity for basic arithmetic operations."""
         a, b, result = int(match.group(1)), int(match.group(2)), int(match.group(3))
-        
+
         # Determine operation from the claim text
         if '+' in claim_text:
             expected = a + b
             op_name = "addition"
             op_symbol = "+"
         elif '*' in claim_text:
-            expected = a * b  
+            expected = a * b
             op_name = "multiplication"
             op_symbol = "*"
         elif '-' in claim_text:
@@ -126,7 +126,7 @@ class MathematicalStructureAnalyzer:
             expected = None
             op_name = "unknown"
             op_symbol = "?"
-        
+
         if expected == result:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
@@ -145,17 +145,17 @@ class MathematicalStructureAnalyzer:
                 {"natural_number_arithmetic"},
                 f"Counter-example: {a} {op_symbol} {b} = {expected} ≠ {result}."
             )
-    
+
     def _inequality_necessity(self, match: re.Match, claim_text: str) -> NecessityEvidence:
         """Analyze necessity for inequality comparisons."""
         a, op, b = int(match.group(1)), match.group(2), int(match.group(3))
-        
+
         # Evaluate the inequality
         if op == '<':
             is_true = a < b
             op_name = "less than"
         elif op == '>':
-            is_true = a > b  
+            is_true = a > b
             op_name = "greater than"
         elif op == '<=':
             is_true = a <= b
@@ -166,7 +166,7 @@ class MathematicalStructureAnalyzer:
         else:
             is_true = False
             op_name = "unknown comparison"
-        
+
         if is_true:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
@@ -185,19 +185,19 @@ class MathematicalStructureAnalyzer:
                 {"natural_number_ordering"},
                 f"Counter-example: {a} {op} {b} is false."
             )
-    
+
     def _factorial_necessity(self, match: re.Match) -> NecessityEvidence:
         """Analyze necessity for factorial computations."""
         n, claimed_result = int(match.group(1)), int(match.group(2))
-        
+
         # Compute actual factorial
         def factorial(x):
             if x <= 1:
                 return 1
             return x * factorial(x - 1)
-        
+
         actual_result = factorial(n)
-        
+
         if actual_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.INDUCTIVE,
@@ -219,19 +219,19 @@ class MathematicalStructureAnalyzer:
                 {"factorial_definition"},
                 f"Counter-example: factorial({n}) = {actual_result} ≠ {claimed_result}."
             )
-    
+
     def _fibonacci_necessity(self, match: re.Match) -> NecessityEvidence:
         """Analyze necessity for Fibonacci sequence claims."""
         n, claimed_result = int(match.group(1)), int(match.group(2))
-        
+
         # Compute actual Fibonacci number
         def fibonacci(x):
             if x <= 1:
                 return x
             return fibonacci(x - 1) + fibonacci(x - 2)
-        
+
         actual_result = fibonacci(n)
-        
+
         if actual_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.INDUCTIVE,
@@ -253,19 +253,19 @@ class MathematicalStructureAnalyzer:
                 {"fibonacci_definition"},
                 f"Counter-example: fibonacci({n}) = {actual_result} ≠ {claimed_result}."
             )
-    
+
     def _gcd_necessity(self, match: re.Match) -> NecessityEvidence:
         """Analyze necessity for GCD (Greatest Common Divisor) computations."""
         a, b, claimed_result = int(match.group(1)), int(match.group(2)), int(match.group(3))
-        
+
         # Compute actual GCD using Euclidean algorithm
         def gcd(x, y):
             while y:
                 x, y = y, x % y
             return x
-        
+
         actual_result = gcd(a, b)
-        
+
         if actual_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
@@ -274,7 +274,7 @@ class MathematicalStructureAnalyzer:
                     "By the Euclidean algorithm",
                     f"gcd({a}, {b}) = {actual_result}"
                 ],
-                1.0,  
+                1.0,
                 {"euclidean_algorithm", "number_theory"},
                 f"Theorem: gcd({a}, {b}) = {actual_result}. Proof: By Euclidean algorithm."
             )
@@ -287,14 +287,14 @@ class MathematicalStructureAnalyzer:
                 {"euclidean_algorithm"},
                 f"Counter-example: gcd({a}, {b}) = {actual_result} ≠ {claimed_result}."
             )
-    
+
     def _summation_necessity(self, match: re.Match) -> NecessityEvidence:
         """Analyze necessity for summation formulas."""
         n, claimed_result = int(match.group(1)), int(match.group(2))
-        
+
         # Sum from 1 to n: n(n+1)/2
         expected_result = n * (n + 1) // 2
-        
+
         if expected_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
@@ -316,18 +316,18 @@ class MathematicalStructureAnalyzer:
                 {"summation_formula"},
                 f"Counter-example: ∑(i=1 to {n}) i = {expected_result} ≠ {claimed_result}."
             )
-    
+
     def analyze_claim(self, claim_text: str) -> Optional[NecessityEvidence]:
         """Analyze a claim to determine its mathematical necessity.
-        
+
         Args:
             claim_text: The mathematical claim to analyze
-            
+
         Returns:
             NecessityEvidence if mathematical necessity can be determined, None otherwise
         """
         claim_lower = claim_text.lower().strip()
-        
+
         # Check definitional patterns
         for pattern, evidence in self.definitional_patterns.items():
             if isinstance(evidence, NecessityEvidence):
@@ -341,39 +341,39 @@ class MathematicalStructureAnalyzer:
                 if match:
                     logger.debug(f"Matched computational pattern: {pattern}")
                     return evidence(match, claim_lower)
-        
+
         # Check inductive patterns
         for pattern, evidence_func in self.inductive_patterns.items():
             match = re.search(pattern, claim_lower)
             if match:
                 logger.debug(f"Matched inductive pattern: {pattern}")
                 return evidence_func(match)
-        
+
         return None
 
 
 class NecessityBasedProver:
     """A prover that constructs proofs based on mathematical necessity."""
-    
+
     def __init__(self):
         self.structure_analyzer = MathematicalStructureAnalyzer()
         self.proof_construction_time = 0.0
-        
+
     def prove_by_necessity(self, claim: Claim) -> ProofResult:
         """Prove a claim by analyzing its mathematical necessity.
-        
+
         Args:
             claim: The claim to prove
-            
+
         Returns:
             ProofResult with necessity-based proof or failure
         """
         start_time = time.time()
         logger.info(f"Attempting necessity-based proof for: '{claim.claim_text}'")
-        
+
         # Analyze the mathematical necessity
         necessity_evidence = self.structure_analyzer.analyze_claim(claim.claim_text)
-        
+
         if necessity_evidence is None:
             # No mathematical necessity detected
             end_time = time.time()
@@ -387,41 +387,41 @@ class NecessityBasedProver:
                 prover_name="necessity",
                 solver_status=ProofStatus.INCONCLUSIVE.value,
             )
-        
+
         # Generate proof based on necessity
         proof_result = self._construct_proof_from_necessity(claim, necessity_evidence)
-        
+
         end_time = time.time()
         proof_result.proof_time_ms = (end_time - start_time) * 1000
-        
+
         logger.info(f"Necessity-based proof {'succeeded' if proof_result.proven else 'failed'} "
                    f"({proof_result.proof_time_ms:.1f}ms)")
-        
+
         return proof_result
-    
+
     def _construct_proof_from_necessity(self, claim: Claim, evidence: NecessityEvidence) -> ProofResult:
         """Construct a formal proof from necessity evidence.
-        
+
         Args:
             claim: The original claim
             evidence: Mathematical necessity evidence
-            
+
         Returns:
             ProofResult with constructed proof
         """
         # Create formal specification from necessity
         coq_code = self._generate_coq_from_necessity(evidence)
-        
+
         spec = FormalSpec(
             claim=claim,
             spec_text=f"Necessity-based proof: {evidence.necessity_type.value}",
             coq_code=coq_code,
             variables={"necessity_type": evidence.necessity_type.value}
         )
-        
+
         # Determine proof success based on confidence
         proven = evidence.confidence >= 0.95  # High confidence threshold for necessity
-        
+
         if proven:
             proof_output = f"Necessity-Based Prover: PROVEN by {evidence.necessity_type.value}\n"
             proof_output += f"Logic: {' → '.join(evidence.logical_chain)}\n"
@@ -433,7 +433,7 @@ class NecessityBasedProver:
             proof_output += f"Logic: {' → '.join(evidence.logical_chain)}\n"
             error_message = "Mathematical necessity analysis shows claim is false"
             counter_example = evidence.proof_sketch if "Counter-example" in evidence.proof_sketch else None
-        
+
         return ProofResult(
             spec=spec,
             proven=proven,
@@ -448,21 +448,21 @@ class NecessityBasedProver:
                 else ProofStatus.DERIVED_REFUTED.value
             ),
         )
-    
+
     def _generate_coq_from_necessity(self, evidence: NecessityEvidence) -> str:
         """Generate Coq code from necessity evidence.
-        
+
         Args:
             evidence: Mathematical necessity evidence
-            
+
         Returns:
             Coq proof code
         """
         axioms_section = "\n".join(f"Axiom {axiom}: Prop." for axiom in evidence.axioms_required)
-        
+
         necessity_comment = f"(* Proof by {evidence.necessity_type.value} *)"
         logic_comments = "\n".join(f"(* {step} *)" for step in evidence.logical_chain)
-        
+
         coq_code = f"""
 {axioms_section}
 
@@ -477,23 +477,23 @@ Proof.
   exact I.
 Qed.
 """
-        
+
         return coq_code.strip()
 
 
 class NecessityProofIntegrator:
     """Integrates necessity-based proving with existing proof systems."""
-    
+
     def __init__(self, fallback_prover=None):
         self.necessity_prover = NecessityBasedProver()
         self.fallback_prover = fallback_prover
-        
+
     def prove_with_necessity_priority(self, claim: Claim) -> ProofResult:
         """Attempt necessity-based proof first, fall back to other methods.
-        
+
         Args:
             claim: The claim to prove
-            
+
         Returns:
             ProofResult from necessity-based proof or fallback
         """
@@ -520,7 +520,7 @@ class NecessityProofIntegrator:
         if necessity_result.proven or necessity_result.counter_example:
             logger.info("Necessity-based proof provided definitive result")
             return necessity_result
-        
+
         # If we have a fallback prover and necessity was inconclusive, try fallback
         if (
             self.fallback_prover
@@ -534,7 +534,7 @@ class NecessityProofIntegrator:
                     return fallback_result
             except Exception as e:
                 logger.warning(f"Fallback prover failed: {e}")
-        
+
         # Return the necessity result (whether successful or not)
         return necessity_result
 
@@ -596,10 +596,10 @@ class NecessityProofIntegrator:
 
 def enhance_prover_with_necessity(existing_prover) -> NecessityProofIntegrator:
     """Enhance an existing prover with necessity-based proof discovery.
-    
+
     Args:
         existing_prover: An existing prover (CoqProver, HybridProver, etc.)
-        
+
     Returns:
         Enhanced prover with necessity-based proof discovery
     """

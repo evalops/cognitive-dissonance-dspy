@@ -301,7 +301,7 @@ def advanced_cognitive_dissonance_experiment(
     try:
         # Advanced baseline optimization
         logger.info("Training baseline agents with advanced optimization...")
-        
+
         # Create advanced optimizers
         optimizer_a = create_advanced_optimizer(optimization_strategy)
         optimizer_b = create_advanced_optimizer(optimization_strategy)
@@ -336,7 +336,7 @@ def advanced_cognitive_dissonance_experiment(
                 advanced_optimizer_a = GEPAOptimizer(metric=metric_a)
             else:
                 advanced_optimizer_a = create_advanced_optimizer("ensemble")
-            
+
             agent_a = advanced_optimizer_a.compile(agent_a, trainset=train_unlabeled)
 
             logger.debug("Training agent B with advanced optimization...")
@@ -344,7 +344,7 @@ def advanced_cognitive_dissonance_experiment(
                 advanced_optimizer_b = GEPAOptimizer(metric=metric_b)
             else:
                 advanced_optimizer_b = create_advanced_optimizer("ensemble")
-            
+
             agent_b = advanced_optimizer_b.compile(agent_b, trainset=train_unlabeled)
 
             # Evaluate with enhanced metrics
@@ -366,7 +366,7 @@ def advanced_cognitive_dissonance_experiment(
             # Advanced confidence analysis
             sample_predictions_a = []
             sample_predictions_b = []
-            
+
             for example in dev_labeled[:10]:
                 try:
                     pred_a = agent_a(text1=example.text1, text2=example.text2)
@@ -381,14 +381,14 @@ def advanced_cognitive_dissonance_experiment(
             if sample_predictions_a:
                 confidence_summary_a = confidence_scorer.get_scoring_summary(sample_predictions_a)
                 confidence_summary_b = confidence_scorer.get_scoring_summary(sample_predictions_b)
-                
+
                 avg_confidence = (
-                    confidence_summary_a.get('avg_confidence', 0.5) + 
+                    confidence_summary_a.get('avg_confidence', 0.5) +
                     confidence_summary_b.get('avg_confidence', 0.5)
                 ) / 2
-                
+
                 avg_uncertainty = (
-                    confidence_summary_a.get('avg_uncertainty', 0.5) + 
+                    confidence_summary_a.get('avg_uncertainty', 0.5) +
                     confidence_summary_b.get('avg_uncertainty', 0.5)
                 ) / 2
             else:
@@ -431,21 +431,21 @@ def advanced_cognitive_dissonance_experiment(
         # Enhanced error analysis
         logger.info("Performing enhanced error analysis...")
         results.error_analysis = analyze_errors(agent_a, dev_labeled, metric=combined_metric)
-        
+
         # Final confidence analysis
         all_predictions = []
         ground_truth = []
-        
+
         for example in dev_labeled:
             try:
                 pred = agent_a(text1=example.text1, text2=example.text2)
                 all_predictions.append(pred)
-                
+
                 # Determine ground truth correctness
                 expected_dissonance = getattr(example, 'has_dissonance', 'no')
                 actual_dissonance = getattr(pred, 'has_dissonance', 'no')
                 ground_truth.append(expected_dissonance.lower() == actual_dissonance.lower())
-                
+
             except Exception as e:
                 logger.warning(f"Failed to get prediction for confidence analysis: {e}")
                 continue
@@ -522,7 +522,7 @@ def run_ablation_study(
     # Compare results
     logger.info("Ablation study completed")
     logger.info("\nConfiguration comparison:")
-    
+
     for name, result in results.items():
         if result and result.rounds:  # Check if result exists and has data
             summary = result.summary()

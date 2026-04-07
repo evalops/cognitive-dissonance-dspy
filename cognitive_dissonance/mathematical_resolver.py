@@ -57,7 +57,7 @@ class EvidenceStatus(Enum):
     INCONCLUSIVE = "inconclusive"
 
 
-@dataclass 
+@dataclass
 class MathematicalEvidence:
     """Evidence from mathematical formal verification."""
     claim_text: str
@@ -91,16 +91,16 @@ class ResolutionResult:
 
 class ClaimClassifier:
     """Classifies claims to determine if they are mathematically verifiable.
-    
+
     This uses the necessity analyzer as the authoritative source for mathematical
     patterns, avoiding duplication of pattern matching logic.
     """
-    
+
     def __init__(self):
         # Import here to avoid circular dependency
         from formal_verification.necessity_prover import MathematicalStructureAnalyzer
         self.necessity_analyzer = MathematicalStructureAnalyzer()
-        
+
         self.algorithmic_patterns = [
             re.compile(r'[Oo]\s*\(\s*[^)]+\s*\)'),
             re.compile(r'\btime complexity\b.*[Oo]\s*\('),
@@ -132,13 +132,13 @@ class ClaimClassifier:
 
         self._classify_cached = lru_cache(maxsize=512)(self._classify_uncached)
         self._analyze_necessity_cached = lru_cache(maxsize=256)(self._analyze_necessity)
-        
+
     def classify_claim(self, claim_text: str) -> ClaimCategory:
         """Classify a claim to determine verification approach.
-        
+
         Args:
             claim_text: The claim to classify
-            
+
         Returns:
             Category indicating verification approach
         """
@@ -182,11 +182,11 @@ class ClaimClassifier:
 
 class MathematicalCognitiveDissonanceResolver(dspy.Module):
     """Revolutionary proof-backed cognitive dissonance resolution system.
-    
+
     This system integrates DSPy agents with formal verification to achieve
     mathematical certainty in cognitive dissonance resolution for verifiable claims.
     """
-    
+
     def __init__(
         self,
         use_cot: bool = True,
@@ -197,7 +197,7 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
         max_bridged_targets: int = 3,
     ):
         """Initialize the mathematical resolver.
-        
+
         Args:
             use_cot: Enable Chain of Thought reasoning for DSPy agents
             enable_formal_verification: Enable formal verification subsystem
@@ -207,18 +207,18 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
             max_bridged_targets: Maximum verification targets per subjective claim
         """
         super().__init__()
-        
+
         # Initialize DSPy agents
         self.belief_agent = BeliefAgent(use_cot=use_cot)
-        self.dissonance_detector = DissonanceDetector(use_cot=use_cot) 
+        self.dissonance_detector = DissonanceDetector(use_cot=use_cot)
         self.reconciliation_agent = ReconciliationAgent(use_cot=use_cot)
-        
+
         # Initialize mathematical components
         self.claim_classifier = ClaimClassifier()
-        
+
         # Initialize semantic bridge system
         self.semantic_bridge = SemanticLogicalBridge()
-        
+
         # Initialize formal verification system
         self.enable_formal_verification = enable_formal_verification
         self._proof_timeout_seconds = proof_timeout_seconds
@@ -261,7 +261,7 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
         else:
             self.formal_detector = None
             logger.info("Initialized without formal verification")
-    
+
     def _normalize_belief_confidence(self, confidence: Optional[Any]) -> float:
         if isinstance(confidence, (int, float)):
             return max(0.0, min(1.0, float(confidence)))
@@ -443,7 +443,7 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
         # Step 1: Extract claims using DSPy agents
         belief1 = self.belief_agent(text=text1)
         belief2 = self.belief_agent(text=text2)
-        
+
         claim1_text = belief1.claim
         claim2_text = belief2.claim
 
@@ -458,18 +458,18 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
                 "belief_confidence": belief_conf2,
             },
         }
-        
+
         logger.debug(f"Extracted claims: '{claim1_text}' vs '{claim2_text}'")
-        
+
         # Step 2: Detect dissonance using DSPy
         dissonance = self.dissonance_detector(claim1=claim1_text, claim2=claim2_text)
         has_conflict = dissonance.are_contradictory == "yes"
-        
+
         if not has_conflict:
             logger.info("No cognitive dissonance detected, using probabilistic reconciliation")
             reconciled = self.reconciliation_agent(
-                claim1=claim1_text, 
-                claim2=claim2_text, 
+                claim1=claim1_text,
+                claim2=claim2_text,
                 has_conflict="no"
             )
             available_confidences = [c for c in (belief_conf1, belief_conf2) if c is not None]
@@ -498,9 +498,9 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
                 solver_diagnostics=[],
                 normalized_specs=[],
             )
-        
+
         logger.info(f"Cognitive dissonance detected: {dissonance.reason}")
-        
+
         # Step 3: Classify claims for mathematical verification
         category1 = self.claim_classifier.classify_claim(claim1_text)
         category2 = self.claim_classifier.classify_claim(claim2_text)
@@ -626,7 +626,7 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
 
                 except Exception as exc:
                     logger.warning("Formal verification failed: %s", exc)
-        
+
         audit_metadata["semantic_bridge_targets"] = bridged_claims
 
         if analysis_results:
@@ -678,7 +678,7 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
             solver_diagnostics=solver_diagnostics,
             normalized_specs=normalized_specs,
         )
-    
+
     def _resolve_with_mathematical_evidence(
         self,
         claim1: str,
@@ -780,21 +780,21 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
             probabilistic_confidence,
             reasoning,
         )
-    
+
     def _probabilistic_fallback(self, claim1: str, claim2: str) -> str:
         """Fallback to probabilistic reconciliation when mathematical proof unavailable.
-        
+
         Args:
             claim1: First claim
             claim2: Second claim
-            
+
         Returns:
             Reconciled claim using DSPy agent
         """
         try:
             reconciled = self.reconciliation_agent(
                 claim1=claim1,
-                claim2=claim2, 
+                claim2=claim2,
                 has_conflict="yes"
             )
             return reconciled.reconciled_claim

@@ -16,10 +16,10 @@ logger = logging.getLogger(__name__)
 
 class CoqProver:
     """Interface to Coq theorem prover for formal verification."""
-    
+
     def __init__(self, timeout_seconds: int = 30, use_cache: bool = True):
         """Initialize Coq prover interface.
-        
+
         Args:
             timeout_seconds: Maximum time to wait for proof completion
             use_cache: Whether to use proof caching
@@ -29,12 +29,12 @@ class CoqProver:
         self.cache = ProofCache() if use_cache else None
         self.coq_available = self._check_binary("coqc")
         self.coqchk_available = self._check_binary("coqchk")
-        
+
         if not self.coq_available:
             logger.warning("Coq theorem prover not available")
         elif not self.coqchk_available:
             logger.warning("coqchk not available; compiled proofs will remain unchecked")
-    
+
     def _check_binary(self, binary: str) -> bool:
         """Check if a Coq binary is installed and available."""
         try:
@@ -72,13 +72,13 @@ class CoqProver:
             timeout=self.timeout_seconds,
             cwd=cwd,
         )
-    
+
     def prove_specification(self, spec: FormalSpec) -> ProofResult:
         """Attempt to prove a formal specification using Coq.
-        
+
         Args:
             spec: The formal specification to prove
-            
+
         Returns:
             ProofResult with success/failure and timing information
         """
@@ -87,7 +87,7 @@ class CoqProver:
             cached_result = self.cache.get(spec)
             if cached_result:
                 return cached_result
-        
+
         start_time = time.time()
         assumptions = self._detect_unverified_assumptions(spec.coq_code)
         if assumptions:
@@ -229,13 +229,13 @@ class CoqProver:
                 solver_status=ProofStatus.TIMEOUT.value,
                 assumptions_present=bool(assumptions),
             )
-    
+
     def _extract_counter_example(self, error_msg: str) -> Optional[str]:
         """Extract counter-example from Coq error message if available.
-        
+
         Args:
             error_msg: The error message from Coq
-            
+
         Returns:
             Counter-example string if found, None otherwise
         """
@@ -245,9 +245,9 @@ class CoqProver:
             for line in lines:
                 if "counter" in line.lower():
                     return line.strip()
-        
+
         return None
-    
+
     def get_cache_stats(self) -> dict:
         """Get cache statistics."""
         if self.cache:
