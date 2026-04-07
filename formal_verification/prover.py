@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from .types import FormalSpec, ProofResult
+from .types import FormalSpec, ProofResult, ProofStatus
 from .proof_cache import ProofCache
 
 logger = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ class CoqProver:
                 counter_example=None,
                 proof_output="",
                 prover_name="coq",
-                solver_status="unavailable",
+                solver_status=ProofStatus.UNAVAILABLE.value,
             )
         
         start_time = time.time()
@@ -114,7 +114,7 @@ class CoqProver:
                 counter_example=None,
                 proof_output="",
                 prover_name="coq",
-                solver_status="formalized_unproved",
+                solver_status=ProofStatus.FORMALIZED_UNPROVED.value,
                 assumptions_present=True,
             )
 
@@ -153,9 +153,9 @@ class CoqProver:
                         counter_example=self._extract_counter_example(error_msg),
                         proof_output=stdout,
                         prover_name="coq",
-                        solver_status="machine_refuted"
+                        solver_status=ProofStatus.MACHINE_REFUTED.value
                         if self._extract_counter_example(error_msg)
-                        else "refuted",
+                        else ProofStatus.REFUTED.value,
                     )
                 elif not self.coqchk_available:
                     proof_result = ProofResult(
@@ -169,7 +169,7 @@ class CoqProver:
                         counter_example=None,
                         proof_output=stdout,
                         prover_name="coq",
-                        solver_status="compiled_unchecked",
+                        solver_status=ProofStatus.COMPILED_UNCHECKED.value,
                     )
                 else:
                     check_result = self._run_coqchk(artifact_path, temp_dir)
@@ -190,7 +190,7 @@ class CoqProver:
                             counter_example=None,
                             proof_output=combined_output,
                             prover_name="coq",
-                            solver_status="machine_checked",
+                            solver_status=ProofStatus.MACHINE_CHECKED.value,
                             checker_name="coqchk",
                         )
                     else:
@@ -207,7 +207,7 @@ class CoqProver:
                             counter_example=None,
                             proof_output=combined_output,
                             prover_name="coq",
-                            solver_status="checker_failed",
+                            solver_status=ProofStatus.CHECKER_FAILED.value,
                             checker_name="coqchk",
                         )
 
@@ -226,7 +226,7 @@ class CoqProver:
                 counter_example=None,
                 proof_output="",
                 prover_name="coq",
-                solver_status="timeout",
+                solver_status=ProofStatus.TIMEOUT.value,
                 assumptions_present=bool(assumptions),
             )
     

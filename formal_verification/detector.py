@@ -3,7 +3,7 @@
 import logging
 from typing import List, Dict, Tuple, Any
 
-from .types import Claim, FormalSpec, ProofResult
+from .types import Claim, FormalSpec, ProofResult, ProofStatus
 from .translator import ClaimTranslator
 from .prover import CoqProver
 from .lemma_discovery import AutomatedProofRepairer
@@ -135,14 +135,12 @@ class FormalVerificationConflictDetector:
         """Normalize hybrid solver dictionaries into ProofResult objects."""
         proven = solver_result.get("proven", False)
         prover_name = solver_result.get("prover", "hybrid")
-        default_status = (
-            "smt_proved"
-            if prover_name == "z3" and proven
-            else "compiled_unchecked"
-            if prover_name == "coq" and proven
-            else "smt_refuted"
-            if prover_name == "z3"
-            else "refuted"
+        counter_example = solver_result.get("counter_example", {})
+        solver_status = ProofStatus.resolve(
+            solver_result.get("solver_status"),
+            proven=proven,
+            prover_name=prover_name,
+            counter_example=counter_example,
         )
         return ProofResult(
             spec=spec,
@@ -150,9 +148,9 @@ class FormalVerificationConflictDetector:
             proof_time_ms=solver_result.get("time_ms", 0),
             error_message=solver_result.get("error", ""),
             proof_output=proof_output,
-            counter_example=solver_result.get("counter_example", {}),
+            counter_example=counter_example,
             prover_name=prover_name,
-            solver_status=solver_result.get("solver_status", default_status),
+            solver_status=solver_status.value,
             assumptions_present=solver_result.get("assumptions_present", False),
             checker_name=solver_result.get("checker_name"),
         )

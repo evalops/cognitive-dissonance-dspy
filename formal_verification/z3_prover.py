@@ -6,6 +6,8 @@ from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
 
+from .types import ProofStatus
+
 logger = logging.getLogger(__name__)
 
 # Check if Z3 is available
@@ -518,14 +520,12 @@ class HybridProver:
             proof_output=f"Prover: {result['prover']}",
             counter_example=result.get('counter_example', {}),
             prover_name=result['prover'],
-            solver_status=result.get(
-                'solver_status',
-                "smt_proved"
-                if result['prover'] == "z3" and result['proven']
-                else "machine_checked"
-                if result['prover'] == "coq" and result['proven']
-                else "refuted"
-            ),
+            solver_status=ProofStatus.resolve(
+                result.get('solver_status'),
+                proven=result['proven'],
+                prover_name=result['prover'],
+                counter_example=result.get('counter_example', {}),
+            ).value,
             checker_name=result.get('checker_name'),
             assumptions_present=result.get('assumptions_present', False),
         )
@@ -548,14 +548,12 @@ class HybridProver:
                 proof_output=f"Prover: {alternative_result['prover']}",
                 counter_example=alternative_result.get('counter_example', {}),
                 prover_name=alternative_result['prover'],
-                solver_status=alternative_result.get(
-                    'solver_status',
-                    "smt_proved"
-                    if alternative_result['prover'] == "z3" and alternative_result['proven']
-                    else "machine_checked"
-                    if alternative_result['prover'] == "coq" and alternative_result['proven']
-                    else "refuted"
-                ),
+                solver_status=ProofStatus.resolve(
+                    alternative_result.get('solver_status'),
+                    proven=alternative_result['proven'],
+                    prover_name=alternative_result['prover'],
+                    counter_example=alternative_result.get('counter_example', {}),
+                ).value,
                 checker_name=alternative_result.get('checker_name'),
                 assumptions_present=alternative_result.get('assumptions_present', False),
             )
@@ -653,5 +651,9 @@ class HybridProver:
             'time_ms': result.time_ms,
             'counter_example': result.model,
             'statistics': result.statistics,
-            'solver_status': "smt_proved" if result.result == "valid" else "smt_refuted",
+            'solver_status': (
+                ProofStatus.SMT_PROVED.value
+                if result.result == "valid"
+                else ProofStatus.SMT_REFUTED.value
+            ),
         }

@@ -8,7 +8,7 @@ rigorous conflict resolution for agent claims about code properties.
 from .detector import FormalVerificationConflictDetector
 from .translator import ClaimTranslator  
 from .prover import CoqProver
-from .types import Claim, FormalSpec, ProofResult, PropertyType
+from .types import Claim, FormalSpec, ProofResult, ProofStatus, PropertyType
 
 __version__ = "0.1.0"
 
@@ -19,5 +19,6 @@ __all__ = [
     "Claim",
     "FormalSpec",
     "ProofResult",
+    "ProofStatus",
     "PropertyType",
 ]

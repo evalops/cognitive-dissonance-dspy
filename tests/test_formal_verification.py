@@ -10,6 +10,7 @@ from formal_verification import (
     Claim,
     FormalSpec,
     ProofResult,
+    ProofStatus,
     PropertyType
 )
 
@@ -223,6 +224,58 @@ class TestCoqProver:
         assert result.proven is False
         assert result.solver_status == "formalized_unproved"
         assert result.assumptions_present is True
+
+
+class TestProofStatus:
+    """Test shared proof-status normalization helpers."""
+
+    def test_proof_result_normalizes_status_values(self):
+        """ProofResult should canonicalize raw status strings and enums."""
+        result = ProofResult(
+            spec=None,
+            proven=True,
+            proof_time_ms=1.0,
+            error_message=None,
+            counter_example=None,
+            solver_status=" Machine_Checked ",
+        )
+        enum_result = ProofResult(
+            spec=None,
+            proven=False,
+            proof_time_ms=1.0,
+            error_message=None,
+            counter_example=None,
+            solver_status=ProofStatus.CHECKER_FAILED,
+        )
+
+        assert result.solver_status == "machine_checked"
+        assert result.status is ProofStatus.MACHINE_CHECKED
+        assert enum_result.solver_status == "checker_failed"
+        assert enum_result.status is ProofStatus.CHECKER_FAILED
+
+    def test_resolve_defaults_conservatively_for_solver_outputs(self):
+        """Implicit solver statuses should use safe defaults by prover type."""
+        assert ProofStatus.resolve(
+            None,
+            proven=True,
+            prover_name="coq",
+        ) is ProofStatus.COMPILED_UNCHECKED
+        assert ProofStatus.resolve(
+            None,
+            proven=False,
+            prover_name="z3",
+        ) is ProofStatus.INCONCLUSIVE
+        assert ProofStatus.resolve(
+            None,
+            proven=False,
+            prover_name="z3",
+            counter_example={"x": 1},
+        ) is ProofStatus.SMT_REFUTED
+        assert ProofStatus.resolve(
+            None,
+            proven=True,
+            prover_name="hybrid",
+        ) is ProofStatus.DERIVED_PROVED
 
 
 class TestConflictDetector:

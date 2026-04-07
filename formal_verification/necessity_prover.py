@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from enum import Enum
 import time
 
-from .types import Claim, FormalSpec, ProofResult
+from .types import Claim, FormalSpec, ProofResult, ProofStatus
 
 logger = logging.getLogger(__name__)
 
@@ -385,7 +385,7 @@ class NecessityBasedProver:
                 counter_example=None,
                 proof_output="Necessity-Based Prover: No applicable necessity pattern",
                 prover_name="necessity",
-                solver_status="inconclusive",
+                solver_status=ProofStatus.INCONCLUSIVE.value,
             )
         
         # Generate proof based on necessity
@@ -442,7 +442,11 @@ class NecessityBasedProver:
             counter_example=counter_example,
             proof_output=proof_output,
             prover_name="necessity",
-            solver_status="derived_proved" if proven else "derived_refuted",
+            solver_status=(
+                ProofStatus.DERIVED_PROVED.value
+                if proven
+                else ProofStatus.DERIVED_REFUTED.value
+            ),
         )
     
     def _generate_coq_from_necessity(self, evidence: NecessityEvidence) -> str:
@@ -544,8 +548,13 @@ class NecessityProofIntegrator:
         if hasattr(self.fallback_prover, "prove_claim"):
             fallback_dict = self.fallback_prover.prove_claim(claim.claim_text)
             prover_name = fallback_dict.get("prover", "hybrid")
-            normalized_prover_name = prover_name.lower()
             counter_example = fallback_dict.get("counter_example")
+            solver_status = ProofStatus.resolve(
+                fallback_dict.get("solver_status"),
+                proven=fallback_dict.get("proven", False),
+                prover_name=prover_name,
+                counter_example=counter_example,
+            )
             fallback_result = ProofResult(
                 spec=FormalSpec(claim, "Fallback proof", "", {}),
                 proven=fallback_dict.get("proven", False),
@@ -557,20 +566,7 @@ class NecessityProofIntegrator:
                     f"Necessity + Fallback: {fallback_dict.get('prover', 'unknown')}"
                 ),
                 prover_name=prover_name,
-                solver_status=fallback_dict.get(
-                    "solver_status",
-                    "smt_proved"
-                    if normalized_prover_name == "z3"
-                    and fallback_dict.get("proven")
-                    else "compiled_unchecked"
-                    if normalized_prover_name == "coq"
-                    and fallback_dict.get("proven")
-                    else "smt_refuted"
-                    if normalized_prover_name == "z3" and counter_example
-                    else "refuted"
-                    if counter_example
-                    else "inconclusive",
-                ),
+                solver_status=solver_status.value,
                 checker_name=fallback_dict.get("checker_name"),
                 assumptions_present=fallback_dict.get("assumptions_present", False),
             )

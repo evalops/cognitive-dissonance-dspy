@@ -7,13 +7,12 @@ improvement that moves from manual proof repair to automated proof synthesis.
 """
 
 import re
-import ast
 import logging
-from typing import List, Dict, Optional, Tuple, Any
+from typing import List, Dict, Optional
 from dataclasses import dataclass
 from enum import Enum
 
-from .types import Claim, FormalSpec, ProofResult, PropertyType
+from .types import Claim, FormalSpec, ProofResult, ProofStatus, PropertyType
 
 logger = logging.getLogger(__name__)
 
@@ -488,8 +487,8 @@ Qed.
         strategies = {
             FailureMode.INDUCTION_NEEDED: f"Add {len(lemmas)} induction-related lemmas and retry with induction tactic",
             FailureMode.MISSING_LEMMA: f"Add {len(lemmas)} helper lemmas to establish required properties",
-            FailureMode.ARITHMETIC_OVERFLOW: f"Add boundedness lemmas and use 'lia' instead of 'omega'",
-            FailureMode.UNIFICATION_FAILED: f"Add equality lemmas to help unification",
+            FailureMode.ARITHMETIC_OVERFLOW: "Add boundedness lemmas and use 'lia' instead of 'omega'",
+            FailureMode.UNIFICATION_FAILED: "Add equality lemmas to help unification",
             FailureMode.BOUNDEDNESS_NEEDED: f"Establish bounds with {len(lemmas)} boundedness lemmas"
         }
         
@@ -560,7 +559,6 @@ class AutomatedProofRepairer:
 def demo_lemma_discovery():
     """Demo the lemma discovery system."""
     # Simulate a failed proof
-    from .types import Claim, FormalSpec, ProofResult, PropertyType
     import time
     
     claim = Claim(
@@ -579,7 +577,7 @@ def demo_lemma_discovery():
         counter_example={},
         proof_output="Tactic 'reflexivity' failed.",
         prover_name="coq",
-        solver_status="refuted",
+        solver_status=ProofStatus.REFUTED.value,
     )
     
     engine = LemmaDiscoveryEngine()
