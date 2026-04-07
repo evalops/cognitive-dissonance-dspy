@@ -1,0 +1,703 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[most]{tcolorbox}
+
+\definecolor{EvalOpsBlue}{HTML}{0F4C81}
+\definecolor{EvalOpsInk}{HTML}{13212B}
+\definecolor{EvalOpsSlate}{HTML}{5A6B7A}
+\definecolor{EvalOpsMist}{HTML}{EEF4F8}
+\definecolor{EvalOpsLine}{HTML}{D5E0E8}
+\definecolor{EvalOpsAccent}{HTML}{2C7DA0}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=EvalOpsBlue,
+  urlcolor=EvalOpsAccent,
+  pdftitle={EvalOps Research Report: Cognitive Dissonance DSPy},
+  pdfauthor={Jonathan Haas},
+  pdfsubject={Research report on proof-oriented conflict resolution in multi-agent LLM systems},
+  pdfcreator={Tectonic}
+}
+
+\setlist[itemize]{leftmargin=1.4em, itemsep=0.25em, topsep=0.4em}
+\setlist[enumerate]{leftmargin=1.7em, itemsep=0.25em, topsep=0.4em}
+\setlength{\parskip}{0.55em}
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{2em}
+\renewcommand{\arraystretch}{1.15}
+
+\titleformat{\section}
+  {\Large\bfseries\color{EvalOpsBlue}}
+  {\thesection}
+  {0.75em}
+  {}
+
+\titleformat{\subsection}
+  {\large\bfseries\color{EvalOpsInk}}
+  {\thesubsection}
+  {0.65em}
+  {}
+
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{EvalOpsInk}}
+  {\thesubsubsection}
+  {0.6em}
+  {}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{EvalOpsSlate}\textbf{EvalOps Research}}
+\fancyhead[R]{\small\color{EvalOpsSlate}Cognitive Dissonance DSPy}
+\fancyfoot[C]{\small\color{EvalOpsSlate}\thepage\ of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{EvalOpsLine}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\footrulewidth}{0pt}
+
+\newtcolorbox{summarybox}{
+  colback=EvalOpsMist,
+  colframe=EvalOpsBlue,
+  boxrule=0.8pt,
+  arc=2pt,
+  left=10pt,
+  right=10pt,
+  top=8pt,
+  bottom=8pt
+}
+
+\newtcolorbox{calloutbox}{
+  colback=white,
+  colframe=EvalOpsLine,
+  boxrule=0.7pt,
+  arc=2pt,
+  left=10pt,
+  right=10pt,
+  top=8pt,
+  bottom=8pt
+}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+\pagenumbering{roman}
+
+\begin{titlepage}
+\thispagestyle{empty}
+
+\vspace*{1.6cm}
+
+\begin{center}
+{\Large\color{EvalOpsSlate}\textbf{EVALOPS RESEARCH TECHNICAL REPORT}\par}
+\vspace{0.65cm}
+{\Huge\bfseries\color{EvalOpsInk}Cognitive Dissonance DSPy\par}
+\vspace{0.2cm}
+{\Large\color{EvalOpsBlue}Formal Verification for Conflict Resolution in Multi-Agent LLM Systems\par}
+\end{center}
+
+\vspace{0.8cm}
+
+\color{EvalOpsLine}\rule{\linewidth}{1.2pt}
+
+\vspace{0.7cm}
+
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\textbf{Author} & Jonathan Haas \\
+\textbf{Email} & \texttt{jonathan@evalops.dev} \\
+\textbf{Organization} & EvalOps \\
+\textbf{Prepared} & 2026-04-07 \\
+\textbf{Repository snapshot} & commit \texttt{6a76740} \\
+\textbf{Document type} & Internal research whitepaper / technical assessment \\
+\end{tabularx}
+
+\vspace{0.8cm}
+
+\begin{summarybox}
+\textbf{Report scope.} This report evaluates the Cognitive Dissonance DSPy
+repository as a research artifact. It focuses on problem framing, architecture,
+proof semantics, hybrid verification design, validation status, limitations,
+and the next steps required to turn the current prototype into a stronger
+empirical research program.
+\end{summarybox}
+
+\vfill
+
+\begin{calloutbox}
+\textbf{Suggested citation}\\
+Haas, Jonathan. \emph{Cognitive Dissonance DSPy: Formal Verification for
+Conflict Resolution in Multi-Agent LLM Systems}. EvalOps Research Technical
+Report, 2026-04-07.
+\end{calloutbox}
+
+\vfill
+
+{\small\color{EvalOpsSlate}
+This report was authored from repository-local documentation, implementation
+files, tests, and CI configuration.}
+
+\end{titlepage}
+
+\begin{abstract}
+Cognitive Dissonance DSPy is a research prototype that attempts to resolve
+formalizable disagreements between language-model agents through proof rather
+than conversational arbitration. The system combines DSPy-based claim handling,
+natural-language-to-formal-spec translation, necessity-driven proof discovery,
+hybrid SMT and Coq proving, and a trust-aware proof-status model that
+distinguishes machine-checked results from weaker forms of evidence.
+
+This report evaluates the repository as a technical research artifact rather
+than as a demo. Its central finding is that the project's most important
+contribution is epistemic discipline: the codebase does not treat generated
+formal text, compiled proof scripts, solver outputs, and independently checked
+proofs as equivalent. The repository now presents a credible architecture, real
+CI coverage for \texttt{coqc}/\texttt{coqchk}, explicit persistence semantics,
+and a growing reproducibility story, while still showing major open problems in
+translation breadth, benchmark maturity, and semantic calibration.
+\end{abstract}
+
+\section*{Executive Summary}
+
+\begin{summarybox}
+\begin{itemize}
+  \item \textbf{Core idea.} Route formalizable agent disagreements into a proof
+  pipeline and use proof outcomes, not debate, as the resolution mechanism.
+  \item \textbf{Strongest contribution.} A normalized trust model that
+  distinguishes machine-checked, SMT-derived, assumption-based, and
+  inconclusive outcomes.
+  \item \textbf{Distinctive technique.} Necessity-based proof discovery that
+  resolves some claims through mathematical structure before broader search.
+  \item \textbf{Current status.} The repository has green local tests, a green
+  multi-version CI matrix, a Coq smoke job, cache-schema versioning, and a much
+  cleaner engineering baseline than a typical proof-integrated demo.
+  \item \textbf{Main gaps.} Pattern-driven translation, heuristic semantic
+  bridging, and the lack of a rigorous benchmark protocol remain the dominant
+  research limitations.
+\end{itemize}
+\end{summarybox}
+
+\tableofcontents
+\newpage
+\hypersetup{pageanchor=true}
+\pagenumbering{arabic}
+
+\section{Introduction}
+
+Multi-agent LLM systems often disagree. In most deployed or experimental
+systems, those disagreements are handled through debate, ranking, confidence
+aggregation, or arbitration prompts. Those methods are acceptable when the
+underlying issue is genuinely subjective or underspecified. They are much less
+appropriate when the disputed claim is formal and decidable.
+
+If two agents disagree about whether \texttt{2 + 2 = 4}, whether a factorial
+claim is correct, or whether a simple software property holds, a confidence-
+weighted debate is the wrong instrument. The correct instrument is some form of
+formal verification. Cognitive Dissonance DSPy is built around that thesis:
+when a dispute is formalizable, stop arguing and attempt to prove it
+\cite{repo_readme,fv_readme}.
+
+\section{Research Questions}
+
+This report evaluates the repository against four practical research questions.
+
+\begin{enumerate}
+  \item \textbf{RQ1:} Does the architecture provide a coherent route from agent
+  disagreement to proof-backed resolution?
+  \item \textbf{RQ2:} Does the implementation distinguish clearly between
+  strong and weak proof evidence?
+  \item \textbf{RQ3:} Does the repository support a credible validation and
+  reproducibility story?
+  \item \textbf{RQ4:} What research gaps remain before the framework can
+  support stronger empirical claims?
+\end{enumerate}
+
+\section{Methodology}
+
+This report is based on repository-local evidence rather than an external
+literature survey. The analysis used four sources:
+
+\begin{enumerate}
+  \item repository documentation in the root and
+  \texttt{formal\_verification/}
+  \item direct inspection of core implementation files
+  \item direct inspection of CI and persistence mechanisms
+  \item local validation commands executed against the checked-out codebase
+\end{enumerate}
+
+The implementation snapshot used here is commit \texttt{6a76740}. On that
+snapshot, the local validation command
+\texttt{.venv/bin/python -m pytest -q} produced \texttt{228 passed, 2 skipped},
+with the skipped tests corresponding to local Coq smoke checks that require
+\texttt{coqc} and \texttt{coqchk} to be installed on the host machine
+\cite{coq_smoke_tests}.
+
+\section{System Overview}
+
+\subsection{Conceptual Pipeline}
+
+At a high level, the repository implements the following workflow:
+
+\begin{enumerate}
+  \item DSPy agents extract beliefs or claims from source texts.
+  \item The system detects cognitive dissonance or contradiction between those
+  claims.
+  \item Claims are classified into mathematical, algorithmic, software,
+  physical, subjective, or unverifiable categories.
+  \item Formalizable claims are translated or routed into proof targets.
+  \item The proof stack attempts resolution through necessity analysis, hybrid
+  SMT reasoning, or Coq-based proving and checking.
+  \item Results are normalized into a stable proof-status vocabulary and then
+  used to decide whether the framework should resolve deterministically,
+  probabilistically, or diagnostically.
+\end{enumerate}
+
+\subsection{Primary Components}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.62\linewidth}}
+\toprule
+\textbf{Component} & \textbf{Research role} \\
+\midrule
+\small\nolinkurl{cognitive_dissonance/verifier.py} &
+DSPy agents for claim extraction, contradiction detection, and reconciliation. \\
+\small\nolinkurl{cognitive_dissonance/mathematical_resolver.py} &
+Main orchestration layer that combines probabilistic agents with formal
+verification and semantic bridging \cite{math_resolver}. \\
+\small\nolinkurl{formal_verification/translator.py} &
+Pattern-based natural-language-to-specification translation for claims that can
+be sent toward Coq or hybrid proving \cite{translator}. \\
+\small\nolinkurl{formal_verification/prover.py} &
+Coq interface that compiles proof scripts, rejects assumption markers, and uses
+\texttt{coqchk} to mark only independently checked proofs as machine-checked
+\cite{coq_prover}. \\
+\small\nolinkurl{formal_verification/detector.py} &
+Formal-verification orchestrator that translates claims, detects conflicts,
+applies proving backends, and integrates proof repair \cite{detector}. \\
+\small\nolinkurl{formal_verification/necessity_prover.py} &
+Necessity-first proving layer for mathematical claims whose truth follows from
+definitional, inductive, or deductive structure \cite{necessity_prover}. \\
+\small\nolinkurl{formal_verification/lemma_discovery.py} &
+Automatic proof-repair machinery that analyzes failure modes and synthesizes
+helper lemmas or repair strategies \cite{lemma_discovery}. \\
+\small\nolinkurl{formal_verification/deep_analysis.py} &
+Program-property extraction for memory safety, concurrency, termination,
+performance, and related static claims \cite{deep_analysis}. \\
+\small\nolinkurl{formal_verification/semantic_bridge.py} &
+Heuristic decomposition of subjective claims into objective, measurable, or
+mathematical subclaims suitable for verification attempts \cite{semantic_bridge}. \\
+\small\nolinkurl{formal_verification/proof_cache.py} and
+\nolinkurl{formal_verification/proof_learning.py} &
+Persistence and learning-oriented infrastructure for cached proof results,
+strategy prediction, and stale-schema rejection \cite{proof_cache,proof_learning}. \\
+\bottomrule
+\end{longtable}
+
+\section{Core Technical Contributions}
+
+\subsection{Trust-Aware Proof Semantics}
+
+The strongest design decision in the repository is the refusal to flatten all
+proof-looking outcomes into a single notion of success. The normalized
+\texttt{ProofStatus} model in \nolinkurl{formal_verification/types.py} includes
+machine-checked, SMT-proved, derived, refuted, formalized-but-unproved,
+compiled-but-unchecked, checker-failed, timeout, and unavailable outcomes
+\cite{types}.
+
+This matters because it prevents the system from overstating certainty. In
+particular:
+
+\begin{itemize}
+  \item Assumption-bearing Coq specifications are rejected before execution and
+  treated as formalized but unproved.
+  \item A compiled proof is not treated as ground truth until the independent
+  proof checker succeeds.
+  \item Solver-derived successes can inform resolution without being conflated
+  with independently checked proof objects.
+\end{itemize}
+
+As a research contribution, this is more important than any single theorem the
+system proves. It establishes an explicit evidence hierarchy for
+proof-integrated agent systems.
+
+\subsection{Necessity-Based Proof Discovery}
+
+The necessity prover is the most distinctive algorithmic idea in the codebase.
+Rather than launching generic search immediately, it tries to determine what
+\emph{must} follow from mathematical structure. The implementation currently
+handles:
+
+\begin{itemize}
+  \item arithmetic equalities and inequalities
+  \item factorial claims
+  \item Fibonacci claims
+  \item GCD claims
+  \item closed-form summation claims
+  \item identity-style statements such as \texttt{n + 0 = n}
+\end{itemize}
+
+This is not a universal theorem prover. It is a routing and proof-construction
+layer for domains where mathematical necessity can be recognized cheaply and
+interpreted clearly. Its research value lies in the claim that some disputes
+should be resolved by structure-aware proving before broader search begins.
+
+\subsection{Hybrid Verification Stack}
+
+The detector supports several verification modes:
+
+\begin{itemize}
+  \item Coq-only proving
+  \item Z3 plus Coq hybrid solving
+  \item necessity-enhanced proving on top of either base prover
+  \item automated repair via lemma discovery
+\end{itemize}
+
+This arrangement matters because different claims are amenable to different
+backends. Arithmetic or constraint-heavy claims often fit SMT reasoning.
+Others benefit from theorem-oriented proof scripts or proof-structure
+synthesis. The normalized status model lets these backends coexist without
+pretending they all produce the same kind of evidence.
+
+\subsection{Semantic Bridging of Subjective Language}
+
+The semantic bridge attempts to extract objective targets from language that
+would normally be dismissed as purely subjective. Terms such as
+\texttt{efficient}, \texttt{secure}, \texttt{reliable}, \texttt{readable}, and
+\texttt{scalable} are mapped to candidate objective components such as
+execution time, complexity, error rate, input validation, memory safety, or
+code complexity \cite{semantic_bridge}.
+
+This is a useful research direction because many practical disagreements contain
+both subjective framing and objective substructure. The bridge does not solve
+the semantics problem completely, but it gives the framework a path for
+converting some qualitative disputes into partially measurable ones.
+
+\subsection{Repair, Caching, and Strategy Learning}
+
+The repository also contains a second layer of research ambition:
+
+\begin{itemize}
+  \item proof-failure analysis and lemma suggestion
+  \item on-disk proof caching with schema versioning
+  \item proof-learning persistence for historical attempts and strategy
+  prediction
+\end{itemize}
+
+Taken together, these pieces point toward an adaptive verification environment
+that not only proves claims but also learns from previous proving behavior and
+avoids repeating stale or redundant work.
+
+\section{Implementation Footprint}
+
+Across \texttt{cognitive\_dissonance/}, \texttt{formal\_verification/},
+\texttt{tests/}, and \texttt{examples/}, the repository currently contains:
+
+\begin{itemize}
+  \item 55 Python source files
+  \item 18{,}547 lines of Python
+  \item 12 Python files in \texttt{cognitive\_dissonance/}
+  \item 16 Python files in \texttt{formal\_verification/}
+  \item 16 test files
+  \item 11 example files
+\end{itemize}
+
+This is a moderately sized research prototype, not a one-off demo. That scale
+matters because verification semantics, persistence, CI, and style
+normalization become part of the research artifact itself.
+
+\section{Validation and Reproducibility}
+
+\subsection{Engineering-Verified Snapshot}
+
+The following status items were directly verified from the repository at commit
+\texttt{6a76740}:
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.34\linewidth} >{\raggedright\arraybackslash}p{0.58\linewidth}}
+\toprule
+\textbf{Item} & \textbf{Observed status} \\
+\midrule
+Local test suite &
+\texttt{230} tests collected; \texttt{228 passed}, \texttt{2 skipped}. \\
+Local Coq availability &
+The two skipped tests are local Coq smoke tests that require
+\texttt{coqc} and \texttt{coqchk}. \\
+GitHub Actions matrix &
+Green on Python \texttt{3.10}, \texttt{3.11}, and \texttt{3.12}. \\
+Coq CI coverage &
+Separate \texttt{coq-smoke} job installs Coq and executes a real
+\texttt{coqc}/\texttt{coqchk} smoke path \cite{ci_workflow,coq_smoke_tests}. \\
+Persistence hardening &
+Proof cache and proof-learning history include explicit schema versions and
+discard stale entries rather than trusting incompatible old data
+\cite{proof_cache,proof_learning,persistence_tests}. \\
+Current lint debt &
+\texttt{318} remaining Ruff findings, all classified as \texttt{E501}
+long lines. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Repository-Reported Metrics}
+
+The repository documentation reports several performance and success-rate
+figures, including:
+
+\begin{itemize}
+  \item 15 claims with an 80\% success rate
+  \item average proof time of roughly 179.7ms
+  \item proof-caching speedups on repeated proofs
+  \item strong arithmetic and mathematical-function success rates
+\end{itemize}
+
+These values are useful as research signals, but they should be treated as
+repository-reported benchmarks rather than independently audited experimental
+results. The engineering foundation is improving, but a mature empirical story
+still needs fixed datasets, archived benchmark commands, seed control, and
+clear reporting of machine-checked versus weaker proof outcomes.
+
+\section{Findings}
+
+\subsection{Finding 1: The Framework Raises the Standard of Evidence}
+
+The repository's clearest success is that it upgrades the standard of evidence
+for a subset of agent disagreements. The system no longer has to choose between
+``pure prompt debate'' and ``pretending every formal-looking output is a
+proof.'' It can represent multiple levels of proof confidence explicitly.
+
+\subsection{Finding 2: The Architecture Is Research-Meaningful}
+
+The project sits at a useful intersection of:
+
+\begin{itemize}
+  \item multi-agent reasoning
+  \item formal verification
+  \item theorem proving
+  \item hybrid symbolic-probabilistic systems
+\end{itemize}
+
+The repository is strongest where these threads are integrated into a coherent
+resolution policy rather than demonstrated independently.
+
+\subsection{Finding 3: The Reproducibility Story Is Becoming Credible}
+
+Schema-version handling, Coq smoke tests in CI, explicit proof-status
+semantics, and a steadily improving code-quality baseline materially strengthen
+the repository as a research artifact. These are the kinds of features that
+allow the system to be trusted across revisions, not just during a one-time
+demo.
+
+\subsection{Finding 4: Translation and Benchmarking Remain the Main Gaps}
+
+The project still relies heavily on pattern-driven translation and repo-level
+benchmark claims. This is the main gap between a strong prototype and a
+research result that can support stronger comparative or scientific claims.
+
+\section{Limitations}
+
+\subsection{Pattern-Driven Translation}
+
+The natural-language-to-formal-spec translation layer remains template-heavy.
+This works for arithmetic and a constrained set of algorithmic or
+software-property claims, but it limits generality and makes coverage sensitive
+to surface phrasing.
+
+\subsection{Heuristic Semantic Bridging}
+
+The semantic bridge is useful, but it is still heuristic. Its objectivity
+levels, confidence scores, and generated verification targets are hand-crafted.
+They are not yet backed by a formal semantics or a calibration study.
+
+\subsection{Incomplete Benchmark Story}
+
+The repository includes examples, tests, and reported metrics, but it does not
+yet present a benchmark protocol with the level of rigor expected for a mature
+research evaluation. In particular, the project still needs:
+
+\begin{itemize}
+  \item fixed benchmark inputs
+  \item archived benchmark outputs
+  \item ablation studies
+  \item separate reporting for machine-checked versus weaker proof outcomes
+\end{itemize}
+
+\subsection{Remaining Repository Normalization Work}
+
+The codebase is much cleaner than before, but line-length lint debt remains.
+This is not the central scientific issue, but it still affects maintainability
+and outside reproducibility.
+
+\section{Threats to Validity}
+
+\subsection{Construct Validity}
+
+The system's strongest results apply to claims that are already formalizable or
+close to formalizable. Measured success may therefore say as much about routing
+and pattern coverage as it does about general open-domain reasoning.
+
+\subsection{Internal Validity}
+
+Some reported performance metrics come from repository documentation rather than
+from a preserved benchmark harness. Without frozen inputs and archived outputs,
+their stability across revisions is hard to assess.
+
+\subsection{External Validity}
+
+The framework is currently strongest on arithmetic, first-order fragments,
+structured software properties, and heuristic decompositions of subjective
+claims. It should not yet be generalized to the full space of agent
+disagreements.
+
+\section{Recommended Next Steps}
+
+The highest-value next steps are:
+
+\begin{enumerate}
+  \item Build a reproducible benchmark suite with explicit categories for
+  mathematical, algorithmic, software, and semantically bridged claims.
+  \item Report outcomes by evidence strength:
+  machine-checked, SMT-proved, derived, formalized-unproved, and inconclusive.
+  \item Expand the translation layer beyond narrow templates, especially for
+  algorithmic correctness and program invariants.
+  \item Compare necessity-first routing against pure hybrid proving as an
+  ablation.
+  \item Evaluate whether semantic bridging improves practical resolution quality
+  without increasing false confidence.
+  \item Continue repository hardening until the remaining style debt is gone
+  and the benchmark path is fully automated.
+\end{enumerate}
+
+\section{Conclusion}
+
+Cognitive Dissonance DSPy is already more than a conceptual demo. It is a
+nontrivial research prototype for proof-oriented conflict resolution in
+multi-agent LLM systems, with a meaningful architecture, explicit proof-trust
+semantics, real CI for Coq smoke coverage, and increasingly serious
+reproducibility work.
+
+Its strongest contribution is architectural and epistemic. The framework treats
+formal verification as a first-class resolution policy and insists that proof
+strength be represented honestly. Its main remaining work is empirical and
+semantic: richer translation, stronger benchmarks, and better-justified
+bridging from subjective language to objective verification targets.
+
+\section{References}
+
+\begin{thebibliography}{99}
+\small
+
+\bibitem{repo_readme}
+EvalOps. \emph{Cognitive Dissonance DSPy README}. Repository artifact, commit
+\texttt{6a76740}, 2026.
+
+\bibitem{fv_readme}
+EvalOps. \emph{Formal Verification Framework README}. Repository artifact,
+\nolinkurl{formal_verification/README.md}, commit \texttt{6a76740}, 2026.
+
+\bibitem{types}
+EvalOps. \emph{Proof status and verification types}. Repository artifact,
+\nolinkurl{formal_verification/types.py}, commit \texttt{6a76740}, 2026.
+
+\bibitem{coq_prover}
+EvalOps. \emph{Coq prover interface and machine-checking path}. Repository
+artifact, \nolinkurl{formal_verification/prover.py}, commit \texttt{6a76740},
+2026.
+
+\bibitem{translator}
+EvalOps. \emph{Natural-language claim translator}. Repository artifact,
+\nolinkurl{formal_verification/translator.py}, commit \texttt{6a76740}, 2026.
+
+\bibitem{detector}
+EvalOps. \emph{Formal verification conflict detector}. Repository artifact,
+\nolinkurl{formal_verification/detector.py}, commit \texttt{6a76740}, 2026.
+
+\bibitem{math_resolver}
+EvalOps. \emph{Mathematical cognitive dissonance resolver}. Repository
+artifact, \nolinkurl{cognitive_dissonance/mathematical_resolver.py}, commit
+\texttt{6a76740}, 2026.
+
+\bibitem{necessity_prover}
+EvalOps. \emph{Necessity-based proof discovery}. Repository artifact,
+\nolinkurl{formal_verification/necessity_prover.py}, commit \texttt{6a76740},
+2026.
+
+\bibitem{lemma_discovery}
+EvalOps. \emph{Automated lemma discovery and proof repair}. Repository
+artifact, \nolinkurl{formal_verification/lemma_discovery.py}, commit
+\texttt{6a76740}, 2026.
+
+\bibitem{deep_analysis}
+EvalOps. \emph{Deep program analysis for verification targets}. Repository
+artifact, \nolinkurl{formal_verification/deep_analysis.py}, commit
+\texttt{6a76740}, 2026.
+
+\bibitem{semantic_bridge}
+EvalOps. \emph{Semantic bridge for grounding subjective claims}. Repository
+artifact, \nolinkurl{formal_verification/semantic_bridge.py}, commit
+\texttt{6a76740}, 2026.
+
+\bibitem{proof_cache}
+EvalOps. \emph{Proof cache and schema versioning}. Repository artifact,
+\nolinkurl{formal_verification/proof_cache.py}, commit \texttt{6a76740}, 2026.
+
+\bibitem{proof_learning}
+EvalOps. \emph{Proof-learning persistence and strategy history}. Repository
+artifact, \nolinkurl{formal_verification/proof_learning.py}, commit
+\texttt{6a76740}, 2026.
+
+\bibitem{ci_workflow}
+EvalOps. \emph{Continuous integration workflow}. Repository artifact,
+\nolinkurl{.github/workflows/ci.yml}, commit \texttt{6a76740}, 2026.
+
+\bibitem{coq_smoke_tests}
+EvalOps. \emph{Coq smoke tests}. Repository artifact,
+\nolinkurl{tests/test_coq_smoke.py}, commit \texttt{6a76740}, 2026.
+
+\bibitem{persistence_tests}
+EvalOps. \emph{Persistence and schema-version tests}. Repository artifact,
+\nolinkurl{tests/test_proof_persistence.py}, commit \texttt{6a76740}, 2026.
+
+\end{thebibliography}
+
+\appendix
+
+\section{Repository Snapshot}
+
+This report reflects the repository state at commit \texttt{6a76740}. The
+implementation snapshot used for the analysis included:
+
+\begin{itemize}
+  \item 55 Python files across core code, tests, and examples
+  \item 18{,}547 lines of Python
+  \item a green multi-version CI matrix
+  \item a green Coq smoke job
+  \item \texttt{318} remaining Ruff findings, all of them line-length related
+\end{itemize}
+
+\section{Validation Commands}
+
+The following commands were used as direct validation inputs for this report:
+
+\begin{itemize}
+  \item \texttt{.venv/bin/python -m pytest -q}
+  \item \texttt{tectonic --outdir reports reports/cognitive\_dissonance\_research\_report.tex}
+  \item \texttt{gh run watch <run-id> --exit-status --interval 10}
+\end{itemize}
+
+\vfill
+
+\begin{center}
+\small
+\textbf{Jonathan Haas}\\
+\texttt{jonathan@evalops.dev}\\
+EvalOps
+\end{center}
+
+\end{document}
