@@ -239,6 +239,26 @@ class TestNecessityProofIntegrator:
         assert result.proven is True
         # Fallback should not have been called
         assert result.solver_status == "derived_proved"
+
+    def test_necessity_success_fallback_failure_returns_original_result(self):
+        """Fallback verification errors should not override a necessity proof."""
+        mock_fallback = Mock(spec=["prove_claim"])
+        mock_fallback.prove_claim.side_effect = Exception("Fallback failed")
+        integrator = NecessityProofIntegrator(fallback_prover=mock_fallback)
+
+        claim = Claim(
+            agent_id="test",
+            claim_text="5 + 3 = 8",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.9,
+            timestamp=time.time()
+        )
+
+        result = integrator.prove_with_necessity_priority(claim)
+
+        assert result.proven is True
+        assert result.solver_status == "derived_proved"
+        mock_fallback.prove_claim.assert_called_once_with("5 + 3 = 8")
     
     def test_necessity_definitive_failure_no_fallback(self):
         """Test when necessity proof definitively fails, no fallback needed."""
@@ -287,6 +307,33 @@ class TestNecessityProofIntegrator:
         assert "Z3" in result.proof_output
         assert "Necessity + Fallback" in result.proof_output
         mock_hybrid_prover.prove_claim.assert_called_once_with("This algorithm terminates")
+
+    def test_necessity_fallback_coq_defaults_to_compiled_unchecked(self):
+        """Fallback Coq results should remain unchecked unless explicitly verified."""
+        mock_hybrid_prover = Mock(spec=["prove_claim"])
+        mock_hybrid_prover.prove_claim.return_value = {
+            'proven': True,
+            'time_ms': 200,
+            'prover': 'coq',
+            'error': None,
+            'counter_example': {}
+        }
+
+        integrator = NecessityProofIntegrator(fallback_prover=mock_hybrid_prover)
+
+        claim = Claim(
+            agent_id="test",
+            claim_text="This algorithm terminates",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.7,
+            timestamp=time.time()
+        )
+
+        result = integrator.prove_with_necessity_priority(claim)
+
+        assert result.proven is True
+        assert result.solver_status == "compiled_unchecked"
+        assert result.is_machine_checked is False
     
     def test_necessity_inconclusive_with_coq_fallback(self):
         """Translatable non-necessity claims should fall back to Coq."""

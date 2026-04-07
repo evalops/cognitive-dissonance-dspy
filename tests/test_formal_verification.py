@@ -288,6 +288,43 @@ class TestFormalVerificationConflictDetector:
         assert hasattr(detector, 'translator')
         assert hasattr(detector, 'prover')
         assert hasattr(detector, 'conflict_detector')
+
+    def test_solver_proofs_are_not_marked_unresolved(self):
+        """Solver-backed proofs should not also appear as unresolved."""
+        detector = FormalVerificationConflictDetector()
+
+        claim = Claim("alice", "2 + 2 = 4", PropertyType.CORRECTNESS, 0.9, time.time())
+        spec = FormalSpec(claim, "spec1", "coq1", {})
+        solver_result = ProofResult(
+            spec,
+            True,
+            100,
+            None,
+            None,
+            solver_status="smt_proved",
+        )
+
+        resolution = detector._resolve_conflicts([], [solver_result])
+
+        assert resolution["derived_or_solver_proofs"] == [solver_result]
+        assert resolution["unresolved"] == []
+
+    def test_coq_solver_dict_defaults_to_compiled_unchecked(self):
+        """Coq solver dictionaries should not default to machine-checked proofs."""
+        detector = FormalVerificationConflictDetector()
+
+        claim = Claim("alice", "2 + 2 = 4", PropertyType.CORRECTNESS, 0.9, time.time())
+        spec = FormalSpec(claim, "spec1", "coq1", {})
+
+        result = detector._proof_result_from_solver_dict(
+            spec,
+            {"proven": True, "prover": "coq"},
+            "Coq output",
+        )
+
+        assert result.solver_status == "compiled_unchecked"
+        assert result.is_machine_checked is False
+        assert result.establishes_ground_truth is False
     
     def test_agent_ranking(self):
         """Test agent accuracy ranking."""

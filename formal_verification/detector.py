@@ -138,7 +138,7 @@ class FormalVerificationConflictDetector:
         default_status = (
             "smt_proved"
             if prover_name == "z3" and proven
-            else "machine_checked"
+            else "compiled_unchecked"
             if prover_name == "coq" and proven
             else "smt_refuted"
             if prover_name == "z3"
@@ -372,7 +372,9 @@ class FormalVerificationConflictDetector:
             'unresolved': [
                 r
                 for r in proof_results
-                if not r.is_machine_checked and not r.is_definitive_disproof
+                if not r.proven
+                and not r.is_machine_checked
+                and not r.is_definitive_disproof
             ],
             'agent_rankings': self._rank_agents_by_correctness(proof_results),
             'ground_truth_established': any(

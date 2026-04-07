@@ -497,9 +497,12 @@ class NecessityProofIntegrator:
         necessity_result = self.necessity_prover.prove_by_necessity(claim)
 
         if necessity_result.proven and self.fallback_prover:
-            verified_result = self._verify_with_fallback(claim, necessity_result)
-            if verified_result is not None:
-                return verified_result
+            try:
+                verified_result = self._verify_with_fallback(claim, necessity_result)
+                if verified_result is not None:
+                    return verified_result
+            except Exception as e:
+                logger.warning(f"Fallback prover failed: {e}")
 
         # If necessity-based proof succeeded or definitively failed, return it
         if necessity_result.proven or necessity_result.counter_example:
@@ -548,7 +551,7 @@ class NecessityProofIntegrator:
                     "smt_proved"
                     if fallback_dict.get("prover") == "z3"
                     and fallback_dict.get("proven")
-                    else "machine_checked"
+                    else "compiled_unchecked"
                     if fallback_dict.get("prover") == "coq"
                     and fallback_dict.get("proven")
                     else "refuted",
