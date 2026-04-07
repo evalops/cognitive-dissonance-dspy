@@ -10,6 +10,7 @@ import logging
 from .types import FormalSpec, ProofResult
 
 logger = logging.getLogger(__name__)
+CACHE_SCHEMA_VERSION = 1
 
 
 class ProofCache:
@@ -41,6 +42,18 @@ class ProofCache:
         # Create hash of the Coq code
         content = spec.coq_code.strip()
         return hashlib.sha256(content.encode()).hexdigest()[:16]
+
+    def _discard_stale_cache_file(self, cache_file: Path, schema_version: Any) -> None:
+        """Delete cache entries written with incompatible semantics."""
+        logger.info(
+            "Discarding stale proof cache entry %s with schema_version=%s",
+            cache_file,
+            schema_version,
+        )
+        try:
+            cache_file.unlink()
+        except OSError as exc:
+            logger.warning("Failed to remove stale cache file %s: %s", cache_file, exc)
     
     def get(self, spec: FormalSpec) -> Optional[ProofResult]:
         """
@@ -66,8 +79,14 @@ class ProofCache:
         cache_file = self.cache_dir / f"{cache_key}.json"
         if cache_file.exists():
             try:
-                with open(cache_file, 'r') as f:
+                with open(cache_file, 'r', encoding="utf-8") as f:
                     data = json.load(f)
+
+                schema_version = data.get("schema_version")
+                if schema_version != CACHE_SCHEMA_VERSION:
+                    self._discard_stale_cache_file(cache_file, schema_version)
+                    self.stats["misses"] += 1
+                    return None
                     
                 result = ProofResult(
                     spec=spec,
@@ -113,6 +132,7 @@ class ProofCache:
         cache_file = self.cache_dir / f"{cache_key}.json"
         try:
             data = {
+                "schema_version": CACHE_SCHEMA_VERSION,
                 "claim_text": spec.claim.claim_text,
                 "proven": result.proven,
                 "proof_time_ms": result.proof_time_ms,
@@ -127,7 +147,7 @@ class ProofCache:
                 "cached_at": time.time()
             }
             
-            with open(cache_file, 'w') as f:
+            with open(cache_file, 'w', encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
                 
             logger.debug(f"Cached proof for {spec.claim.claim_text[:30]}...")

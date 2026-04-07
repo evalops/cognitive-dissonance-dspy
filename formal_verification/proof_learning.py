@@ -21,6 +21,7 @@ from .types import Claim, ProofResult
 
 logger = logging.getLogger(__name__)
 DEFAULT_PROOF_LEARNING_DATA_FILE = Path(".proof_cache") / "proof_learning_data.json"
+PROOF_LEARNING_SCHEMA_VERSION = 1
 
 
 @dataclass
@@ -490,6 +491,15 @@ class ProofStrategyLearner:
         try:
             with self.data_file.open(encoding="utf-8") as f:
                 data = json.load(f)
+
+            schema_version = data.get("schema_version")
+            if schema_version != PROOF_LEARNING_SCHEMA_VERSION:
+                logger.info(
+                    "Ignoring stale proof learning history %s with schema_version=%s",
+                    self.data_file,
+                    schema_version,
+                )
+                return
             
             for attempt_data in data.get('attempts', []):
                 # Reconstruct ProofFeatures
@@ -522,6 +532,7 @@ class ProofStrategyLearner:
         """Save proof history to disk."""
         try:
             data = {
+                'schema_version': PROOF_LEARNING_SCHEMA_VERSION,
                 'attempts': [
                     {
                         'claim_text': attempt.claim_text,
