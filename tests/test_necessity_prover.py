@@ -259,6 +259,60 @@ class TestNecessityProofIntegrator:
         assert result.proven is True
         assert result.solver_status == "derived_proved"
         mock_fallback.prove_claim.assert_called_once_with("5 + 3 = 8")
+
+    def test_necessity_success_inconclusive_fallback_keeps_original_result(self):
+        """Inconclusive fallback results should not override a necessity proof."""
+        mock_fallback = Mock(spec=["prove_claim"])
+        mock_fallback.prove_claim.return_value = {
+            "proven": False,
+            "time_ms": 200,
+            "prover": "z3",
+            "error": "solver could not prove claim",
+            "counter_example": None,
+        }
+        integrator = NecessityProofIntegrator(fallback_prover=mock_fallback)
+
+        claim = Claim(
+            agent_id="test",
+            claim_text="5 + 3 = 8",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.9,
+            timestamp=time.time(),
+        )
+
+        result = integrator.prove_with_necessity_priority(claim)
+
+        assert result.proven is True
+        assert result.solver_status == "derived_proved"
+        mock_fallback.prove_claim.assert_called_once_with("5 + 3 = 8")
+
+    def test_necessity_success_definitive_fallback_refutation_overrides(self):
+        """A concrete fallback refutation should override a derived success."""
+        mock_fallback = Mock(spec=["prove_claim"])
+        mock_fallback.prove_claim.return_value = {
+            "proven": False,
+            "time_ms": 200,
+            "prover": "z3",
+            "error": "counterexample found",
+            "counter_example": {"x": 1},
+            "solver_status": "smt_refuted",
+        }
+        integrator = NecessityProofIntegrator(fallback_prover=mock_fallback)
+
+        claim = Claim(
+            agent_id="test",
+            claim_text="5 + 3 = 8",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.9,
+            timestamp=time.time(),
+        )
+
+        result = integrator.prove_with_necessity_priority(claim)
+
+        assert result.proven is False
+        assert result.solver_status == "smt_refuted"
+        assert result.counter_example == {"x": 1}
+        mock_fallback.prove_claim.assert_called_once_with("5 + 3 = 8")
     
     def test_necessity_definitive_failure_no_fallback(self):
         """Test when necessity proof definitively fails, no fallback needed."""

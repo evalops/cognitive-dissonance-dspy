@@ -500,7 +500,15 @@ class NecessityProofIntegrator:
             try:
                 verified_result = self._verify_with_fallback(claim, necessity_result)
                 if verified_result is not None:
-                    return verified_result
+                    if (
+                        verified_result.proven
+                        or verified_result.is_definitive_disproof
+                    ):
+                        return verified_result
+                    logger.warning(
+                        "Fallback prover did not confirm necessity proof; "
+                        "keeping derived result"
+                    )
             except Exception as e:
                 logger.warning(f"Fallback prover failed: {e}")
 
@@ -535,26 +543,33 @@ class NecessityProofIntegrator:
 
         if hasattr(self.fallback_prover, "prove_claim"):
             fallback_dict = self.fallback_prover.prove_claim(claim.claim_text)
+            prover_name = fallback_dict.get("prover", "hybrid")
+            normalized_prover_name = prover_name.lower()
+            counter_example = fallback_dict.get("counter_example")
             fallback_result = ProofResult(
                 spec=FormalSpec(claim, "Fallback proof", "", {}),
                 proven=fallback_dict.get("proven", False),
                 proof_time_ms=fallback_dict.get("time_ms", 0)
                 + necessity_result.proof_time_ms,
                 error_message=fallback_dict.get("error", None),
-                counter_example=fallback_dict.get("counter_example", {}),
+                counter_example=counter_example,
                 proof_output=(
                     f"Necessity + Fallback: {fallback_dict.get('prover', 'unknown')}"
                 ),
-                prover_name=fallback_dict.get("prover", "hybrid"),
+                prover_name=prover_name,
                 solver_status=fallback_dict.get(
                     "solver_status",
                     "smt_proved"
-                    if fallback_dict.get("prover") == "z3"
+                    if normalized_prover_name == "z3"
                     and fallback_dict.get("proven")
                     else "compiled_unchecked"
-                    if fallback_dict.get("prover") == "coq"
+                    if normalized_prover_name == "coq"
                     and fallback_dict.get("proven")
-                    else "refuted",
+                    else "smt_refuted"
+                    if normalized_prover_name == "z3" and counter_example
+                    else "refuted"
+                    if counter_example
+                    else "inconclusive",
                 ),
                 checker_name=fallback_dict.get("checker_name"),
                 assumptions_present=fallback_dict.get("assumptions_present", False),
