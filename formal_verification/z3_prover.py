@@ -519,7 +519,16 @@ class HybridProver:
             proof_output=f"Prover: {result['prover']}",
             counter_example=result.get('counter_example', {}),
             prover_name=result['prover'],
-            solver_status="proved" if result['proven'] else "refuted",
+            solver_status=result.get(
+                'solver_status',
+                "smt_proved"
+                if result['prover'] == "z3" and result['proven']
+                else "machine_checked"
+                if result['prover'] == "coq" and result['proven']
+                else "refuted"
+            ),
+            checker_name=result.get('checker_name'),
+            assumptions_present=result.get('assumptions_present', False),
         )
         
         self.learner.record_proof_attempt(claim, result['prover'], learning_result, code)
@@ -540,7 +549,16 @@ class HybridProver:
                 proof_output=f"Prover: {alternative_result['prover']}",
                 counter_example=alternative_result.get('counter_example', {}),
                 prover_name=alternative_result['prover'],
-                solver_status="proved" if alternative_result['proven'] else "refuted",
+                solver_status=alternative_result.get(
+                    'solver_status',
+                    "smt_proved"
+                    if alternative_result['prover'] == "z3" and alternative_result['proven']
+                    else "machine_checked"
+                    if alternative_result['prover'] == "coq" and alternative_result['proven']
+                    else "refuted"
+                ),
+                checker_name=alternative_result.get('checker_name'),
+                assumptions_present=alternative_result.get('assumptions_present', False),
             )
             
             self.learner.record_proof_attempt(claim, alternative_result['prover'], alt_learning_result, code)
@@ -615,7 +633,10 @@ class HybridProver:
             'proven': result.proven,
             'prover': 'coq',
             'time_ms': result.proof_time_ms,
-            'error': result.error_message
+            'error': result.error_message,
+            'solver_status': result.solver_status,
+            'checker_name': result.checker_name,
+            'assumptions_present': result.assumptions_present,
         }
     
     def _prove_with_z3(self, claim_text: str) -> Dict[str, Any]:
@@ -632,5 +653,6 @@ class HybridProver:
             'prover': 'z3',
             'time_ms': result.time_ms,
             'counter_example': result.model,
-            'statistics': result.statistics
+            'statistics': result.statistics,
+            'solver_status': "smt_proved" if result.result == "valid" else "smt_refuted",
         }

@@ -7,6 +7,16 @@ import dspy
 logger = logging.getLogger(__name__)
 
 
+def _normalize_dissonance_label(label: Optional[str]) -> str:
+    """Normalize free-form dissonance labels into yes/no."""
+    normalized = (label or "no").strip().lower()
+    if "yes" in normalized and "no" not in normalized:
+        return "yes"
+    if "no" in normalized:
+        return "no"
+    return "no"
+
+
 def evaluate(
     module: dspy.Module,
     dataset: List[dspy.Example],
@@ -101,15 +111,8 @@ def agreement_rate(
             pred2 = agent2(text1=example.text1, text2=example.text2)
             
             # Compare dissonance detection
-            dissonance1 = (pred1.has_dissonance or "no").strip().lower()
-            dissonance2 = (pred2.has_dissonance or "no").strip().lower()
-            
-            # Normalize
-            for d in [dissonance1, dissonance2]:
-                if "yes" in d and "no" not in d:
-                    d = "yes"
-                elif "no" in d:
-                    d = "no"
+            dissonance1 = _normalize_dissonance_label(getattr(pred1, "has_dissonance", "no"))
+            dissonance2 = _normalize_dissonance_label(getattr(pred2, "has_dissonance", "no"))
             
             if dissonance1 == dissonance2:
                 agreements += 1
@@ -235,14 +238,10 @@ def analyze_errors(
             if score < 1.0 and hasattr(example, "has_dissonance"):
                 errors["total_errors"] += 1
                 
-                truth_dissonance = example.has_dissonance.lower()
-                pred_dissonance = (prediction.has_dissonance or "no").lower()
-                
-                # Normalize
-                if "yes" in pred_dissonance:
-                    pred_dissonance = "yes"
-                elif "no" in pred_dissonance:
-                    pred_dissonance = "no"
+                truth_dissonance = _normalize_dissonance_label(example.has_dissonance)
+                pred_dissonance = _normalize_dissonance_label(
+                    getattr(prediction, "has_dissonance", "no")
+                )
                 
                 if truth_dissonance == "no" and pred_dissonance == "yes":
                     errors["false_positives"].append({

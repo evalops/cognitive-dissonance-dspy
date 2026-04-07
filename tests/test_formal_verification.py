@@ -142,8 +142,8 @@ class TestCoqProver:
     
     def test_prove_specification_no_coq(self):
         """Test proof attempt when Coq is not available."""
-        with patch.object(CoqProver, '_check_coq_installation', return_value=False):
-            prover = CoqProver()
+        with patch.object(CoqProver, '_check_binary', return_value=False):
+            prover = CoqProver(use_cache=False)
             
             claim = Claim("test", "test claim", PropertyType.CORRECTNESS, 0.5, time.time())
             spec = FormalSpec(claim, "test spec", "test coq code", {})
@@ -155,17 +155,18 @@ class TestCoqProver:
             assert result.proof_time_ms == 0
     
     @patch('subprocess.run')
-    @patch('tempfile.NamedTemporaryFile')
-    def test_successful_proof(self, mock_tempfile, mock_run):
+    def test_successful_proof(self, mock_run):
         """Test successful proof execution."""
-        # Mock temporary file
-        mock_tempfile.return_value.__enter__.return_value.name = "/tmp/test.v"
-        
-        # Mock successful coqc execution
-        mock_run.return_value.returncode = 0
-        
-        with patch.object(CoqProver, '_check_coq_installation', return_value=True):
-            prover = CoqProver()
+        compile_result = Mock(returncode=0, stdout=b"", stderr=b"")
+        check_result = Mock(returncode=0, stdout=b"", stderr=b"")
+        mock_run.side_effect = [compile_result, check_result]
+
+        with patch.object(
+            CoqProver,
+            '_check_binary',
+            side_effect=lambda binary: binary in {"coqc", "coqchk"},
+        ):
+            prover = CoqProver(use_cache=False)
             
             claim = Claim("test", "test claim", PropertyType.CORRECTNESS, 0.5, time.time())
             spec = FormalSpec(claim, "test spec", "Theorem test : True. Proof. exact I. Qed.", {})
@@ -175,20 +176,21 @@ class TestCoqProver:
             assert result.proven is True
             assert result.error_message is None
             assert result.proof_time_ms > 0
+            assert result.solver_status == "machine_checked"
+            assert result.checker_name == "coqchk"
     
-    @patch('subprocess.run')  
-    @patch('tempfile.NamedTemporaryFile')
-    def test_failed_proof(self, mock_tempfile, mock_run):
+    @patch('subprocess.run')
+    def test_failed_proof(self, mock_run):
         """Test failed proof execution."""
-        # Mock temporary file
-        mock_tempfile.return_value.__enter__.return_value.name = "/tmp/test.v"
-        
-        # Mock failed coqc execution
         mock_run.return_value.returncode = 1
         mock_run.return_value.stderr = b"Error: Unable to prove theorem"
         
-        with patch.object(CoqProver, '_check_coq_installation', return_value=True):
-            prover = CoqProver()
+        with patch.object(
+            CoqProver,
+            '_check_binary',
+            side_effect=lambda binary: binary in {"coqc", "coqchk"},
+        ):
+            prover = CoqProver(use_cache=False)
             
             claim = Claim("test", "test claim", PropertyType.CORRECTNESS, 0.5, time.time())
             spec = FormalSpec(claim, "test spec", "Theorem false : False. Proof. Qed.", {})
@@ -198,6 +200,30 @@ class TestCoqProver:
             assert result.proven is False
             assert "Unable to prove theorem" in result.error_message
             assert result.proof_time_ms > 0
+            assert result.solver_status == "refuted"
+
+    def test_assumption_based_spec_is_not_marked_proven(self):
+        """Specs with Admitted or Axiom should not count as proofs."""
+        with patch.object(
+            CoqProver,
+            '_check_binary',
+            side_effect=lambda binary: binary in {"coqc", "coqchk"},
+        ):
+            prover = CoqProver(use_cache=False)
+
+        claim = Claim("test", "test claim", PropertyType.CORRECTNESS, 0.5, time.time())
+        spec = FormalSpec(
+            claim,
+            "test spec",
+            "Theorem test : True. Proof. Admitted.",
+            {},
+        )
+
+        result = prover.prove_specification(spec)
+
+        assert result.proven is False
+        assert result.solver_status == "formalized_unproved"
+        assert result.assumptions_present is True
 
 
 class TestConflictDetector:
@@ -278,9 +304,9 @@ class TestFormalVerificationConflictDetector:
         spec3 = FormalSpec(claim3, "spec3", "coq3", {})
         
         results = [
-            ProofResult(spec1, True, 100, None, None),   # Alice correct
-            ProofResult(spec2, True, 100, None, None),   # Alice correct  
-            ProofResult(spec3, False, 100, "error", None)  # Bob incorrect
+            ProofResult(spec1, True, 100, None, None, solver_status="machine_checked"),
+            ProofResult(spec2, True, 100, None, None, solver_status="machine_checked"),
+            ProofResult(spec3, False, 100, "error", None, solver_status="refuted"),
         ]
         
         rankings = detector._rank_agents_by_correctness(results)
@@ -295,9 +321,9 @@ class TestFormalVerificationConflictDetector:
         
         # Mock proof results
         results = [
-            Mock(proven=True, proof_time_ms=100),
-            Mock(proven=False, proof_time_ms=150, error_message="error"),
-            Mock(proven=False, proof_time_ms=75, error_message=None)
+            ProofResult(None, True, 100, None, None, solver_status="machine_checked"),
+            ProofResult(None, False, 150, "error", None, solver_status="refuted"),
+            ProofResult(None, False, 75, None, None, solver_status="formalized_unproved"),
         ]
         
         conflicts = [("conflict1", "conflict2")]
@@ -306,6 +332,7 @@ class TestFormalVerificationConflictDetector:
         
         assert summary['total_claims'] == 3
         assert summary['mathematically_proven'] == 1
+        assert summary['derived_proofs'] == 0
         assert summary['mathematically_disproven'] == 1  
         assert summary['conflicts_detected'] == 1
         assert summary['average_proof_time_ms'] == (100 + 150 + 75) / 3
@@ -321,9 +348,9 @@ class TestIntegration:
         # Mock successful and failed proofs
         def mock_proof_side_effect(spec):
             if "2 + 2 = 4" in spec.claim.claim_text:
-                return ProofResult(spec, True, 100, None, None)
+                return ProofResult(spec, True, 100, None, None, solver_status="machine_checked")
             else:
-                return ProofResult(spec, False, 100, "Proof failed", None)
+                return ProofResult(spec, False, 100, "Proof failed", None, solver_status="refuted")
         
         mock_prove.side_effect = mock_proof_side_effect
         

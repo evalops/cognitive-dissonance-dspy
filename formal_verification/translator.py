@@ -126,8 +126,16 @@ class ClaimTranslator:
     
     def _extract_function_name(self, code: str) -> str:
         """Extract function name from code."""
-        func_match = re.search(r'fn\s+(\w+)', code)
-        return func_match.group(1) if func_match else "function"
+        patterns = [
+            r"\bdef\s+(\w+)\s*\(",
+            r"\bfn\s+(\w+)\s*\(",
+            r"\bfunction\s+(\w+)\s*\(",
+        ]
+        for pattern in patterns:
+            func_match = re.search(pattern, code)
+            if func_match:
+                return func_match.group(1)
+        return "function"
     
     def _memory_safety_spec(self, claim: Claim, code: str) -> FormalSpec:
         """Generate memory safety specification."""
@@ -761,66 +769,6 @@ Admitted.
             variables={"func_name": func_name}
         )
     
-    def _extremum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate extremum finding correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly finds the extremum value"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
-
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  In output input /\\ (forall x, In x input -> x <= output).
-
-Theorem {func_name}_finds_extremum :
-  forall input, input <> nil ->
-    exists output, {func_name} input = Some output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify extremum finding correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
-    def _sum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate sum computation correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly computes the sum"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
-
-Fixpoint list_sum (l: list nat) : nat :=
-  match l with
-  | nil => 0
-  | h :: t => h + list_sum t
-  end.
-
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  output = list_sum input.
-
-Theorem {func_name}_computes_sum :
-  forall input, exists output,
-    {func_name} input = output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify sum computation correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
     def _binary_search_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
         """Generate binary search correctness specification."""
         func_name = self._extract_function_name(code)
@@ -852,66 +800,6 @@ Admitted.
             variables={"func_name": func_name}
         )
     
-    def _extremum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate extremum finding correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly finds the extremum value"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
-
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  In output input /\\ (forall x, In x input -> x <= output).
-
-Theorem {func_name}_finds_extremum :
-  forall input, input <> nil ->
-    exists output, {func_name} input = Some output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify extremum finding correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
-    def _sum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate sum computation correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly computes the sum"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
-
-Fixpoint list_sum (l: list nat) : nat :=
-  match l with
-  | nil => 0
-  | h :: t => h + list_sum t
-  end.
-
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  output = list_sum input.
-
-Theorem {func_name}_computes_sum :
-  forall input, exists output,
-    {func_name} input = output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify sum computation correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
     def _permutation_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
         """Generate permutation preservation specification."""
         func_name = self._extract_function_name(code)
@@ -929,66 +817,6 @@ Theorem {func_name}_permutation_correct :
     {func_name} input = output /\\ {func_name}_preserves_elements input output.
 Proof.
   (* Proof would verify permutation preservation *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
-    def _extremum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate extremum finding correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly finds the extremum value"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
-
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  In output input /\\ (forall x, In x input -> x <= output).
-
-Theorem {func_name}_finds_extremum :
-  forall input, input <> nil ->
-    exists output, {func_name} input = Some output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify extremum finding correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
-    def _sum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate sum computation correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly computes the sum"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
-
-Fixpoint list_sum (l: list nat) : nat :=
-  match l with
-  | nil => 0
-  | h :: t => h + list_sum t
-  end.
-
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  output = list_sum input.
-
-Theorem {func_name}_computes_sum :
-  forall input, exists output,
-    {func_name} input = output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify sum computation correctness *)
 Admitted.
 """
         

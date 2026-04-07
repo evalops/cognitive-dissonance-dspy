@@ -443,7 +443,7 @@ class NecessityBasedProver:
             counter_example=counter_example,
             proof_output=proof_output,
             prover_name="necessity",
-            solver_status="proved" if proven else "refuted",
+            solver_status="derived_proved" if proven else "derived_refuted",
         )
     
     def _generate_coq_from_necessity(self, evidence: NecessityEvidence) -> str:
@@ -496,51 +496,89 @@ class NecessityProofIntegrator:
         """
         # Try necessity-based proof first
         necessity_result = self.necessity_prover.prove_by_necessity(claim)
-        
+
+        if necessity_result.proven and self.fallback_prover:
+            verified_result = self._verify_with_fallback(claim, necessity_result)
+            if verified_result is not None:
+                return verified_result
+
         # If necessity-based proof succeeded or definitively failed, return it
         if necessity_result.proven or necessity_result.counter_example:
             logger.info("Necessity-based proof provided definitive result")
             return necessity_result
         
         # If we have a fallback prover and necessity was inconclusive, try fallback
-        if self.fallback_prover and "No mathematical necessity pattern detected" in necessity_result.error_message:
+        if (
+            self.fallback_prover
+            and necessity_result.error_message
+            and "No mathematical necessity pattern detected" in necessity_result.error_message
+        ):
             logger.info("Falling back to secondary prover for non-necessity claims")
             try:
-                if hasattr(self.fallback_prover, 'prove_claim'):
-                    # HybridProver interface
-                    fallback_dict = self.fallback_prover.prove_claim(claim.claim_text)
-                    
-                    # Convert to ProofResult format
-                    from .types import ProofResult
-                    fallback_result = ProofResult(
-                        spec=FormalSpec(claim, "Fallback proof", "", {}),
-                        proven=fallback_dict.get('proven', False),
-                        proof_time_ms=fallback_dict.get('time_ms', 0) + necessity_result.proof_time_ms,
-                        error_message=fallback_dict.get('error', None),
-                        counter_example=fallback_dict.get('counter_example', {}),
-                        proof_output=f"Necessity + Fallback: {fallback_dict.get('prover', 'unknown')}",
-                        prover_name=fallback_dict.get('prover', 'hybrid'),
-                        solver_status="proved" if fallback_dict.get('proven') else "refuted",
-                    )
+                fallback_result = self._verify_with_fallback(claim, necessity_result)
+                if fallback_result is not None:
                     return fallback_result
-                    
-                elif hasattr(self.fallback_prover, 'prove_specification'):
-                    # CoqProver interface
-                    spec = FormalSpec(claim, "Fallback proof", "Theorem fallback: True. Proof. exact I. Qed.", {})
-                    fallback_result = self.fallback_prover.prove_specification(spec)
-                    fallback_result.proof_time_ms = fallback_result.proof_time_ms + necessity_result.proof_time_ms
-                    fallback_result.proof_output = f"Necessity + {fallback_result.proof_output}"
-                    if fallback_result.prover_name is None:
-                        fallback_result.prover_name = "coq"
-                    if fallback_result.solver_status is None:
-                        fallback_result.solver_status = "proved" if fallback_result.proven else "refuted"
-                    return fallback_result
-                    
             except Exception as e:
                 logger.warning(f"Fallback prover failed: {e}")
         
         # Return the necessity result (whether successful or not)
         return necessity_result
+
+    def _verify_with_fallback(
+        self, claim: Claim, necessity_result: ProofResult
+    ) -> Optional[ProofResult]:
+        """Try to turn a derived proof result into a concrete solver result."""
+        if not self.fallback_prover:
+            return None
+
+        if hasattr(self.fallback_prover, "prove_claim"):
+            fallback_dict = self.fallback_prover.prove_claim(claim.claim_text)
+            fallback_result = ProofResult(
+                spec=FormalSpec(claim, "Fallback proof", "", {}),
+                proven=fallback_dict.get("proven", False),
+                proof_time_ms=fallback_dict.get("time_ms", 0)
+                + necessity_result.proof_time_ms,
+                error_message=fallback_dict.get("error", None),
+                counter_example=fallback_dict.get("counter_example", {}),
+                proof_output=(
+                    f"Necessity + Fallback: {fallback_dict.get('prover', 'unknown')}"
+                ),
+                prover_name=fallback_dict.get("prover", "hybrid"),
+                solver_status=fallback_dict.get(
+                    "solver_status",
+                    "smt_proved"
+                    if fallback_dict.get("prover") == "z3"
+                    and fallback_dict.get("proven")
+                    else "machine_checked"
+                    if fallback_dict.get("prover") == "coq"
+                    and fallback_dict.get("proven")
+                    else "refuted",
+                ),
+                checker_name=fallback_dict.get("checker_name"),
+                assumptions_present=fallback_dict.get("assumptions_present", False),
+            )
+            return fallback_result
+
+        if hasattr(self.fallback_prover, "prove_specification"):
+            from .translator import ClaimTranslator
+
+            translator = ClaimTranslator()
+            spec = translator.translate(claim, "")
+            if not spec:
+                return None
+
+            fallback_result = self.fallback_prover.prove_specification(spec)
+            fallback_result.proof_time_ms = (
+                fallback_result.proof_time_ms + necessity_result.proof_time_ms
+            )
+            fallback_result.proof_output = "Necessity + " + (
+                fallback_result.proof_output or ""
+            )
+            if fallback_result.prover_name is None:
+                fallback_result.prover_name = "coq"
+            return fallback_result
+
+        return None
 
 
 def enhance_prover_with_necessity(existing_prover) -> NecessityProofIntegrator:

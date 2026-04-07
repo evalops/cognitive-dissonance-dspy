@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-import os
 import time
 from typing import Dict, Optional, Any
 from pathlib import Path
@@ -80,6 +79,8 @@ class ProofCache:
                     prover_name=data.get("prover_name"),
                     solver_status=data.get("solver_status"),
                     auto_repaired=data.get("auto_repaired", False),
+                    assumptions_present=data.get("assumptions_present", False),
+                    checker_name=data.get("checker_name"),
                 )
                 
                 # Add to memory cache
@@ -121,6 +122,8 @@ class ProofCache:
                 "prover_name": result.prover_name,
                 "solver_status": result.solver_status,
                 "auto_repaired": result.auto_repaired,
+                "assumptions_present": result.assumptions_present,
+                "checker_name": result.checker_name,
                 "cached_at": time.time()
             }
             

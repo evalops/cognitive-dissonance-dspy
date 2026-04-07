@@ -92,9 +92,10 @@ def setup_logging(level: str = "INFO") -> None:
     """Setup logging configuration."""
     # Configure basic logging
     logging.basicConfig(
-        level=logging.INFO,  # Set root level to INFO
+        level=getattr(logging, level.upper()),
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
+        force=True,
     )
 
     # Set our application loggers to the requested level

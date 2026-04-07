@@ -1,6 +1,6 @@
 # Formal Verification Framework
 
-A comprehensive formal verification system that integrates with DSPy agents to provide mathematical certainty in cognitive dissonance resolution. This framework moves beyond probabilistic "best guess" reconciliation to achieve mathematical proof where possible.
+A comprehensive formal verification system that integrates with DSPy agents to provide mathematically grounded conflict resolution. Machine-checked proofs are reported separately from derived or assumption-based results so the system does not overstate certainty.
 
 ## Core Philosophy
 

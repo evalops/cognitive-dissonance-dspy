@@ -45,3 +45,32 @@ class ProofResult:
     prover_name: Optional[str] = None
     solver_status: Optional[str] = None
     auto_repaired: bool = False
+    assumptions_present: bool = False
+    checker_name: Optional[str] = None
+
+    @property
+    def is_machine_checked(self) -> bool:
+        """Whether this result is backed by an independent proof checker."""
+        return self.proven and self.solver_status == "machine_checked"
+
+    @property
+    def is_definitive_disproof(self) -> bool:
+        """Whether this result contains a concrete refutation."""
+        return (
+            not self.proven
+            and self.solver_status in {"refuted", "smt_refuted", "machine_refuted"}
+        )
+
+    @property
+    def is_formalized_unproved(self) -> bool:
+        """Whether the claim was formalized but remains unchecked or assumption-based."""
+        return self.solver_status in {
+            "formalized_unproved",
+            "compiled_unchecked",
+            "checker_failed",
+        }
+
+    @property
+    def establishes_ground_truth(self) -> bool:
+        """Whether this result is strong enough to count as ground truth."""
+        return self.is_machine_checked and not self.assumptions_present

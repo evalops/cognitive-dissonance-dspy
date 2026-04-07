@@ -318,10 +318,18 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
                 numpy_module.random.set_state(numpy_state)
 
     def _determine_evidence_status(self, proof_result: ProofResult) -> EvidenceStatus:
-        if proof_result.proven:
+        if proof_result.is_machine_checked or proof_result.solver_status == "smt_proved":
             return EvidenceStatus.PROVEN
-        if proof_result.counter_example:
+        if proof_result.is_definitive_disproof:
             return EvidenceStatus.DISPROVEN
+        if proof_result.solver_status in {
+            "derived_proved",
+            "derived_refuted",
+            "formalized_unproved",
+            "compiled_unchecked",
+            "checker_failed",
+        }:
+            return EvidenceStatus.INCONCLUSIVE
         if proof_result.error_message:
             message = proof_result.error_message.lower()
             if any(term in message for term in ["counter", "refuted", "contradiction"]):
@@ -350,7 +358,7 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
 
         return MathematicalEvidence(
             claim_text=proof_result.spec.claim.claim_text,
-            proven=proof_result.proven,
+            proven=status == EvidenceStatus.PROVEN,
             proof_time_ms=proof_result.proof_time_ms,
             prover_used=prover_used,
             status=status,

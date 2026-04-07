@@ -1,9 +1,11 @@
 """Coq theorem prover interface for formal verification."""
 
+import re
 import subprocess
 import tempfile
 import time
 import logging
+from pathlib import Path
 from typing import Optional
 
 from .types import FormalSpec, ProofResult
@@ -25,19 +27,51 @@ class CoqProver:
         self.timeout_seconds = timeout_seconds
         self.use_cache = use_cache
         self.cache = ProofCache() if use_cache else None
-        self.coq_available = self._check_coq_installation()
+        self.coq_available = self._check_binary("coqc")
+        self.coqchk_available = self._check_binary("coqchk")
         
         if not self.coq_available:
             logger.warning("Coq theorem prover not available")
+        elif not self.coqchk_available:
+            logger.warning("coqchk not available; compiled proofs will remain unchecked")
     
-    def _check_coq_installation(self) -> bool:
-        """Check if Coq is installed and available."""
+    def _check_binary(self, binary: str) -> bool:
+        """Check if a Coq binary is installed and available."""
         try:
-            result = subprocess.run(['coqc', '--version'], 
-                                  capture_output=True, timeout=5)
+            result = subprocess.run(
+                [binary, "--version"], capture_output=True, timeout=5
+            )
             return result.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError):
             return False
+
+    def _check_coq_installation(self) -> bool:
+        """Backward-compatible alias for tests and older callers."""
+        return self._check_binary("coqc")
+
+    def _detect_unverified_assumptions(self, coq_code: str) -> list[str]:
+        """Detect assumptions that invalidate proof soundness claims."""
+        markers: list[str] = []
+        patterns = {
+            "Admitted": r"\bAdmitted\.",
+            "Axiom": r"\bAxiom\b",
+            "Axioms": r"\bAxioms\b",
+            "Parameter": r"\bParameter\b",
+            "Parameters": r"\bParameters\b",
+        }
+        for label, pattern in patterns.items():
+            if re.search(pattern, coq_code):
+                markers.append(label)
+        return markers
+
+    def _run_coqchk(self, artifact_path: Path, cwd: str) -> subprocess.CompletedProcess:
+        """Run coqchk against a compiled .vo artifact."""
+        return subprocess.run(
+            ["coqchk", artifact_path.name],
+            capture_output=True,
+            timeout=self.timeout_seconds,
+            cwd=cwd,
+        )
     
     def prove_specification(self, spec: FormalSpec) -> ProofResult:
         """Attempt to prove a formal specification using Coq.
@@ -67,55 +101,123 @@ class CoqProver:
             )
         
         start_time = time.time()
-        
-        # Create temporary file with Coq code
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.v', delete=False) as f:
-            f.write(spec.coq_code)
-            temp_file = f.name
-        
+        assumptions = self._detect_unverified_assumptions(spec.coq_code)
+        if assumptions:
+            return ProofResult(
+                spec=spec,
+                proven=False,
+                proof_time_ms=(time.time() - start_time) * 1000,
+                error_message=(
+                    "Specification contains unverified assumptions: "
+                    + ", ".join(assumptions)
+                ),
+                counter_example=None,
+                proof_output="",
+                prover_name="coq",
+                solver_status="formalized_unproved",
+                assumptions_present=True,
+            )
+
         try:
-            # Run Coq compiler
-            result = subprocess.run([
-                'coqc', '-q', temp_file
-            ], capture_output=True, timeout=self.timeout_seconds)
-            
-            proof_time = (time.time() - start_time) * 1000
-            
-            if result.returncode == 0:
-                logger.debug(f"Proof successful for: {spec.spec_text}")
-                proof_result = ProofResult(
-                    spec=spec,
-                    proven=True,
-                    proof_time_ms=proof_time,
-                    error_message=None,
-                    counter_example=None,
-                    proof_output=result.stdout.decode('utf-8') if result.stdout else "",
-                    prover_name="coq",
-                    solver_status="proved",
+            with tempfile.TemporaryDirectory() as temp_dir:
+                source_path = Path(temp_dir) / "proof.v"
+                artifact_path = source_path.with_suffix(".vo")
+                source_path.write_text(spec.coq_code, encoding="utf-8")
+
+                compile_result = subprocess.run(
+                    ["coqc", "-q", source_path.name],
+                    capture_output=True,
+                    timeout=self.timeout_seconds,
+                    cwd=temp_dir,
                 )
-            else:
-                error_msg = result.stderr.decode('utf-8') if result.stderr else "Proof failed"
-                logger.debug(f"Proof failed for: {spec.spec_text}, error: {error_msg[:100]}")
-                
-                proof_result = ProofResult(
-                    spec=spec,
-                    proven=False,
-                    proof_time_ms=proof_time,
-                    error_message=error_msg,
-                    counter_example=self._extract_counter_example(error_msg),
-                    proof_output=result.stdout.decode('utf-8') if result.stdout else "",
-                    prover_name="coq",
-                    solver_status="refuted",
-                )
-            
-            # Cache the result
-            if self.use_cache and self.cache:
-                self.cache.put(spec, proof_result)
-            
-            return proof_result
-        
+
+                proof_time = (time.time() - start_time) * 1000
+                stdout = compile_result.stdout.decode("utf-8") if compile_result.stdout else ""
+
+                if compile_result.returncode != 0:
+                    error_msg = (
+                        compile_result.stderr.decode("utf-8")
+                        if compile_result.stderr
+                        else "Proof failed"
+                    )
+                    logger.debug(
+                        "Proof failed for: %s, error: %s",
+                        spec.spec_text,
+                        error_msg[:100],
+                    )
+                    proof_result = ProofResult(
+                        spec=spec,
+                        proven=False,
+                        proof_time_ms=proof_time,
+                        error_message=error_msg,
+                        counter_example=self._extract_counter_example(error_msg),
+                        proof_output=stdout,
+                        prover_name="coq",
+                        solver_status="machine_refuted"
+                        if self._extract_counter_example(error_msg)
+                        else "refuted",
+                    )
+                elif not self.coqchk_available:
+                    proof_result = ProofResult(
+                        spec=spec,
+                        proven=False,
+                        proof_time_ms=proof_time,
+                        error_message=(
+                            "Proof compiled with coqc but coqchk is not available for "
+                            "independent validation"
+                        ),
+                        counter_example=None,
+                        proof_output=stdout,
+                        prover_name="coq",
+                        solver_status="compiled_unchecked",
+                    )
+                else:
+                    check_result = self._run_coqchk(artifact_path, temp_dir)
+                    checker_output = (
+                        check_result.stdout.decode("utf-8") if check_result.stdout else ""
+                    )
+                    combined_output = "\n".join(
+                        part for part in [stdout, checker_output] if part
+                    )
+
+                    if check_result.returncode == 0:
+                        logger.debug("Machine-checked proof successful for: %s", spec.spec_text)
+                        proof_result = ProofResult(
+                            spec=spec,
+                            proven=True,
+                            proof_time_ms=proof_time,
+                            error_message=None,
+                            counter_example=None,
+                            proof_output=combined_output,
+                            prover_name="coq",
+                            solver_status="machine_checked",
+                            checker_name="coqchk",
+                        )
+                    else:
+                        error_msg = (
+                            check_result.stderr.decode("utf-8")
+                            if check_result.stderr
+                            else "coqchk validation failed"
+                        )
+                        proof_result = ProofResult(
+                            spec=spec,
+                            proven=False,
+                            proof_time_ms=proof_time,
+                            error_message=error_msg,
+                            counter_example=None,
+                            proof_output=combined_output,
+                            prover_name="coq",
+                            solver_status="checker_failed",
+                            checker_name="coqchk",
+                        )
+
+                if self.use_cache and self.cache:
+                    self.cache.put(spec, proof_result)
+
+                return proof_result
+
         except subprocess.TimeoutExpired:
-            logger.warning(f"Proof timeout for: {spec.spec_text}")
+            logger.warning("Proof timeout for: %s", spec.spec_text)
             return ProofResult(
                 spec=spec,
                 proven=False,
@@ -125,15 +227,8 @@ class CoqProver:
                 proof_output="",
                 prover_name="coq",
                 solver_status="timeout",
+                assumptions_present=bool(assumptions),
             )
-        
-        finally:
-            # Clean up temporary file
-            try:
-                import os
-                os.unlink(temp_file)
-            except Exception:
-                pass
     
     def _extract_counter_example(self, error_msg: str) -> Optional[str]:
         """Extract counter-example from Coq error message if available.
