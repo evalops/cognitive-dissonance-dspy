@@ -9,15 +9,10 @@ This demonstrates more sophisticated formal verification capabilities including:
 - Graph theory basics
 """
 
-import time
 import logging
-from typing import List
+import time
 
-from formal_verification import (
-    FormalVerificationConflictDetector,
-    Claim,
-    PropertyType
-)
+from formal_verification import Claim, FormalVerificationConflictDetector, PropertyType
 
 # Setup logging
 logging.basicConfig(
@@ -27,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def create_advanced_mathematical_claims() -> List[Claim]:
+def create_advanced_mathematical_claims() -> list[Claim]:
     """Create advanced mathematical claims for complex theorem proving."""
     return [
         # Number theory - prime properties
@@ -100,7 +95,7 @@ def create_advanced_mathematical_claims() -> List[Claim]:
     ]
 
 
-def create_complexity_claims() -> List[Claim]:
+def create_complexity_claims() -> list[Claim]:
     """Create time complexity claims for algorithm analysis."""
     return [
         Claim(

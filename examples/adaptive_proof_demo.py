@@ -6,16 +6,13 @@ This shows how the framework improves its proof capabilities over time
 by learning successful proof strategies and applying them to new problems.
 """
 
-import time
 import logging
+import time
 
-from formal_verification import (
-    FormalVerificationConflictDetector,
-    Claim,
-    PropertyType
-)
-from formal_verification.proof_strategies import AdaptiveProver
 from formal_verification.code_analyzer import CodeAnalyzer, SpecificationSynthesizer
+from formal_verification.proof_strategies import AdaptiveProver
+
+from formal_verification import Claim, FormalVerificationConflictDetector, PropertyType
 
 # Setup logging
 logging.basicConfig(

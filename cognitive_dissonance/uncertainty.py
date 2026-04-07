@@ -2,9 +2,10 @@
 
 import logging
 import math
-from typing import Dict, List, Tuple, Optional, Any
-import numpy as np
+from typing import Any
+
 import dspy
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ class UncertaintyQuantifier:
 
     def compute_uncertainty(self,
                           prediction: dspy.Prediction,
-                          context: Optional[Dict] = None) -> Dict[str, float]:
+                          context: dict | None = None) -> dict[str, float]:
         """
         Compute multiple types of uncertainty for a prediction.
 
@@ -69,7 +70,7 @@ class UncertaintyQuantifier:
 
     def _compute_epistemic_uncertainty(self,
                                      prediction: dspy.Prediction,
-                                     context: Optional[Dict] = None) -> float:
+                                     context: dict | None = None) -> float:
         """
         Compute epistemic (model) uncertainty.
         This represents uncertainty about the model's knowledge.
@@ -108,7 +109,7 @@ class UncertaintyQuantifier:
 
     def _compute_aleatoric_uncertainty(self,
                                      prediction: dspy.Prediction,
-                                     context: Optional[Dict] = None) -> float:
+                                     context: dict | None = None) -> float:
         """
         Compute aleatoric (data) uncertainty.
         This represents inherent uncertainty in the data/task.
@@ -208,7 +209,7 @@ class UncertaintyQuantifier:
         }
         return conf_map.get(confidence.lower(), 0.5)
 
-    def calibrate(self, predictions: List[dspy.Prediction], ground_truth: List[bool]):
+    def calibrate(self, predictions: list[dspy.Prediction], ground_truth: list[bool]):
         """
         Calibrate confidence scores using ground truth data.
 
@@ -237,7 +238,7 @@ class UncertaintyQuantifier:
 
         logger.info("Calibration complete")
 
-    def _compute_calibration_curve(self) -> List[Tuple[float, float]]:
+    def _compute_calibration_curve(self) -> list[tuple[float, float]]:
         """Compute calibration curve from calibration data."""
         if not self.calibration_data:
             return []
@@ -276,7 +277,7 @@ class UncertaintyQuantifier:
         # Simple linear interpolation (could be improved)
         return closest_point[1]
 
-    def get_calibration_metrics(self) -> Dict[str, float]:
+    def get_calibration_metrics(self) -> dict[str, float]:
         """Get calibration quality metrics."""
         if not self.is_calibrated:
             return {'calibration_error': float('inf')}
@@ -305,7 +306,7 @@ class EnhancedConfidenceScorer:
     Enhanced confidence scoring system that integrates uncertainty quantification.
     """
 
-    def __init__(self, uncertainty_quantifier: Optional[UncertaintyQuantifier] = None):
+    def __init__(self, uncertainty_quantifier: UncertaintyQuantifier | None = None):
         """
         Initialize enhanced confidence scorer.
 
@@ -317,7 +318,7 @@ class EnhancedConfidenceScorer:
 
     def score_prediction(self,
                         prediction: dspy.Prediction,
-                        context: Optional[Dict] = None) -> Dict[str, float]:
+                        context: dict | None = None) -> dict[str, float]:
         """
         Compute comprehensive confidence scoring for a prediction.
 
@@ -360,7 +361,7 @@ class EnhancedConfidenceScorer:
 
     def _compute_reliability_score(self,
                                  prediction: dspy.Prediction,
-                                 uncertainty: Dict[str, float]) -> float:
+                                 uncertainty: dict[str, float]) -> float:
         """
         Compute overall reliability score combining confidence and uncertainty.
 
@@ -395,7 +396,7 @@ class EnhancedConfidenceScorer:
         reliability = base_reliability - uncertainty_penalty + consistency_bonus + ensemble_bonus
         return max(0.0, min(1.0, reliability))
 
-    def calibrate_scorer(self, predictions: List[dspy.Prediction], ground_truth: List[bool]):
+    def calibrate_scorer(self, predictions: list[dspy.Prediction], ground_truth: list[bool]):
         """
         Calibrate the confidence scorer using ground truth data.
 
@@ -406,7 +407,7 @@ class EnhancedConfidenceScorer:
         self.uncertainty_quantifier.calibrate(predictions, ground_truth)
         logger.info("Confidence scorer calibration complete")
 
-    def get_scoring_summary(self, predictions: List[dspy.Prediction]) -> Dict[str, Any]:
+    def get_scoring_summary(self, predictions: list[dspy.Prediction]) -> dict[str, Any]:
         """
         Get summary statistics for a set of predictions.
 
@@ -434,7 +435,7 @@ class EnhancedConfidenceScorer:
 
         return summary
 
-    def _compute_confidence_distribution(self, scores: List[Dict[str, float]]) -> Dict[str, int]:
+    def _compute_confidence_distribution(self, scores: list[dict[str, float]]) -> dict[str, int]:
         """Compute distribution of confidence categories."""
         distribution = {
             'very_high': 0,

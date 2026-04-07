@@ -1,17 +1,18 @@
 """Tests for necessity-based proof discovery system."""
 
-import pytest
 import time
 from unittest.mock import Mock
 
+import pytest
+
+from formal_verification import Claim, PropertyType
 from formal_verification.necessity_prover import (
     MathematicalStructureAnalyzer,
     NecessityBasedProver,
     NecessityProofIntegrator,
     NecessityType,
-    enhance_prover_with_necessity
+    enhance_prover_with_necessity,
 )
-from formal_verification import Claim, PropertyType
 
 
 class TestMathematicalStructureAnalyzer:

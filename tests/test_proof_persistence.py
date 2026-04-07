@@ -3,7 +3,13 @@
 import json
 import time
 
-from formal_verification import Claim, FormalSpec, ProofResult, ProofStatus, PropertyType
+from formal_verification import (
+    Claim,
+    FormalSpec,
+    ProofResult,
+    ProofStatus,
+    PropertyType,
+)
 from formal_verification.proof_cache import CACHE_SCHEMA_VERSION, ProofCache
 from formal_verification.proof_learning import (
     PROOF_LEARNING_SCHEMA_VERSION,

@@ -6,9 +6,8 @@ helper lemmas that would enable the proof to succeed. This is a foundational
 improvement that moves from manual proof repair to automated proof synthesis.
 """
 
-import re
 import logging
-from typing import List, Dict, Optional
+import re
 from dataclasses import dataclass
 from enum import Enum
 
@@ -40,16 +39,16 @@ class SuggestedLemma:
     reasoning: str
     confidence: float
     failure_mode: FailureMode
-    dependencies: List[str]  # Other lemmas this depends on
+    dependencies: list[str]  # Other lemmas this depends on
 
 
 @dataclass
 class ProofFailureAnalysis:
     """Analysis of why a proof failed."""
     failure_mode: FailureMode
-    error_location: Optional[str]
-    missing_concepts: List[str]
-    suggested_lemmas: List[SuggestedLemma]
+    error_location: str | None
+    missing_concepts: list[str]
+    suggested_lemmas: list[SuggestedLemma]
     repair_strategy: str
 
 
@@ -155,7 +154,7 @@ class LemmaDiscoveryEngine:
             repair_strategy=self._generate_repair_strategy(failure_mode, suggested_lemmas)
         )
 
-    def _generate_induction_lemmas(self, claim: Claim) -> List[SuggestedLemma]:
+    def _generate_induction_lemmas(self, claim: Claim) -> list[SuggestedLemma]:
         """Generate induction-related lemmas."""
         lemmas = []
         claim_text = claim.claim_text.lower()
@@ -237,7 +236,7 @@ Qed.
 
         return lemmas
 
-    def _generate_boundedness_lemmas(self, claim: Claim) -> List[SuggestedLemma]:
+    def _generate_boundedness_lemmas(self, claim: Claim) -> list[SuggestedLemma]:
         """Generate lemmas about bounds and ranges."""
         lemmas = []
         claim_text = claim.claim_text.lower()
@@ -286,7 +285,7 @@ Qed.
 
         return lemmas
 
-    def _generate_helper_lemmas(self, claim: Claim) -> List[SuggestedLemma]:
+    def _generate_helper_lemmas(self, claim: Claim) -> list[SuggestedLemma]:
         """Generate general helper lemmas."""
         lemmas = []
         claim_text = claim.claim_text.lower()
@@ -348,7 +347,7 @@ Qed.
 
         return lemmas
 
-    def _generate_equality_lemmas(self, claim: Claim) -> List[SuggestedLemma]:
+    def _generate_equality_lemmas(self, claim: Claim) -> list[SuggestedLemma]:
         """Generate lemmas about equality and unification."""
         lemmas = []
 
@@ -387,7 +386,7 @@ Qed.
 
         return lemmas
 
-    def _generate_fundamental_lemmas(self, claim: Claim) -> List[SuggestedLemma]:
+    def _generate_fundamental_lemmas(self, claim: Claim) -> list[SuggestedLemma]:
         """Generate fundamental mathematical lemmas that are often needed."""
         lemmas = []
         claim_text = claim.claim_text.lower()
@@ -430,7 +429,7 @@ Qed.
 
         return lemmas
 
-    def _initialize_lemma_templates(self) -> Dict[str, str]:
+    def _initialize_lemma_templates(self) -> dict[str, str]:
         """Initialize templates for common lemma patterns."""
         return {
             'induction_base': "Lemma {name}_base : P 0.\nProof.\n  {proof}\nQed.",
@@ -440,7 +439,7 @@ Qed.
             'monotonicity': "Lemma {op}_monotonic : forall a b c, a <= b -> {op} a c <= {op} b c.\nProof.\n  {proof}\nQed."
         }
 
-    def _extract_error_location(self, error_message: str) -> Optional[str]:
+    def _extract_error_location(self, error_message: str) -> str | None:
         """Extract the location where the error occurred."""
         if not error_message:
             return None
@@ -457,7 +456,7 @@ Qed.
 
         return None
 
-    def _identify_missing_concepts(self, claim: Claim, failed_result: ProofResult) -> List[str]:
+    def _identify_missing_concepts(self, claim: Claim, failed_result: ProofResult) -> list[str]:
         """Identify mathematical concepts that might be missing."""
         concepts = []
         claim_text = claim.claim_text.lower()
@@ -479,7 +478,7 @@ Qed.
 
         return concepts
 
-    def _generate_repair_strategy(self, failure_mode: FailureMode, lemmas: List[SuggestedLemma]) -> str:
+    def _generate_repair_strategy(self, failure_mode: FailureMode, lemmas: list[SuggestedLemma]) -> str:
         """Generate a human-readable repair strategy."""
         if not lemmas:
             return f"No automatic repair available for {failure_mode.value}. Manual intervention required."
@@ -503,7 +502,7 @@ class AutomatedProofRepairer:
     def __init__(self):
         self.lemma_engine = LemmaDiscoveryEngine()
 
-    def repair_failed_proof(self, failed_result: ProofResult, original_spec: FormalSpec) -> Optional[FormalSpec]:
+    def repair_failed_proof(self, failed_result: ProofResult, original_spec: FormalSpec) -> FormalSpec | None:
         """
         Attempt to repair a failed proof automatically.
 
@@ -536,7 +535,7 @@ class AutomatedProofRepairer:
 
         return repaired_spec
 
-    def _integrate_lemmas(self, original_coq: str, lemmas: List[SuggestedLemma]) -> str:
+    def _integrate_lemmas(self, original_coq: str, lemmas: list[SuggestedLemma]) -> str:
         """Integrate discovered lemmas into the original Coq code."""
         lines = [
             "(* Original theorem with auto-discovered supporting lemmas *)",

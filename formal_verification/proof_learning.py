@@ -13,7 +13,7 @@ import time
 from collections import defaultdict
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -75,7 +75,7 @@ class ProofAttempt:
     prover_used: str
     success: bool
     time_ms: float
-    error_type: Optional[str]
+    error_type: str | None
     timestamp: float
 
     def get_fingerprint(self) -> str:
@@ -225,9 +225,9 @@ class ProofStrategyLearner:
         self.data_file = Path(data_file)
         self.data_file.parent.mkdir(parents=True, exist_ok=True)
         self.feature_extractor = FeatureExtractor()
-        self.proof_history: List[ProofAttempt] = []
-        self.success_patterns: Dict[str, List[ProofAttempt]] = defaultdict(list)
-        self.failure_patterns: Dict[str, List[ProofAttempt]] = defaultdict(list)
+        self.proof_history: list[ProofAttempt] = []
+        self.success_patterns: dict[str, list[ProofAttempt]] = defaultdict(list)
+        self.failure_patterns: dict[str, list[ProofAttempt]] = defaultdict(list)
 
         # Load existing data
         self._load_history()
@@ -278,7 +278,7 @@ class ProofStrategyLearner:
             "SUCCESS" if result.proven else "FAIL",
         )
 
-    def predict_optimal_strategy(self, claim: Claim, code: str = "") -> Dict[str, Any]:
+    def predict_optimal_strategy(self, claim: Claim, code: str = "") -> dict[str, Any]:
         """Predict the optimal proving strategy for a claim."""
         features = self.feature_extractor.extract_features(claim, code)
         features.previous_success_rate = self._compute_historical_success_rate(features)
@@ -307,7 +307,7 @@ class ProofStrategyLearner:
             'suggested_tactics': strategy['tactics']
         }
 
-    def _find_similar_attempts(self, features: ProofFeatures, success_only: bool = True) -> List[ProofAttempt]:
+    def _find_similar_attempts(self, features: ProofFeatures, success_only: bool = True) -> list[ProofAttempt]:
         """Find historically similar proof attempts."""
         similar = []
         target_vector = features.to_vector()
@@ -334,7 +334,7 @@ class ProofStrategyLearner:
             return 0.0
         return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
-    def _analyze_prover_performance(self, successes: List[ProofAttempt], failures: List[ProofAttempt]) -> Dict[str, Dict[str, float]]:
+    def _analyze_prover_performance(self, successes: list[ProofAttempt], failures: list[ProofAttempt]) -> dict[str, dict[str, float]]:
         """Analyze which provers perform best on similar claims."""
         prover_stats = defaultdict(lambda: {'successes': 0, 'failures': 0, 'avg_time': 0})
 
@@ -362,7 +362,7 @@ class ProofStrategyLearner:
 
         return analysis
 
-    def _predict_proof_time(self, features: ProofFeatures, similar_successes: List[ProofAttempt]) -> float:
+    def _predict_proof_time(self, features: ProofFeatures, similar_successes: list[ProofAttempt]) -> float:
         """Predict expected proof time based on similar claims."""
         if not similar_successes:
             return 150.0  # Default estimate
@@ -376,7 +376,7 @@ class ProofStrategyLearner:
         weighted_avg = np.average(times, weights=weights)
         return max(50.0, weighted_avg)  # Minimum 50ms
 
-    def _generate_strategy(self, features: ProofFeatures, prover_analysis: Dict[str, Dict[str, float]], time_prediction: float) -> Dict[str, Any]:
+    def _generate_strategy(self, features: ProofFeatures, prover_analysis: dict[str, dict[str, float]], time_prediction: float) -> dict[str, Any]:
         """Generate optimal strategy recommendation."""
 
         if not prover_analysis:
@@ -415,7 +415,7 @@ class ProofStrategyLearner:
             'tactics': tactics
         }
 
-    def _recommend_tactics(self, features: ProofFeatures, prover: str) -> List[str]:
+    def _recommend_tactics(self, features: ProofFeatures, prover: str) -> list[str]:
         """Recommend specific proof tactics based on features."""
         tactics = []
 
@@ -463,7 +463,7 @@ class ProofStrategyLearner:
 
         return max_similarity
 
-    def _classify_error_type(self, error_message: Optional[str]) -> Optional[str]:
+    def _classify_error_type(self, error_message: str | None) -> str | None:
         """Classify the type of proof error."""
         if not error_message:
             return None
@@ -553,7 +553,7 @@ class ProofStrategyLearner:
         except Exception as e:
             logger.warning(f"Failed to save proof history: {e}")
 
-    def get_learning_stats(self) -> Dict[str, Any]:
+    def get_learning_stats(self) -> dict[str, Any]:
         """Get statistics about the learning system."""
         total_attempts = len(self.proof_history)
         successful_attempts = sum(1 for a in self.proof_history if a.success)

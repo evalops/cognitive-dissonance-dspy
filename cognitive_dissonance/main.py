@@ -5,20 +5,20 @@ import logging
 
 from .config import ExperimentConfig, setup_logging
 from .experiment import (
-    cognitive_dissonance_experiment,
     advanced_cognitive_dissonance_experiment,
+    cognitive_dissonance_experiment,
     run_ablation_study,
-    run_confidence_analysis
+    run_confidence_analysis,
 )
-from .verifier import BeliefAgent, DissonanceDetector, ReconciliationAgent
 from .mathematical_resolver import MathematicalCognitiveDissonanceResolver
+from .verifier import BeliefAgent, DissonanceDetector, ReconciliationAgent
 
 logger = logging.getLogger(__name__)
 
 
 def demo_mathematical_resolution():
     """Demonstrate mathematical proof-backed cognitive dissonance resolution."""
-    from .config import setup_logging, ExperimentConfig
+    from .config import ExperimentConfig, setup_logging
 
     setup_logging()
     config = ExperimentConfig.from_env()
@@ -112,7 +112,7 @@ def demo_mathematical_resolution():
 
 def demo_basic_usage():
     """Demonstrate basic usage of the cognitive dissonance system."""
-    from .config import setup_logging, ExperimentConfig
+    from .config import ExperimentConfig, setup_logging
 
     setup_logging()
     config = ExperimentConfig.from_env()

@@ -6,12 +6,11 @@ successfully translated to Coq specifications before being passed to the prover.
 
 import logging
 import re
-from typing import Optional, List, Tuple
 from dataclasses import dataclass
 
-from .structured_models import FormalizableClaim, ClaimCategory
-from .types import Claim, PropertyType
+from .structured_models import ClaimCategory, FormalizableClaim
 from .translator import ClaimTranslator
+from .types import Claim, PropertyType
 
 logger = logging.getLogger(__name__)
 
@@ -22,14 +21,14 @@ class GuardrailViolation:
     rule_name: str
     severity: str  # 'error', 'warning'
     message: str
-    suggestion: Optional[str] = None
+    suggestion: str | None = None
 
 
 @dataclass
 class GuardrailResult:
     """Result of guardrail validation."""
     passed: bool
-    violations: List[GuardrailViolation]
+    violations: list[GuardrailViolation]
     confidence_adjustment: float = 0.0  # Adjust confidence up/down based on checks
 
 
@@ -67,7 +66,7 @@ class ClaimGuardrails:
         Returns:
             GuardrailResult with validation status and violations
         """
-        violations: List[GuardrailViolation] = []
+        violations: list[GuardrailViolation] = []
 
         # Run all guardrail checks
         violations.extend(self._check_format_validity(claim))
@@ -102,7 +101,7 @@ class ClaimGuardrails:
 
         return result
 
-    def _check_format_validity(self, claim: FormalizableClaim) -> List[GuardrailViolation]:
+    def _check_format_validity(self, claim: FormalizableClaim) -> list[GuardrailViolation]:
         """Check that the claim format matches expected patterns for its category."""
         violations = []
 
@@ -174,7 +173,7 @@ class ClaimGuardrails:
         self,
         claim: FormalizableClaim,
         code_context: str
-    ) -> List[GuardrailViolation]:
+    ) -> list[GuardrailViolation]:
         """Check that the claim can be translated by the ClaimTranslator."""
         violations = []
 
@@ -219,7 +218,7 @@ class ClaimGuardrails:
     def _check_variable_consistency(
         self,
         claim: FormalizableClaim
-    ) -> List[GuardrailViolation]:
+    ) -> list[GuardrailViolation]:
         """Check that extracted variables match the claim text."""
         violations = []
 
@@ -279,7 +278,7 @@ class ClaimGuardrails:
     def _check_confidence_alignment(
         self,
         claim: FormalizableClaim
-    ) -> List[GuardrailViolation]:
+    ) -> list[GuardrailViolation]:
         """Check that confidence level is reasonable."""
         violations = []
 
@@ -321,7 +320,7 @@ class ClaimGuardrails:
     def _check_pattern_hints(
         self,
         claim: FormalizableClaim
-    ) -> List[GuardrailViolation]:
+    ) -> list[GuardrailViolation]:
         """Check that pattern hints are useful and accurate."""
         violations = []
 
@@ -378,7 +377,7 @@ class GuardrailWithRetry:
         self,
         text: str,
         code_context: str = ""
-    ) -> Tuple[Optional[FormalizableClaim], GuardrailResult]:
+    ) -> tuple[FormalizableClaim | None, GuardrailResult]:
         """
         Extract a claim with guardrail validation and retry on failure.
 

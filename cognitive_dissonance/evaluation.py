@@ -1,13 +1,14 @@
 """Evaluation utilities for cognitive dissonance experiments."""
 
 import logging
-from typing import List, Callable, Optional
+from collections.abc import Callable
+
 import dspy
 
 logger = logging.getLogger(__name__)
 
 
-def _normalize_dissonance_label(label: Optional[str]) -> str:
+def _normalize_dissonance_label(label: str | None) -> str:
     """Normalize free-form dissonance labels into yes/no."""
     normalized = (label or "no").strip().lower()
     if "yes" in normalized and "no" not in normalized:
@@ -19,8 +20,8 @@ def _normalize_dissonance_label(label: Optional[str]) -> str:
 
 def evaluate(
     module: dspy.Module,
-    dataset: List[dspy.Example],
-    metric: Optional[Callable] = None,
+    dataset: list[dspy.Example],
+    metric: Callable | None = None,
     display_progress: bool = True,
     return_outputs: bool = False
 ) -> float:
@@ -84,7 +85,7 @@ def evaluate(
 def agreement_rate(
     agent1: dspy.Module,
     agent2: dspy.Module,
-    dataset: List[dspy.Example]
+    dataset: list[dspy.Example]
 ) -> float:
     """
     Calculate agreement rate between two agents.
@@ -131,9 +132,9 @@ def agreement_rate(
 
 def cross_validate(
     module_class: type,
-    dataset: List[dspy.Example],
+    dataset: list[dspy.Example],
     k_folds: int = 5,
-    metric: Optional[Callable] = None,
+    metric: Callable | None = None,
     **module_kwargs
 ) -> dict:
     """
@@ -204,8 +205,8 @@ def cross_validate(
 
 def analyze_errors(
     module: dspy.Module,
-    dataset: List[dspy.Example],
-    metric: Optional[Callable] = None
+    dataset: list[dspy.Example],
+    metric: Callable | None = None
 ) -> dict:
     """
     Analyze errors made by the module.

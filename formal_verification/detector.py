@@ -1,14 +1,15 @@
 """Main formal verification cognitive dissonance detector."""
 
 import logging
-from typing import List, Dict, Tuple, Any
+from typing import Any
 
-from .types import Claim, FormalSpec, ProofResult, ProofStatus
-from .translator import ClaimTranslator
-from .prover import CoqProver
-from .lemma_discovery import AutomatedProofRepairer
 from .deep_analysis import PropertySpecificationGenerator
+from .lemma_discovery import AutomatedProofRepairer
 from .necessity_prover import enhance_prover_with_necessity
+from .prover import CoqProver
+from .translator import ClaimTranslator
+from .types import Claim, FormalSpec, ProofResult, ProofStatus
+
 try:
     from .z3_prover import HybridProver
     Z3_AVAILABLE = True
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 class ConflictDetector:
     """Detects conflicts between formal specifications."""
 
-    def detect_conflicts(self, specs: List[FormalSpec]) -> List[Tuple[FormalSpec, FormalSpec]]:
+    def detect_conflicts(self, specs: list[FormalSpec]) -> list[tuple[FormalSpec, FormalSpec]]:
         """Find pairs of specifications that directly contradict each other.
 
         Args:
@@ -130,7 +131,7 @@ class FormalVerificationConflictDetector:
         logger.info("Initialized with deep program property analysis")
 
     def _proof_result_from_solver_dict(
-        self, spec: FormalSpec, solver_result: Dict[str, Any], proof_output: str
+        self, spec: FormalSpec, solver_result: dict[str, Any], proof_output: str
     ) -> ProofResult:
         """Normalize hybrid solver dictionaries into ProofResult objects."""
         proven = solver_result.get("proven", False)
@@ -155,7 +156,7 @@ class FormalVerificationConflictDetector:
             checker_name=solver_result.get("checker_name"),
         )
 
-    def analyze_claims(self, claims: List[Claim], code: str = "") -> Dict[str, Any]:
+    def analyze_claims(self, claims: list[Claim], code: str = "") -> dict[str, Any]:
         """Analyze conflicting claims about code using formal verification.
 
         Args:
@@ -263,7 +264,7 @@ class FormalVerificationConflictDetector:
             'summary': self._generate_summary(proof_results, conflicts)
         }
 
-    def analyze_program_properties(self, code: str, language: str = "python") -> Dict[str, Any]:
+    def analyze_program_properties(self, code: str, language: str = "python") -> dict[str, Any]:
         """
         Perform deep analysis of program to discover and verify complex properties.
 
@@ -346,7 +347,7 @@ class FormalVerificationConflictDetector:
             'complex_properties_verified': True
         }
 
-    def _resolve_conflicts(self, conflicts: List, proof_results: List[ProofResult]) -> Dict[str, Any]:
+    def _resolve_conflicts(self, conflicts: list, proof_results: list[ProofResult]) -> dict[str, Any]:
         """Resolve conflicts based on formal proof results.
 
         Args:
@@ -382,7 +383,7 @@ class FormalVerificationConflictDetector:
 
         return resolution
 
-    def _rank_agents_by_correctness(self, proof_results: List[ProofResult]) -> Dict[str, float]:
+    def _rank_agents_by_correctness(self, proof_results: list[ProofResult]) -> dict[str, float]:
         """Rank agents by how many of their claims were mathematically proven.
 
         Args:
@@ -414,7 +415,7 @@ class FormalVerificationConflictDetector:
 
         return dict(sorted(rankings.items(), key=lambda x: x[1], reverse=True))
 
-    def _generate_summary(self, proof_results: List[ProofResult], conflicts: List) -> Dict[str, Any]:
+    def _generate_summary(self, proof_results: list[ProofResult], conflicts: list) -> dict[str, Any]:
         """Generate human-readable summary of analysis.
 
         Args:

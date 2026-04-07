@@ -1,22 +1,23 @@
 """Main experiment implementation for Cognitive Dissonance resolution."""
 
-from typing import List, Dict, Tuple, Any
 import logging
+from typing import Any
+
 from dspy.teleprompt import BootstrapFewShot
 
 from .config import ExperimentConfig
-from .verifier import CognitiveDissonanceResolver
 from .data import get_dev_labeled, get_train_unlabeled, validate_dataset
+from .evaluation import agreement_rate, analyze_errors, evaluate
 from .metrics import (
-    dissonance_detection_accuracy,
-    combined_metric,
     agreement_metric_factory,
     blended_metric_factory,
-    confidence_weighted_accuracy
+    combined_metric,
+    confidence_weighted_accuracy,
+    dissonance_detection_accuracy,
 )
-from .evaluation import evaluate, agreement_rate, analyze_errors
-from .optimization import create_advanced_optimizer, GEPAOptimizer
-from .uncertainty import UncertaintyQuantifier, EnhancedConfidenceScorer
+from .optimization import GEPAOptimizer, create_advanced_optimizer
+from .uncertainty import EnhancedConfidenceScorer, UncertaintyQuantifier
+from .verifier import CognitiveDissonanceResolver
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class ExperimentResults:
     """Container for experiment results."""
 
     def __init__(self):
-        self.rounds: List[Dict[str, Any]] = []
+        self.rounds: list[dict[str, Any]] = []
         self.agent_a = None
         self.agent_b = None
         self.error_analysis = {}
@@ -54,7 +55,7 @@ class ExperimentResults:
             }
         )
 
-    def get_final_accuracies(self) -> Tuple[float, float]:
+    def get_final_accuracies(self) -> tuple[float, float]:
         """Get final accuracies for both agents."""
         if not self.rounds:
             return 0.0, 0.0
@@ -73,7 +74,7 @@ class ExperimentResults:
             return 0.0
         return self.rounds[-1].get("reconciliation_quality", 0.0)
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Get experiment summary."""
         if not self.rounds:
             return {"total_rounds": 0}
@@ -468,7 +469,7 @@ def advanced_cognitive_dissonance_experiment(
 
 def run_ablation_study(
     base_config: ExperimentConfig = None,
-) -> Dict[str, ExperimentResults]:
+) -> dict[str, ExperimentResults]:
     """
     Run an ablation study with different configurations.
 
@@ -537,7 +538,7 @@ def run_ablation_study(
 
 def run_confidence_analysis(
     config: ExperimentConfig = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Analyze the impact of confidence weighting.
 

@@ -7,9 +7,8 @@ and security invariants. It's the foundation for verifying production code.
 """
 
 import ast
-import re
 import logging
-from typing import List, Dict, Optional, Set
+import re
 from dataclasses import dataclass
 from enum import Enum
 
@@ -46,8 +45,8 @@ class LoopInfo:
     """Information about a loop construct."""
     loop_type: str  # "for", "while", "do_while"
     line_number: int
-    variables_modified: Set[str]
-    invariant_candidates: List[str]
+    variables_modified: set[str]
+    invariant_candidates: list[str]
     termination_condition: str
     complexity_estimate: str
 
@@ -57,7 +56,7 @@ class ConcurrencyPattern:
     """Concurrent programming pattern detected."""
     pattern_type: str  # "lock", "atomic", "barrier", "message_passing"
     line_number: int
-    shared_variables: Set[str]
+    shared_variables: set[str]
     synchronization_mechanism: str
     race_condition_risk: float
 
@@ -84,7 +83,7 @@ class DeepProgramAnalyzer:
         self.security_patterns = self._initialize_security_patterns()
         self.algorithmic_patterns = self._initialize_algorithmic_patterns()
 
-    def analyze_program(self, code: str, language: str = "python") -> Dict[PropertyCategory, List[Claim]]:
+    def analyze_program(self, code: str, language: str = "python") -> dict[PropertyCategory, list[Claim]]:
         """
         Perform deep analysis of program to extract verifiable properties.
 
@@ -105,7 +104,7 @@ class DeepProgramAnalyzer:
             logger.warning(f"Language {language} not fully supported, using generic analysis")
             return self._analyze_generic_program(code)
 
-    def _analyze_python_program(self, code: str) -> Dict[PropertyCategory, List[Claim]]:
+    def _analyze_python_program(self, code: str) -> dict[PropertyCategory, list[Claim]]:
         """Analyze Python program for verifiable properties."""
         properties = {category: [] for category in PropertyCategory}
 
@@ -141,7 +140,7 @@ class DeepProgramAnalyzer:
 
         return properties
 
-    def _extract_memory_safety_claims(self, tree: ast.AST, code: str) -> List[Claim]:
+    def _extract_memory_safety_claims(self, tree: ast.AST, code: str) -> list[Claim]:
         """Extract memory safety claims from Python AST."""
         claims = []
 
@@ -198,7 +197,7 @@ class DeepProgramAnalyzer:
 
         return claims
 
-    def _extract_algorithmic_claims(self, tree: ast.AST, code: str) -> List[Claim]:
+    def _extract_algorithmic_claims(self, tree: ast.AST, code: str) -> list[Claim]:
         """Extract algorithmic correctness claims."""
         claims = []
 
@@ -274,7 +273,7 @@ class DeepProgramAnalyzer:
 
         return claims
 
-    def _extract_concurrency_claims(self, tree: ast.AST, code: str) -> List[Claim]:
+    def _extract_concurrency_claims(self, tree: ast.AST, code: str) -> list[Claim]:
         """Extract concurrency-related claims."""
         claims = []
 
@@ -322,7 +321,7 @@ class DeepProgramAnalyzer:
 
         return claims
 
-    def _extract_security_claims(self, tree: ast.AST, code: str) -> List[Claim]:
+    def _extract_security_claims(self, tree: ast.AST, code: str) -> list[Claim]:
         """Extract security-related claims."""
         claims = []
 
@@ -378,7 +377,7 @@ class DeepProgramAnalyzer:
 
         return claims
 
-    def _extract_termination_claims(self, tree: ast.AST, code: str) -> List[Claim]:
+    def _extract_termination_claims(self, tree: ast.AST, code: str) -> list[Claim]:
         """Extract loop termination claims."""
         claims = []
 
@@ -424,7 +423,7 @@ class DeepProgramAnalyzer:
 
         return claims
 
-    def _extract_resource_claims(self, tree: ast.AST, code: str) -> List[Claim]:
+    def _extract_resource_claims(self, tree: ast.AST, code: str) -> list[Claim]:
         """Extract resource usage and complexity claims."""
         claims = []
 
@@ -476,7 +475,7 @@ class DeepProgramAnalyzer:
 
         return claims
 
-    def _analyze_rust_program(self, code: str) -> Dict[PropertyCategory, List[Claim]]:
+    def _analyze_rust_program(self, code: str) -> dict[PropertyCategory, list[Claim]]:
         """Analyze Rust program (simplified version)."""
         properties = {category: [] for category in PropertyCategory}
 
@@ -503,7 +502,7 @@ class DeepProgramAnalyzer:
 
         return properties
 
-    def _analyze_c_program(self, code: str) -> Dict[PropertyCategory, List[Claim]]:
+    def _analyze_c_program(self, code: str) -> dict[PropertyCategory, list[Claim]]:
         """Analyze C program (simplified version)."""
         properties = {category: [] for category in PropertyCategory}
 
@@ -533,7 +532,7 @@ class DeepProgramAnalyzer:
 
         return properties
 
-    def _analyze_generic_program(self, code: str) -> Dict[PropertyCategory, List[Claim]]:
+    def _analyze_generic_program(self, code: str) -> dict[PropertyCategory, list[Claim]]:
         """Generic analysis for unsupported languages."""
         properties = {category: [] for category in PropertyCategory}
 
@@ -576,7 +575,7 @@ class DeepProgramAnalyzer:
 
         return False
 
-    def _initialize_memory_patterns(self) -> Dict[str, List[str]]:
+    def _initialize_memory_patterns(self) -> dict[str, list[str]]:
         """Initialize patterns for memory safety analysis."""
         return {
             'bounds_check': [r'\[\s*\d+\s*\]', r'\.at\s*\(', r'range\s*\('],
@@ -585,7 +584,7 @@ class DeepProgramAnalyzer:
             'memory_leak': [r'malloc', r'new\s+', r'alloc']
         }
 
-    def _initialize_concurrency_patterns(self) -> Dict[str, List[str]]:
+    def _initialize_concurrency_patterns(self) -> dict[str, list[str]]:
         """Initialize patterns for concurrency analysis."""
         return {
             'locks': [r'\.lock\s*\(', r'acquire', r'synchronized'],
@@ -594,7 +593,7 @@ class DeepProgramAnalyzer:
             'shared_data': [r'global\s+', r'static\s+', r'shared']
         }
 
-    def _initialize_security_patterns(self) -> Dict[str, List[str]]:
+    def _initialize_security_patterns(self) -> dict[str, list[str]]:
         """Initialize patterns for security analysis."""
         return {
             'input_validation': [r'validate', r'sanitize', r'escape'],
@@ -603,7 +602,7 @@ class DeepProgramAnalyzer:
             'access_control': [r'permission', r'authorize', r'access']
         }
 
-    def _initialize_algorithmic_patterns(self) -> Dict[str, List[str]]:
+    def _initialize_algorithmic_patterns(self) -> dict[str, list[str]]:
         """Initialize patterns for algorithmic analysis."""
         return {
             'sorting': [r'sort', r'quicksort', r'mergesort', r'bubblesort'],
@@ -625,7 +624,7 @@ class PropertySpecificationGenerator:
         self.analyzer = DeepProgramAnalyzer()
         self.spec_templates = self._initialize_spec_templates()
 
-    def generate_specifications(self, code: str, language: str = "python") -> List[FormalSpec]:
+    def generate_specifications(self, code: str, language: str = "python") -> list[FormalSpec]:
         """
         Generate formal specifications for complex software properties.
 
@@ -649,7 +648,7 @@ class PropertySpecificationGenerator:
 
         return specifications
 
-    def _claim_to_formal_spec(self, claim: Claim, code: str, category: PropertyCategory) -> Optional[FormalSpec]:
+    def _claim_to_formal_spec(self, claim: Claim, code: str, category: PropertyCategory) -> FormalSpec | None:
         """Convert a high-level claim to a formal specification."""
 
         if category == PropertyCategory.MEMORY_SAFETY:
@@ -667,7 +666,7 @@ class PropertySpecificationGenerator:
 
         return None
 
-    def _generate_memory_safety_spec(self, claim: Claim, code: str) -> Optional[FormalSpec]:
+    def _generate_memory_safety_spec(self, claim: Claim, code: str) -> FormalSpec | None:
         """Generate memory safety specification."""
         if "bounds-safe" in claim.claim_text:
             # Extract array access details
@@ -724,7 +723,7 @@ Admitted.
 
         return None
 
-    def _generate_algorithmic_spec(self, claim: Claim, code: str) -> Optional[FormalSpec]:
+    def _generate_algorithmic_spec(self, claim: Claim, code: str) -> FormalSpec | None:
         """Generate algorithmic correctness specification."""
         if "correctly sorts" in claim.claim_text:
             match = re.search(r'Function (\w+) correctly sorts', claim.claim_text)
@@ -789,7 +788,7 @@ Admitted.
 
         return None
 
-    def _generate_termination_spec(self, claim: Claim, code: str) -> Optional[FormalSpec]:
+    def _generate_termination_spec(self, claim: Claim, code: str) -> FormalSpec | None:
         """Generate termination specification."""
         if "terminates" in claim.claim_text:
             # This is complex and would require sophisticated analysis
@@ -819,7 +818,7 @@ Admitted.
 
         return None
 
-    def _generate_performance_spec(self, claim: Claim, code: str) -> Optional[FormalSpec]:
+    def _generate_performance_spec(self, claim: Claim, code: str) -> FormalSpec | None:
         """Generate performance/complexity specification."""
         complexity_match = re.search(r'has O\(([^)]+)\) time complexity', claim.claim_text)
         if complexity_match:
@@ -850,7 +849,7 @@ Admitted.
 
         return None
 
-    def _generate_security_spec(self, claim: Claim, code: str) -> Optional[FormalSpec]:
+    def _generate_security_spec(self, claim: Claim, code: str) -> FormalSpec | None:
         """Generate security specification."""
         # Security properties are often high-level and context-dependent
         # This would be a template for more specific analysis
@@ -879,7 +878,7 @@ Qed.
             variables={}
         )
 
-    def _generate_concurrency_spec(self, claim: Claim, code: str) -> Optional[FormalSpec]:
+    def _generate_concurrency_spec(self, claim: Claim, code: str) -> FormalSpec | None:
         """Generate concurrency specification."""
         if "race-free" in claim.claim_text:
             var_match = re.search(r'variable (\w+)', claim.claim_text)
@@ -912,7 +911,7 @@ Admitted.
 
         return None
 
-    def _initialize_spec_templates(self) -> Dict[str, str]:
+    def _initialize_spec_templates(self) -> dict[str, str]:
         """Initialize formal specification templates."""
         return {
             'bounds_check': """

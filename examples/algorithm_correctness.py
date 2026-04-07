@@ -9,15 +9,10 @@ testing more complex theorem proving scenarios including:
 - Data structure invariants
 """
 
-import time
 import logging
-from typing import List
+import time
 
-from formal_verification import (
-    FormalVerificationConflictDetector,
-    Claim,
-    PropertyType
-)
+from formal_verification import Claim, FormalVerificationConflictDetector, PropertyType
 
 # Setup logging
 logging.basicConfig(
@@ -27,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def create_sorting_claims() -> List[Claim]:
+def create_sorting_claims() -> list[Claim]:
     """Create conflicting claims about sorting algorithm correctness."""
     return [
         # Correct sorting claims
@@ -73,7 +68,7 @@ def create_sorting_claims() -> List[Claim]:
     ]
 
 
-def create_search_claims() -> List[Claim]:
+def create_search_claims() -> list[Claim]:
     """Create claims about search algorithm properties."""
     return [
         Claim(

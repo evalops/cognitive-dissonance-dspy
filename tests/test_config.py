@@ -1,6 +1,7 @@
 """Tests for configuration module."""
 
 import pytest
+
 from cognitive_dissonance.config import ExperimentConfig, setup_logging
 
 

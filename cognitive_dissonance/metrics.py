@@ -1,7 +1,8 @@
 """Metrics for evaluating cognitive dissonance detection and resolution."""
 
 import logging
-from typing import Callable
+from collections.abc import Callable
+
 import dspy
 
 logger = logging.getLogger(__name__)

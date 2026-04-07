@@ -1,15 +1,14 @@
 """Coq theorem prover interface for formal verification."""
 
+import logging
 import re
 import subprocess
 import tempfile
 import time
-import logging
 from pathlib import Path
-from typing import Optional
 
-from .types import FormalSpec, ProofResult, ProofStatus
 from .proof_cache import ProofCache
+from .types import FormalSpec, ProofResult, ProofStatus
 
 logger = logging.getLogger(__name__)
 
@@ -230,7 +229,7 @@ class CoqProver:
                 assumptions_present=bool(assumptions),
             )
 
-    def _extract_counter_example(self, error_msg: str) -> Optional[str]:
+    def _extract_counter_example(self, error_msg: str) -> str | None:
         """Extract counter-example from Coq error message if available.
 
         Args:

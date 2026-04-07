@@ -1,13 +1,14 @@
 """Data handling for Cognitive Dissonance experiments."""
 
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 import dspy
 
 logger = logging.getLogger(__name__)
 
 
-def get_belief_conflicts() -> List[dspy.Example]:
+def get_belief_conflicts() -> list[dspy.Example]:
     """
     Get examples of belief conflicts for training.
 
@@ -65,7 +66,7 @@ def get_belief_conflicts() -> List[dspy.Example]:
     return examples
 
 
-def get_dev_labeled() -> List[dspy.Example]:
+def get_dev_labeled() -> list[dspy.Example]:
     """
     Get labeled development set for evaluation.
 
@@ -109,7 +110,7 @@ def get_dev_labeled() -> List[dspy.Example]:
     return examples
 
 
-def get_train_unlabeled() -> List[dspy.Example]:
+def get_train_unlabeled() -> list[dspy.Example]:
     """
     Get unlabeled training set for co-training.
 
@@ -172,7 +173,7 @@ def get_train_unlabeled() -> List[dspy.Example]:
 
 
 def validate_dataset(
-    dataset: List[dspy.Example],
+    dataset: list[dspy.Example],
     require_labels: bool = False
 ) -> None:
     """
@@ -206,7 +207,7 @@ def validate_dataset(
     logger.info(f"Dataset validation passed for {len(dataset)} examples")
 
 
-def get_external_knowledge(url: Optional[str] = None) -> Dict[str, Any]:
+def get_external_knowledge(url: str | None = None) -> dict[str, Any]:
     """
     Fetch external knowledge from API.
 

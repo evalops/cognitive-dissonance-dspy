@@ -9,15 +9,10 @@ This shows the enhanced translator handling:
 - More complex mathematical functions
 """
 
-import time
 import logging
-from typing import List
+import time
 
-from formal_verification import (
-    FormalVerificationConflictDetector,
-    Claim,
-    PropertyType
-)
+from formal_verification import Claim, FormalVerificationConflictDetector, PropertyType
 
 # Setup logging
 logging.basicConfig(
@@ -27,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def create_advanced_claims() -> List[Claim]:
+def create_advanced_claims() -> list[Claim]:
     """Create claims that test our advanced proof patterns."""
     return [
         # Basic arithmetic (should work)

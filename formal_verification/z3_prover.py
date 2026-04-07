@@ -1,10 +1,10 @@
 """Z3 SMT solver integration for formal verification."""
 
-import time
 import logging
-from typing import Optional, List, Dict, Any
+import time
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 from .types import ProofStatus
 
@@ -34,10 +34,10 @@ class Z3ProofResult:
     claim: str
     proof_type: Z3ProofType
     result: str  # sat, unsat, unknown
-    model: Optional[Dict[str, Any]] = None
-    proof: Optional[str] = None
+    model: dict[str, Any] | None = None
+    proof: str | None = None
     time_ms: float = 0.0
-    statistics: Dict[str, Any] = None
+    statistics: dict[str, Any] = None
 
 
 class Z3Translator:
@@ -60,7 +60,7 @@ class Z3Translator:
         self.variables = {}
         self.solver = Solver()
 
-    def translate_claim(self, claim_text: str) -> Optional[Any]:
+    def translate_claim(self, claim_text: str) -> Any | None:
         """
         Translate a claim to Z3 formula.
 
@@ -95,7 +95,7 @@ class Z3Translator:
         import re
         return bool(re.search(r'\d+\s*[+\-*/=<>]', claim))
 
-    def _translate_arithmetic(self, claim: str) -> Optional[Any]:
+    def _translate_arithmetic(self, claim: str) -> Any | None:
         """Translate arithmetic claim to Z3."""
         import re
 
@@ -150,7 +150,7 @@ class Z3Translator:
 
         return None
 
-    def _translate_array_claim(self, claim: str) -> Optional[Any]:
+    def _translate_array_claim(self, claim: str) -> Any | None:
         """Translate array-related claim to Z3."""
 
         # Array bounds: "array[i] is safe when 0 <= i < length"
@@ -177,7 +177,7 @@ class Z3Translator:
 
         return None
 
-    def _translate_logical_claim(self, claim: str) -> Optional[Any]:
+    def _translate_logical_claim(self, claim: str) -> Any | None:
         """Translate logical claim to Z3."""
         import re
 
@@ -249,7 +249,7 @@ class Z3Translator:
 
         return None
 
-    def _translate_optimization_claim(self, claim: str) -> Optional[Any]:
+    def _translate_optimization_claim(self, claim: str) -> Any | None:
         """Translate optimization claim to Z3."""
         # This would use Z3's optimization features
         return None
@@ -345,7 +345,7 @@ class Z3Prover:
                 statistics=self.solver.statistics()
             )
 
-    def check_satisfiability(self, constraints: List[str]) -> Z3ProofResult:
+    def check_satisfiability(self, constraints: list[str]) -> Z3ProofResult:
         """
         Check if a set of constraints is satisfiable.
 
@@ -398,7 +398,7 @@ class Z3Prover:
                 statistics=self.solver.statistics()
             )
 
-    def find_counter_example(self, claim_text: str) -> Optional[Dict[str, Any]]:
+    def find_counter_example(self, claim_text: str) -> dict[str, Any] | None:
         """
         Find a counter-example to a claim.
 
@@ -423,7 +423,7 @@ class Z3Prover:
 
         return None
 
-    def _extract_model(self, model) -> Dict[str, Any]:
+    def _extract_model(self, model) -> dict[str, Any]:
         """Extract model values as dictionary."""
         if not model:
             return {}
@@ -434,7 +434,7 @@ class Z3Prover:
 
         return result
 
-    def _get_proof(self) -> Optional[str]:
+    def _get_proof(self) -> str | None:
         """Get proof from solver if available."""
         # Z3 proof extraction (when enabled)
         try:
@@ -457,8 +457,8 @@ class HybridProver:
 
     def __init__(self):
         """Initialize hybrid prover with learning system."""
-        from .prover import CoqProver
         from .proof_learning import ProofStrategyLearner
+        from .prover import CoqProver
 
         self.coq_prover = CoqProver()
         self.z3_prover = Z3Prover() if Z3_AVAILABLE else None
@@ -470,7 +470,7 @@ class HybridProver:
             'z3': {'attempts': 0, 'successes': 0}
         }
 
-    def prove_claim(self, claim_text: str, preferred_prover: Optional[str] = None, code: str = "") -> Dict[str, Any]:
+    def prove_claim(self, claim_text: str, preferred_prover: str | None = None, code: str = "") -> dict[str, Any]:
         """
         Prove a claim using intelligent prover selection.
 
@@ -598,7 +598,7 @@ class HybridProver:
 
         return "coq"  # Default to Coq
 
-    def _prove_with_coq(self, claim_text: str) -> Dict[str, Any]:
+    def _prove_with_coq(self, claim_text: str) -> dict[str, Any]:
         """Prove using Coq."""
         from .types import Claim, PropertyType
 
@@ -636,7 +636,7 @@ class HybridProver:
             'assumptions_present': result.assumptions_present,
         }
 
-    def _prove_with_z3(self, claim_text: str) -> Dict[str, Any]:
+    def _prove_with_z3(self, claim_text: str) -> dict[str, Any]:
         """Prove using Z3."""
         result = self.z3_prover.prove_claim(claim_text)
 

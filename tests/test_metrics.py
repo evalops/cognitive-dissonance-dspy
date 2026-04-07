@@ -1,13 +1,14 @@
 """Tests for metrics module."""
 
 import dspy
+
 from cognitive_dissonance.metrics import (
-    dissonance_detection_accuracy,
-    reconciliation_quality,
-    combined_metric,
     agreement_metric_factory,
     blended_metric_factory,
-    confidence_weighted_accuracy
+    combined_metric,
+    confidence_weighted_accuracy,
+    dissonance_detection_accuracy,
+    reconciliation_quality,
 )
 
 

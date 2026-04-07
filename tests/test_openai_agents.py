@@ -1,16 +1,14 @@
 """Tests for OpenAI Agents SDK integration."""
 
-import pytest
-from unittest.mock import patch, MagicMock
 import json
+from unittest.mock import MagicMock, patch
 
-from formal_verification.structured_models import (
-    FormalizableClaim,
-    ClaimCategory
-)
-from formal_verification.openai_agents import OpenAIClaimExtractor
+import pytest
+
 from formal_verification.guardrails import ClaimGuardrails
 from formal_verification.hybrid_resolver import HybridCognitiveDissonanceResolver
+from formal_verification.openai_agents import OpenAIClaimExtractor
+from formal_verification.structured_models import ClaimCategory, FormalizableClaim
 
 
 class TestStructuredModels:

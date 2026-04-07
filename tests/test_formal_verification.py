@@ -4,14 +4,14 @@ import time
 from unittest.mock import Mock, patch
 
 from formal_verification import (
-    FormalVerificationConflictDetector,
+    Claim,
     ClaimTranslator,
     CoqProver,
-    Claim,
     FormalSpec,
+    FormalVerificationConflictDetector,
     ProofResult,
     ProofStatus,
-    PropertyType
+    PropertyType,
 )
 
 

@@ -6,15 +6,10 @@ This demonstrates working formal verification with concrete, provable theorems
 rather than abstract function specifications that require implementation details.
 """
 
-import time
 import logging
-from typing import List
+import time
 
-from formal_verification import (
-    FormalVerificationConflictDetector,
-    Claim,
-    PropertyType
-)
+from formal_verification import Claim, FormalVerificationConflictDetector, PropertyType
 
 # Setup logging
 logging.basicConfig(
@@ -24,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def create_provable_claims() -> List[Claim]:
+def create_provable_claims() -> list[Claim]:
     """Create mathematical claims that can be formally proven."""
     return [
         # Basic arithmetic - these should work

@@ -1,18 +1,19 @@
 """Tests for mathematical proof-backed cognitive dissonance resolution."""
 
-import pytest
 from unittest.mock import Mock, patch
 
+import pytest
+
 from cognitive_dissonance.mathematical_resolver import (
-    MathematicalCognitiveDissonanceResolver,
-    ClaimClassifier,
     ClaimCategory,
-    MathematicalEvidence,
-    ResolutionResult,
-    ResolutionMethod,
+    ClaimClassifier,
     EvidenceStatus,
+    MathematicalCognitiveDissonanceResolver,
+    MathematicalEvidence,
+    ResolutionMethod,
+    ResolutionResult,
 )
-from formal_verification import PropertyType, ProofResult
+from formal_verification import ProofResult, PropertyType
 
 
 class TestClaimClassifier:

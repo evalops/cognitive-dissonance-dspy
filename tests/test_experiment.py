@@ -1,13 +1,15 @@
 """Tests for experiment module."""
 
-import pytest
 from unittest.mock import Mock, patch
+
 import dspy
+import pytest
+
 from cognitive_dissonance.experiment import (
     ExperimentResults,
     cognitive_dissonance_experiment,
     run_ablation_study,
-    run_confidence_analysis
+    run_confidence_analysis,
 )
 
 

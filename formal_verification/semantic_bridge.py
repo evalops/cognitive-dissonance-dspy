@@ -7,7 +7,6 @@ measurable assertions within natural language disputes.
 
 import logging
 import re
-from typing import List, Optional
 from dataclasses import dataclass
 from enum import Enum
 
@@ -30,18 +29,18 @@ class ObjectiveComponent:
     objective_claim: str
     objectivity_level: ObjectivityLevel
     confidence: float
-    measurable_property: Optional[str]
+    measurable_property: str | None
     verification_approach: str
-    grounding_evidence: List[str]
+    grounding_evidence: list[str]
 
 
 @dataclass
 class SemanticBridge:
     """A bridge between subjective language and objective verification."""
     subjective_term: str
-    objective_components: List[ObjectiveComponent]
+    objective_components: list[ObjectiveComponent]
     total_objectivity_score: float
-    suggested_verification: List[str]
+    suggested_verification: list[str]
 
 
 class SubjectiveTermExtractor:
@@ -116,7 +115,7 @@ class SubjectiveTermExtractor:
             r'easier|harder|simpler|complex': 'comparative_complexity'
         }
 
-    def extract_objective_components(self, claim_text: str) -> List[ObjectiveComponent]:
+    def extract_objective_components(self, claim_text: str) -> list[ObjectiveComponent]:
         """Extract objective components from potentially subjective text.
 
         Args:
@@ -190,7 +189,7 @@ class ObjectiveClaimGenerator:
         from .necessity_prover import MathematicalStructureAnalyzer
         self.necessity_analyzer = MathematicalStructureAnalyzer()
 
-    def generate_verifiable_claims(self, components: List[ObjectiveComponent]) -> List[str]:
+    def generate_verifiable_claims(self, components: list[ObjectiveComponent]) -> list[str]:
         """Generate specific verifiable claims from objective components.
 
         Args:
@@ -219,7 +218,7 @@ class ObjectiveClaimGenerator:
 
         return verifiable_claims
 
-    def _extract_mathematical_claims(self, component: ObjectiveComponent) -> List[str]:
+    def _extract_mathematical_claims(self, component: ObjectiveComponent) -> list[str]:
         """Extract mathematical claims that can use necessity-based proving."""
         claims = []
 
@@ -240,7 +239,7 @@ class ObjectiveClaimGenerator:
 
         return claims
 
-    def _generate_measurement_claims(self, component: ObjectiveComponent) -> List[str]:
+    def _generate_measurement_claims(self, component: ObjectiveComponent) -> list[str]:
         """Generate measurable claims with specific thresholds."""
         claims = []
         prop = component.measurable_property.lower()
@@ -263,7 +262,7 @@ class ObjectiveClaimGenerator:
 
         return claims
 
-    def _generate_contextual_claims(self, component: ObjectiveComponent) -> List[str]:
+    def _generate_contextual_claims(self, component: ObjectiveComponent) -> list[str]:
         """Generate context-dependent verification targets."""
         claims = []
         prop = component.measurable_property.lower()
@@ -343,7 +342,7 @@ class SemanticLogicalBridge:
         """
         return bridge.total_objectivity_score >= threshold
 
-    def get_verification_targets(self, bridge: SemanticBridge) -> List[str]:
+    def get_verification_targets(self, bridge: SemanticBridge) -> list[str]:
         """Get the most promising verification targets from a semantic bridge.
 
         Args:
@@ -378,7 +377,7 @@ class SemanticLogicalBridge:
         return targets[:3]  # Return top 3 most promising targets
 
 
-def bridge_subjective_to_objective(claim_text: str) -> Optional[SemanticBridge]:
+def bridge_subjective_to_objective(claim_text: str) -> SemanticBridge | None:
     """Utility function to quickly bridge subjective claims to objective components.
 
     Args:

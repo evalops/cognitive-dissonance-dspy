@@ -1,8 +1,7 @@
 """Natural language claim to formal specification translator."""
 
-import re
 import logging
-from typing import Optional
+import re
 
 from .types import Claim, FormalSpec
 
@@ -69,7 +68,7 @@ class ClaimTranslator:
             (r"list\s+size\s+increases.*?after\s+append", self._list_append_spec),
         ]
 
-    def translate(self, claim: Claim, code: str) -> Optional[FormalSpec]:
+    def translate(self, claim: Claim, code: str) -> FormalSpec | None:
         """Convert a claim to formal specification.
 
         Args:

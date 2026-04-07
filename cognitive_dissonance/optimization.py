@@ -1,9 +1,10 @@
 """Advanced optimization techniques for cognitive dissonance detection."""
 
 import logging
-from typing import List, Dict, Any, Optional, Callable
-import dspy
+from collections.abc import Callable
+from typing import Any
 
+import dspy
 from dspy.teleprompt import BootstrapFewShot
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ class GEPAOptimizer:
 
     def __init__(self,
                  metric: Callable,
-                 reflection_model: Optional[str] = None,
+                 reflection_model: str | None = None,
                  max_iterations: int = 3,
                  improvement_threshold: float = 0.05):
         """
@@ -38,7 +39,7 @@ class GEPAOptimizer:
 
     def reflect_on_trajectory(self,
                              module: dspy.Module,
-                             examples: List[dspy.Example],
+                             examples: list[dspy.Example],
                              performance: float) -> str:
         """
         Use LLM to reflect on program trajectory and identify improvements.
@@ -82,7 +83,7 @@ class GEPAOptimizer:
             logger.warning(f"Reflection failed: {e}")
             return "Unable to generate reflection - using default optimization strategy."
 
-    def _format_predictions(self, predictions: List[Dict]) -> str:
+    def _format_predictions(self, predictions: list[dict]) -> str:
         """Format predictions for reflection analysis."""
         formatted = []
         for i, pred in enumerate(predictions):
@@ -94,7 +95,7 @@ class GEPAOptimizer:
             """)
         return "\n".join(formatted)
 
-    def _analyze_predictions(self, predictions: List[Dict], performance: float) -> str:
+    def _analyze_predictions(self, predictions: list[dict], performance: float) -> str:
         """Analyze predictions to generate improvement suggestions."""
         issues = []
         suggestions = []
@@ -135,7 +136,7 @@ class GEPAOptimizer:
 
         return reflection
 
-    def compile(self, module: dspy.Module, trainset: List[dspy.Example]) -> dspy.Module:
+    def compile(self, module: dspy.Module, trainset: list[dspy.Example]) -> dspy.Module:
         """
         Compile module using GEPA optimization strategy.
 
@@ -199,7 +200,7 @@ class EnsembleOptimizer:
     """
 
     def __init__(self,
-                 base_optimizers: List[Any],
+                 base_optimizers: list[Any],
                  ensemble_size: int = 5,
                  voting_strategy: str = "majority"):
         """
@@ -215,7 +216,7 @@ class EnsembleOptimizer:
         self.voting_strategy = voting_strategy
         logger.debug(f"Initialized ensemble optimizer with {ensemble_size} modules")
 
-    def compile(self, module: dspy.Module, trainset: List[dspy.Example]) -> 'EnsembleModule':
+    def compile(self, module: dspy.Module, trainset: list[dspy.Example]) -> 'EnsembleModule':
         """
         Create ensemble of optimized modules.
 
@@ -260,7 +261,7 @@ class EnsembleModule(dspy.Module):
     Ensemble module that combines predictions from multiple optimized modules.
     """
 
-    def __init__(self, modules: List[dspy.Module], scores: List[float], voting_strategy: str = "majority"):
+    def __init__(self, modules: list[dspy.Module], scores: list[float], voting_strategy: str = "majority"):
         super().__init__()
         self.modules = modules
         self.scores = scores
@@ -268,7 +269,7 @@ class EnsembleModule(dspy.Module):
         self.weights = self._compute_weights(scores)
         logger.debug(f"Created ensemble with {len(modules)} modules")
 
-    def _compute_weights(self, scores: List[float]) -> List[float]:
+    def _compute_weights(self, scores: list[float]) -> list[float]:
         """Compute voting weights based on individual module performance."""
         if not self.modules:
             return []
@@ -313,7 +314,7 @@ class EnsembleModule(dspy.Module):
         else:
             return predictions[0]  # Fallback to first prediction
 
-    def _majority_vote(self, predictions: List[dspy.Prediction]) -> dspy.Prediction:
+    def _majority_vote(self, predictions: list[dspy.Prediction]) -> dspy.Prediction:
         """Combine predictions using majority voting."""
         # Count dissonance votes
         dissonance_votes = {"yes": 0, "no": 0}
@@ -348,7 +349,7 @@ class EnsembleModule(dspy.Module):
 
         return result
 
-    def _weighted_vote(self, predictions: List[dspy.Prediction]) -> dspy.Prediction:
+    def _weighted_vote(self, predictions: list[dspy.Prediction]) -> dspy.Prediction:
         """Combine predictions using weighted voting based on module performance."""
         if len(predictions) != len(self.weights):
             return self._majority_vote(predictions)
@@ -399,7 +400,7 @@ def create_advanced_optimizer(optimization_strategy: str = "gepa+ensemble") -> A
         return GEPAOptimizer(metric=combined_metric)
 
     if optimization_strategy == "ensemble":
-        base_optimizers: List[Any] = [
+        base_optimizers: list[Any] = [
             GEPAOptimizer(metric=combined_metric),
             BootstrapFewShot(metric=combined_metric),
             BootstrapFewShot(metric=dissonance_detection_accuracy),

@@ -1,6 +1,7 @@
 """Verifier modules for detecting and resolving cognitive dissonance."""
 
 import logging
+
 import dspy
 
 logger = logging.getLogger(__name__)

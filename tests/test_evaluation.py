@@ -1,13 +1,17 @@
 """Tests for evaluation module."""
 
-import dspy
 from unittest.mock import Mock
+
+import dspy
+
 from cognitive_dissonance.evaluation import (
-    evaluate,
     agreement_rate,
+    analyze_errors,
     cross_validate,
-    analyze_errors
+    evaluate,
 )
+
+
 class TestEvaluate:
     """Test evaluate function."""
 

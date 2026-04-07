@@ -6,15 +6,10 @@ This shows the framework verifying real code properties that agents
 might disagree about, not just abstract mathematical claims.
 """
 
-import time
 import logging
-from typing import List
+import time
 
-from formal_verification import (
-    FormalVerificationConflictDetector,
-    Claim,
-    PropertyType
-)
+from formal_verification import Claim, FormalVerificationConflictDetector, PropertyType
 
 # Setup logging
 logging.basicConfig(
@@ -24,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def create_software_property_claims() -> List[Claim]:
+def create_software_property_claims() -> list[Claim]:
     """Create claims about actual software properties."""
     return [
         # Array bounds claims
@@ -59,7 +54,7 @@ def create_software_property_claims() -> List[Claim]:
     ]
 
 
-def create_conflicting_implementation_claims() -> List[Claim]:
+def create_conflicting_implementation_claims() -> list[Claim]:
     """Create conflicting claims about the same implementation."""
     return [
         # Different agents claim different things about same function

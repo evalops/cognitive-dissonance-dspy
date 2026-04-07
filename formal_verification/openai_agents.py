@@ -4,18 +4,15 @@ This module provides specialized agents for extracting formalizable claims
 with much higher accuracy than the unstructured DSPy approach.
 """
 
-import os
 import logging
-from typing import Optional, Dict, Any
+import os
+from typing import Any
+
 from openai import OpenAI
 
-from .structured_models import (
-    FormalizableClaim,
-    ClaimExtractionResult,
-    ClaimCategory
-)
-from .types import Claim, PropertyType
+from .structured_models import ClaimCategory, ClaimExtractionResult, FormalizableClaim
 from .translator import ClaimTranslator
+from .types import Claim, PropertyType
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +168,7 @@ class OpenAIClaimExtractor:
     that produces claims matching the translator's regex patterns.
     """
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4"):
+    def __init__(self, api_key: str | None = None, model: str = "gpt-4"):
         """
         Initialize the OpenAI claim extractor.
 
@@ -255,7 +252,7 @@ class OpenAIClaimExtractor:
             original_text=text
         )
 
-    def _triage_claim(self, text: str) -> Dict[str, Any]:
+    def _triage_claim(self, text: str) -> dict[str, Any]:
         """Triage a claim to determine if it's formalizable."""
         try:
             response = self.client.chat.completions.create(

@@ -6,16 +6,13 @@ This shows how the system helps developers understand and fix proof failures,
 and how it can convert test suites into formal specifications.
 """
 
-import time
 import logging
+import time
 
-from formal_verification import (
-    FormalVerificationConflictDetector,
-    Claim,
-    PropertyType
-)
-from formal_verification.proof_debugger import ProofDebugger, InteractiveProofAssistant
+from formal_verification.proof_debugger import InteractiveProofAssistant, ProofDebugger
 from formal_verification.spec_inference import SpecificationSynthesizer
+
+from formal_verification import Claim, FormalVerificationConflictDetector, PropertyType
 
 # Setup logging
 logging.basicConfig(

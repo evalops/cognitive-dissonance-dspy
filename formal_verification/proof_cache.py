@@ -2,10 +2,10 @@
 
 import hashlib
 import json
-import time
-from typing import Dict, Optional, Any
-from pathlib import Path
 import logging
+import time
+from pathlib import Path
+from typing import Any
 
 from .types import FormalSpec, ProofResult
 
@@ -21,7 +21,7 @@ class ProofCache:
     claims or similar proof patterns.
     """
 
-    def __init__(self, cache_dir: Optional[str] = None):
+    def __init__(self, cache_dir: str | None = None):
         """
         Initialize proof cache.
 
@@ -30,7 +30,7 @@ class ProofCache:
         """
         self.cache_dir = Path(cache_dir or ".proof_cache")
         self.cache_dir.mkdir(exist_ok=True)
-        self.memory_cache: Dict[str, ProofResult] = {}
+        self.memory_cache: dict[str, ProofResult] = {}
         self.stats = {
             "hits": 0,
             "misses": 0,
@@ -55,7 +55,7 @@ class ProofCache:
         except OSError as exc:
             logger.warning("Failed to remove stale cache file %s: %s", cache_file, exc)
 
-    def get(self, spec: FormalSpec) -> Optional[ProofResult]:
+    def get(self, spec: FormalSpec) -> ProofResult | None:
         """
         Retrieve cached proof result if available.
 
@@ -173,7 +173,7 @@ class ProofCache:
         }
         logger.info("Proof cache cleared")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         total = self.stats["hits"] + self.stats["misses"]
         hit_rate = self.stats["hits"] / total if total > 0 else 0.0

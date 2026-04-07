@@ -7,15 +7,10 @@ conflicting mathematical claims from different agents and using Coq theorem
 proving to establish ground truth.
 """
 
-import time
 import logging
-from typing import List
+import time
 
-from formal_verification import (
-    FormalVerificationConflictDetector,
-    Claim,
-    PropertyType
-)
+from formal_verification import Claim, FormalVerificationConflictDetector, PropertyType
 
 # Setup logging
 logging.basicConfig(
@@ -25,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def create_mathematical_claims() -> List[Claim]:
+def create_mathematical_claims() -> list[Claim]:
     """Create a set of conflicting mathematical claims for testing."""
     return [
         Claim(

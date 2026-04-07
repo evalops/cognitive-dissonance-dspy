@@ -1,17 +1,19 @@
 """Integration tests for cognitive dissonance system."""
 
-import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
 import dspy
+import pytest
+
 from cognitive_dissonance import (
-    ExperimentConfig,
     BeliefAgent,
-    DissonanceDetector,
-    ReconciliationAgent,
     CognitiveDissonanceResolver,
+    DissonanceDetector,
+    ExperimentConfig,
+    ReconciliationAgent,
+    agreement_rate,
     cognitive_dissonance_experiment,
     evaluate,
-    agreement_rate
 )
 from cognitive_dissonance.data import get_dev_labeled, get_train_unlabeled
 
@@ -244,9 +246,9 @@ class TestMetricsIntegration:
     def test_metrics_with_real_predictions(self):
         """Test metrics with realistic predictions."""
         from cognitive_dissonance.metrics import (
+            combined_metric,
             dissonance_detection_accuracy,
             reconciliation_quality,
-            combined_metric
         )
 
         # Create realistic example and prediction

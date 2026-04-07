@@ -10,15 +10,10 @@ This demonstrates the complete capabilities of the formal verification framework
 - Ground truth establishment through formal proof
 """
 
-import time
 import logging
-from typing import List
+import time
 
-from formal_verification import (
-    FormalVerificationConflictDetector,
-    Claim,
-    PropertyType
-)
+from formal_verification import Claim, FormalVerificationConflictDetector, PropertyType
 
 # Setup logging
 logging.basicConfig(
@@ -28,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def create_comprehensive_test_claims() -> List[Claim]:
+def create_comprehensive_test_claims() -> list[Claim]:
     """Create a comprehensive set of mathematical claims for thorough testing."""
     return [
         # Basic arithmetic with conflicts

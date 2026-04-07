@@ -1,7 +1,8 @@
 """Shared fixtures for tests."""
 
-import pytest
 import dspy
+import pytest
+
 from cognitive_dissonance.config import ExperimentConfig
 
 

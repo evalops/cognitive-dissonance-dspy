@@ -1,14 +1,15 @@
 """Tests for optimization module."""
 
 import dspy
+
+from cognitive_dissonance.metrics import combined_metric
 from cognitive_dissonance.optimization import (
-    GEPAOptimizer,
-    EnsembleOptimizer,
     EnsembleModule,
-    create_advanced_optimizer
+    EnsembleOptimizer,
+    GEPAOptimizer,
+    create_advanced_optimizer,
 )
 from cognitive_dissonance.verifier import CognitiveDissonanceResolver
-from cognitive_dissonance.metrics import combined_metric
 
 
 class TestGEPAOptimizer:

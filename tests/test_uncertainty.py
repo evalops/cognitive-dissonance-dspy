@@ -1,9 +1,10 @@
 """Tests for uncertainty module."""
 
 import dspy
+
 from cognitive_dissonance.uncertainty import (
+    EnhancedConfidenceScorer,
     UncertaintyQuantifier,
-    EnhancedConfidenceScorer
 )
 
 

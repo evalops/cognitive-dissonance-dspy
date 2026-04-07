@@ -5,24 +5,26 @@ enabling mathematical certainty to override probabilistic reconciliation for ver
 """
 
 import logging
-import time
-import re
 import random
+import re
 import threading
+import time
 from contextlib import contextmanager
-from functools import lru_cache
-from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
+from functools import lru_cache
+from typing import Any
 
 import dspy
+
+from formal_verification import Claim as FormalClaim
 from formal_verification import (
     FormalVerificationConflictDetector,
-    Claim as FormalClaim,
+    ProofResult,
     PropertyType,
-    ProofResult
 )
 from formal_verification.semantic_bridge import SemanticLogicalBridge
+
 from .verifier import BeliefAgent, DissonanceDetector, ReconciliationAgent
 
 logger = logging.getLogger(__name__)
@@ -65,11 +67,11 @@ class MathematicalEvidence:
     proof_time_ms: float
     prover_used: str
     status: EvidenceStatus
-    error_message: Optional[str] = None
-    counter_example: Optional[str] = None
+    error_message: str | None = None
+    counter_example: str | None = None
     confidence_score: float = 1.0
-    proof_output: Optional[str] = None
-    solver_metadata: Dict[str, Any] = field(default_factory=dict)
+    proof_output: str | None = None
+    solver_metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -80,13 +82,13 @@ class ResolutionResult:
     conflict_detected: bool
     resolution_method: ResolutionMethod
     resolved_claim: str
-    mathematical_evidence: List[MathematicalEvidence]
+    mathematical_evidence: list[MathematicalEvidence]
     probabilistic_confidence: float
     final_confidence: float
     reasoning: str
-    audit_metadata: Dict[str, Any]
-    solver_diagnostics: List[Dict[str, Any]]
-    normalized_specs: List[str]
+    audit_metadata: dict[str, Any]
+    solver_diagnostics: list[dict[str, Any]]
+    normalized_specs: list[str]
 
 
 class ClaimClassifier:
@@ -262,7 +264,7 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
             self.formal_detector = None
             logger.info("Initialized without formal verification")
 
-    def _normalize_belief_confidence(self, confidence: Optional[Any]) -> float:
+    def _normalize_belief_confidence(self, confidence: Any | None) -> float:
         if isinstance(confidence, (int, float)):
             return max(0.0, min(1.0, float(confidence)))
         if isinstance(confidence, str):
@@ -339,7 +341,7 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
         confidence_score = 1.0 if status == EvidenceStatus.PROVEN else (
             proof_result.spec.claim.confidence if status == EvidenceStatus.INCONCLUSIVE else 0.0
         )
-        solver_metadata: Dict[str, Any] = {
+        solver_metadata: dict[str, Any] = {
             "agent_id": proof_result.spec.claim.agent_id,
             "property_type": proof_result.spec.claim.property_type.value,
             "status": status.value,
@@ -367,12 +369,12 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
     def _compute_final_confidence(
         self,
         resolved_claim: str,
-        evidence: List[MathematicalEvidence],
-        claim_context: Dict[str, Dict[str, Any]],
+        evidence: list[MathematicalEvidence],
+        claim_context: dict[str, dict[str, Any]],
         fallback_confidence: float,
     ) -> float:
         base_prior = claim_context.get(resolved_claim, {}).get("prior", fallback_confidence)
-        contributions: List[Tuple[float, float]] = []
+        contributions: list[tuple[float, float]] = []
 
         for ev in evidence:
             if ev.claim_text == resolved_claim:
@@ -396,11 +398,11 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
 
     def _collect_solver_diagnostics(
         self,
-        proof_results: List[ProofResult],
-        analysis_results: Optional[Dict[str, Any]],
-    ) -> Tuple[List[Dict[str, Any]], List[str]]:
-        diagnostics: List[Dict[str, Any]] = []
-        normalized_specs: List[str] = []
+        proof_results: list[ProofResult],
+        analysis_results: dict[str, Any] | None,
+    ) -> tuple[list[dict[str, Any]], list[str]]:
+        diagnostics: list[dict[str, Any]] = []
+        normalized_specs: list[str] = []
 
         if analysis_results:
             specs = analysis_results.get("specifications", []) or []
@@ -450,7 +452,7 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
         belief_conf1 = self._normalize_belief_confidence(getattr(belief1, "confidence", None))
         belief_conf2 = self._normalize_belief_confidence(getattr(belief2, "confidence", None))
 
-        claim_context: Dict[str, Dict[str, Any]] = {
+        claim_context: dict[str, dict[str, Any]] = {
             claim1_text: {
                 "belief_confidence": belief_conf1,
             },
@@ -510,7 +512,7 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
         claim_context[claim1_text]["prior"] = self._base_prior(belief_conf1, category1)
         claim_context[claim2_text]["prior"] = self._base_prior(belief_conf2, category2)
 
-        audit_metadata: Dict[str, Any] = {
+        audit_metadata: dict[str, Any] = {
             "seed": invocation_seed,
             "base_seed": self.random_seed,
             "invocation_index": self._invocation_counter,
@@ -521,13 +523,13 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
             "num_formal_targets": 0,
         }
 
-        mathematical_evidence: List[MathematicalEvidence] = []
-        analysis_results: Optional[Dict[str, Any]] = None
-        bridged_claims: List[Dict[str, Any]] = []
+        mathematical_evidence: list[MathematicalEvidence] = []
+        analysis_results: dict[str, Any] | None = None
+        bridged_claims: list[dict[str, Any]] = []
 
         # Step 4: Attempt formal verification for verifiable claims (including bridged subjective)
         if self.enable_formal_verification and self.formal_detector:
-            formal_claims: List[FormalClaim] = []
+            formal_claims: list[FormalClaim] = []
 
             # Process each claim through classification and semantic bridging
             for i, (claim_text, category) in enumerate([(claim1_text, category1), (claim2_text, category2)]):
@@ -683,11 +685,11 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
         self,
         claim1: str,
         claim2: str,
-        evidence: List[MathematicalEvidence],
+        evidence: list[MathematicalEvidence],
         conflict_reason: str,
-        claim_context: Dict[str, Dict[str, Any]],
+        claim_context: dict[str, dict[str, Any]],
         probabilistic_confidence: float,
-    ) -> Tuple[ResolutionMethod, str, float, str]:
+    ) -> tuple[ResolutionMethod, str, float, str]:
         """Resolve conflicts using mathematical evidence with fallback to probabilistic."""
 
         proven_claims = [e for e in evidence if e.status == EvidenceStatus.PROVEN]

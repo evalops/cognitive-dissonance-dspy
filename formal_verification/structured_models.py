@@ -1,9 +1,9 @@
 """Pydantic models for structured claim extraction using OpenAI Agents SDK."""
 
-from pydantic import BaseModel, Field, field_validator
-from enum import Enum
-from typing import Optional, Dict, List
 import re
+from enum import Enum
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class ClaimCategory(str, Enum):
@@ -68,7 +68,7 @@ class FormalizableClaim(BaseModel):
         description="Confidence level from 0.0 to 1.0"
     )
 
-    variables: Dict[str, str] = Field(
+    variables: dict[str, str] = Field(
         default_factory=dict,
         description="""Extracted variables from the claim. Examples:
         - For '2 + 2 = 4': {'left': '2', 'right': '2', 'result': '4'}
@@ -77,7 +77,7 @@ class FormalizableClaim(BaseModel):
         """
     )
 
-    pattern_hints: List[str] = Field(
+    pattern_hints: list[str] = Field(
         default_factory=list,
         description="""Keywords that help match to formal patterns. Examples:
         - ['factorial', 'equals'] for factorial claims
@@ -87,7 +87,7 @@ class FormalizableClaim(BaseModel):
         """
     )
 
-    function_name: Optional[str] = Field(
+    function_name: str | None = Field(
         default=None,
         description="The function name if the claim is about a specific function"
     )
@@ -143,7 +143,7 @@ class FormalizableClaim(BaseModel):
 class ClaimExtractionResult(BaseModel):
     """Result of claim extraction including metadata."""
 
-    claim: Optional[FormalizableClaim] = Field(
+    claim: FormalizableClaim | None = Field(
         default=None,
         description="The extracted formalizable claim, or None if unformalizable"
     )
@@ -156,7 +156,7 @@ class ClaimExtractionResult(BaseModel):
         description="Explanation of the extraction decision"
     )
 
-    alternative_formulation: Optional[str] = Field(
+    alternative_formulation: str | None = Field(
         default=None,
         description="""If unformalizable, suggest how the claim could be
         reformulated to be formalizable"""
@@ -181,7 +181,7 @@ class ClaimConflict(BaseModel):
         description="Explanation of why the claims conflict or don't conflict"
     )
 
-    conflict_type: Optional[str] = Field(
+    conflict_type: str | None = Field(
         default=None,
         description="""Type of conflict: 'value_mismatch', 'logical_contradiction',
         'property_violation', etc."""
@@ -193,7 +193,7 @@ class ProofStrategy(BaseModel):
 
     claim: FormalizableClaim
 
-    coq_tactics: List[str] = Field(
+    coq_tactics: list[str] = Field(
         description="""Suggested Coq tactics for proving this claim. Examples:
         - ['reflexivity'] for simple arithmetic
         - ['simpl', 'reflexivity'] for factorial
@@ -202,7 +202,7 @@ class ProofStrategy(BaseModel):
         """
     )
 
-    requires: List[str] = Field(
+    requires: list[str] = Field(
         default_factory=list,
         description="""Required Coq libraries. Examples:
         - ['Arith'] for arithmetic
@@ -215,7 +215,7 @@ class ProofStrategy(BaseModel):
         description="Difficulty: 'trivial', 'simple', 'moderate', 'complex', 'requires_lemmas'"
     )
 
-    potential_issues: List[str] = Field(
+    potential_issues: list[str] = Field(
         default_factory=list,
         description="Potential issues that might prevent proof: type mismatches, missing lemmas, etc."
     )

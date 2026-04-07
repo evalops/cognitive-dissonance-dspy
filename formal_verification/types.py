@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 class PropertyType(Enum):
@@ -32,7 +32,7 @@ class ProofStatus(str, Enum):
     UNAVAILABLE = "unavailable"
 
     @classmethod
-    def from_value(cls, value: Optional[Any]) -> Optional["ProofStatus"]:
+    def from_value(cls, value: Any | None) -> Optional["ProofStatus"]:
         """Convert raw status values into normalized enum members when possible."""
         if value is None:
             return None
@@ -47,7 +47,7 @@ class ProofStatus(str, Enum):
             return None
 
     @classmethod
-    def normalize(cls, value: Optional[Any]) -> Optional[str]:
+    def normalize(cls, value: Any | None) -> str | None:
         """Normalize solver status values for stable storage on ProofResult."""
         status = cls.from_value(value)
         if status is not None:
@@ -64,8 +64,8 @@ class ProofStatus(str, Enum):
         cls,
         *,
         proven: bool,
-        prover_name: Optional[str],
-        counter_example: Optional[Any] = None,
+        prover_name: str | None,
+        counter_example: Any | None = None,
     ) -> "ProofStatus":
         """Infer the safest default status for loosely structured solver outputs."""
         normalized_prover = (prover_name or "").strip().lower()
@@ -88,11 +88,11 @@ class ProofStatus(str, Enum):
     @classmethod
     def resolve(
         cls,
-        value: Optional[Any],
+        value: Any | None,
         *,
         proven: bool,
-        prover_name: Optional[str],
-        counter_example: Optional[Any] = None,
+        prover_name: str | None,
+        counter_example: Any | None = None,
     ) -> "ProofStatus":
         """Use an explicit status when present, otherwise infer a safe default."""
         return cls.from_value(value) or cls.default_for_solver_result(
@@ -156,30 +156,30 @@ class FormalSpec:
     claim: Claim
     spec_text: str
     coq_code: str
-    variables: Dict[str, str]
+    variables: dict[str, str]
 
 
 @dataclass
 class ProofResult:
     """Result of attempting to prove a formal specification."""
-    spec: Optional[FormalSpec]
+    spec: FormalSpec | None
     proven: bool
     proof_time_ms: float
-    error_message: Optional[str]
-    counter_example: Optional[str]
+    error_message: str | None
+    counter_example: str | None
     proof_output: str = ""
-    prover_name: Optional[str] = None
-    solver_status: Optional[str] = None
+    prover_name: str | None = None
+    solver_status: str | None = None
     auto_repaired: bool = False
     assumptions_present: bool = False
-    checker_name: Optional[str] = None
+    checker_name: str | None = None
 
     def __post_init__(self) -> None:
         """Normalize status values so all callers observe a stable vocabulary."""
         self.solver_status = ProofStatus.normalize(self.solver_status)
 
     @property
-    def status(self) -> Optional[ProofStatus]:
+    def status(self) -> ProofStatus | None:
         """Normalized enum view of the stored solver status."""
         return ProofStatus.from_value(self.solver_status)
 

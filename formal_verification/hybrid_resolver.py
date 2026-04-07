@@ -6,15 +6,14 @@ existing DSPy-based dissonance detection and reconciliation pipeline.
 
 import logging
 import time
-from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
-from .openai_agents import OpenAIClaimExtractor
 from .guardrails import ClaimGuardrails, GuardrailWithRetry
-from .structured_models import FormalizableClaim, ClaimCategory
-from .types import Claim, PropertyType, ProofResult
-from .translator import ClaimTranslator
+from .openai_agents import OpenAIClaimExtractor
 from .prover import CoqProver
+from .structured_models import ClaimCategory, FormalizableClaim
+from .translator import ClaimTranslator
+from .types import Claim, ProofResult, PropertyType
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +22,9 @@ logger = logging.getLogger(__name__)
 class ClaimAnalysis:
     """Analysis result for a single claim."""
     original_text: str
-    formalized_claim: Optional[FormalizableClaim]
+    formalized_claim: FormalizableClaim | None
     is_formalizable: bool
-    proof_result: Optional[ProofResult]
+    proof_result: ProofResult | None
     extraction_time_ms: float
     proof_time_ms: float
     reasoning: str
@@ -34,9 +33,9 @@ class ClaimAnalysis:
 @dataclass
 class ConflictAnalysis:
     """Analysis of conflicts between multiple claims."""
-    claim_analyses: List[ClaimAnalysis]
-    conflicts_detected: List[Tuple[int, int]]  # Indices of conflicting claims
-    conflict_descriptions: List[str]
+    claim_analyses: list[ClaimAnalysis]
+    conflicts_detected: list[tuple[int, int]]  # Indices of conflicting claims
+    conflict_descriptions: list[str]
     resolution_strategy: str
     total_time_ms: float
 
@@ -55,7 +54,7 @@ class HybridCognitiveDissonanceResolver:
 
     def __init__(
         self,
-        openai_api_key: Optional[str] = None,
+        openai_api_key: str | None = None,
         model: str = "gpt-4",
         use_guardrails: bool = True,
         strict_guardrails: bool = False
@@ -187,7 +186,7 @@ class HybridCognitiveDissonanceResolver:
 
     def analyze_multiple_claims(
         self,
-        texts: List[str],
+        texts: list[str],
         code_context: str = ""
     ) -> ConflictAnalysis:
         """
@@ -289,8 +288,8 @@ class HybridCognitiveDissonanceResolver:
 
     def _are_semantically_conflicting(
         self,
-        claim1: Optional[FormalizableClaim],
-        claim2: Optional[FormalizableClaim]
+        claim1: FormalizableClaim | None,
+        claim2: FormalizableClaim | None
     ) -> bool:
         """
         Determine if two claims are semantically conflicting.
@@ -357,9 +356,9 @@ class HybridCognitiveDissonanceResolver:
 
     def compare_with_dspy(
         self,
-        texts: List[str],
+        texts: list[str],
         code_context: str = ""
-    ) -> Dict:
+    ) -> dict:
         """
         Compare OpenAI SDK extraction with DSPy extraction.
 

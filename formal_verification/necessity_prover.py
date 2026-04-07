@@ -7,10 +7,9 @@ tactics, it analyzes the logical structure to determine what MUST be true.
 
 import logging
 import re
-from typing import List, Optional, Set
+import time
 from dataclasses import dataclass
 from enum import Enum
-import time
 
 from .types import Claim, FormalSpec, ProofResult, ProofStatus
 
@@ -32,10 +31,10 @@ class NecessityType(Enum):
 class NecessityEvidence:
     """Evidence for why a claim must be mathematically necessary."""
     necessity_type: NecessityType
-    supporting_facts: List[str]
-    logical_chain: List[str]
+    supporting_facts: list[str]
+    logical_chain: list[str]
     confidence: float
-    axioms_required: Set[str]
+    axioms_required: set[str]
     proof_sketch: str
 
 
@@ -43,8 +42,8 @@ class NecessityEvidence:
 class ProofStrategy:
     """A necessity-driven proof strategy."""
     approach: str
-    tactics: List[str]
-    expected_lemmas: List[str]
+    tactics: list[str]
+    expected_lemmas: list[str]
     complexity_estimate: int
     success_probability: float
     rationale: str
@@ -317,7 +316,7 @@ class MathematicalStructureAnalyzer:
                 f"Counter-example: ∑(i=1 to {n}) i = {expected_result} ≠ {claimed_result}."
             )
 
-    def analyze_claim(self, claim_text: str) -> Optional[NecessityEvidence]:
+    def analyze_claim(self, claim_text: str) -> NecessityEvidence | None:
         """Analyze a claim to determine its mathematical necessity.
 
         Args:
@@ -540,7 +539,7 @@ class NecessityProofIntegrator:
 
     def _verify_with_fallback(
         self, claim: Claim, necessity_result: ProofResult
-    ) -> Optional[ProofResult]:
+    ) -> ProofResult | None:
         """Try to turn a derived proof result into a concrete solver result."""
         if not self.fallback_prover:
             return None

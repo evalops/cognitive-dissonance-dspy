@@ -12,17 +12,17 @@ Run with:
     python examples/openai_agents_demo.py
 """
 
+import logging
 import os
 import sys
-import logging
 from pathlib import Path
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from formal_verification.guardrails import ClaimGuardrails, GuardrailWithRetry
 from formal_verification.hybrid_resolver import HybridCognitiveDissonanceResolver
 from formal_verification.openai_agents import OpenAIClaimExtractor
-from formal_verification.guardrails import ClaimGuardrails, GuardrailWithRetry
 
 # Configure logging
 logging.basicConfig(

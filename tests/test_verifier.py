@@ -1,14 +1,15 @@
 """Tests for verifier module."""
 
 import dspy
+
 from cognitive_dissonance.verifier import (
     BeliefAgent,
-    DissonanceDetector,
-    ReconciliationAgent,
     CognitiveDissonanceResolver,
-    ExtractClaim,
     DetectDissonance,
-    ReconcileClaims
+    DissonanceDetector,
+    ExtractClaim,
+    ReconcileClaims,
+    ReconciliationAgent,
 )
 
 

@@ -1,13 +1,14 @@
 """Tests for data module."""
 
-import pytest
 import dspy
+import pytest
+
 from cognitive_dissonance.data import (
     get_belief_conflicts,
     get_dev_labeled,
+    get_external_knowledge,
     get_train_unlabeled,
     validate_dataset,
-    get_external_knowledge
 )
 
 
