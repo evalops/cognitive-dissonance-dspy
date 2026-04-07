@@ -1,7 +1,7 @@
 """Tests for experiment module."""
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import dspy
 from cognitive_dissonance.experiment import (
     ExperimentResults,
@@ -9,7 +9,6 @@ from cognitive_dissonance.experiment import (
     run_ablation_study,
     run_confidence_analysis
 )
-from cognitive_dissonance.config import ExperimentConfig
 
 
 class TestExperimentResults:

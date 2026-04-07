@@ -62,7 +62,7 @@ def demo_basic_extraction():
             print(f"  Variables: {result.claim.variables}")
             print(f"  Reasoning: {result.reasoning}")
         else:
-            print(f"✗ Not formalizable")
+            print("✗ Not formalizable")
             print(f"  Reasoning: {result.reasoning}")
             if result.alternative_formulation:
                 print(f"  Suggestion: {result.alternative_formulation}")
@@ -91,7 +91,7 @@ def demo_with_guardrails():
         claim, validation = guarded_extractor.extract_with_validation(text)
 
         if validation.passed:
-            print(f"✓ Passed guardrails")
+            print("✓ Passed guardrails")
             print(f"  Claim: {claim.claim_text}")
             print(f"  Category: {claim.category.value}")
             print(f"  Confidence: {claim.confidence:.2f}")
@@ -135,7 +135,7 @@ def demo_full_analysis():
             if analysis.proof_result.proven:
                 print(f"✓ PROVEN ({analysis.proof_time_ms:.1f}ms)")
             else:
-                print(f"✗ DISPROVEN or FAILED")
+                print("✗ DISPROVEN or FAILED")
                 if analysis.proof_result.error_message:
                     print(f"  Error: {analysis.proof_result.error_message[:100]}")
 
@@ -161,13 +161,13 @@ def demo_conflict_detection():
     agent_names = ["Alice", "Bob", "Charlie"]
 
     print("\nAgent Claims:")
-    for name, claim in zip(agent_names, claims):
+    for name, claim in zip(agent_names, claims, strict=True):
         print(f"  {name}: '{claim}'")
 
     print("\nAnalyzing claims...")
     conflict_analysis = resolver.analyze_multiple_claims(claims)
 
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Total claims: {len(claims)}")
     print(f"  Analysis time: {conflict_analysis.total_time_ms:.1f}ms")
 
@@ -177,17 +177,17 @@ def demo_conflict_detection():
         print(f"    Formalizable: {analysis.is_formalizable}")
         if analysis.proof_result:
             if analysis.proof_result.proven:
-                print(f"    Status: ✓ PROVEN")
+                print("    Status: ✓ PROVEN")
             else:
-                print(f"    Status: ✗ DISPROVEN/FAILED")
+                print("    Status: ✗ DISPROVEN/FAILED")
 
     if conflict_analysis.conflicts_detected:
-        print(f"\n⚠️  Conflicts Detected:")
+        print("\n⚠️  Conflicts Detected:")
         for conflict_desc in conflict_analysis.conflict_descriptions:
             print(f"    - {conflict_desc}")
         print(f"\n  Resolution: {conflict_analysis.resolution_strategy}")
     else:
-        print(f"\n✓ No conflicts detected")
+        print("\n✓ No conflicts detected")
 
 
 def demo_comparison():
@@ -213,9 +213,9 @@ def demo_comparison():
     print(f"\nTesting {len(test_claims)} claims...")
     metrics = resolver.compare_with_dspy(test_claims)
 
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Total claims: {metrics['total_claims']}")
-    print(f"\n  OpenAI SDK + Guardrails:")
+    print("\n  OpenAI SDK + Guardrails:")
     print(f"    Formalizable: {metrics['openai']['formalizable_count']}/{metrics['total_claims']} "
           f"({metrics['openai']['formalizable_rate']:.1%})")
     print(f"    Proven: {metrics['openai']['proven_count']}/{metrics['total_claims']} "

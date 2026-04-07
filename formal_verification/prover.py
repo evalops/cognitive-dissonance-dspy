@@ -88,18 +88,6 @@ class CoqProver:
             if cached_result:
                 return cached_result
         
-        if not self.coq_available:
-            return ProofResult(
-                spec=spec,
-                proven=False,
-                proof_time_ms=0,
-                error_message="Coq theorem prover not available",
-                counter_example=None,
-                proof_output="",
-                prover_name="coq",
-                solver_status=ProofStatus.UNAVAILABLE.value,
-            )
-        
         start_time = time.time()
         assumptions = self._detect_unverified_assumptions(spec.coq_code)
         if assumptions:
@@ -116,6 +104,18 @@ class CoqProver:
                 prover_name="coq",
                 solver_status=ProofStatus.FORMALIZED_UNPROVED.value,
                 assumptions_present=True,
+            )
+
+        if not self.coq_available:
+            return ProofResult(
+                spec=spec,
+                proven=False,
+                proof_time_ms=0,
+                error_message="Coq theorem prover not available",
+                counter_example=None,
+                proof_output="",
+                prover_name="coq",
+                solver_status=ProofStatus.UNAVAILABLE.value,
             )
 
         try:

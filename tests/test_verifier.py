@@ -1,6 +1,5 @@
 """Tests for verifier module."""
 
-import pytest
 import dspy
 from cognitive_dissonance.verifier import (
     BeliefAgent,
@@ -162,7 +161,7 @@ class TestDissonanceDetector:
             mock_pred = dspy.Prediction()
             mock_pred.are_contradictory = input_verdict
             mock_pred.reason = "Test"
-            detector.detect = lambda **kwargs: mock_pred
+            detector.detect = lambda mock_pred=mock_pred, **kwargs: mock_pred
             
             result = detector.forward("Claim 1", "Claim 2")
             assert result.are_contradictory == expected

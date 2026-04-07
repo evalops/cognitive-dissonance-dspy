@@ -70,8 +70,8 @@ def print_comprehensive_results(results: dict):
     """Print comprehensive analysis results with detailed formatting."""
     print("🔬 COMPREHENSIVE FORMAL VERIFICATION ANALYSIS")
     print("=" * 70)
-    print(f"Framework: Formal Verification + Cognitive Dissonance Detection")
-    print(f"Theorem Prover: Coq (coqc)")
+    print("Framework: Formal Verification + Cognitive Dissonance Detection")
+    print("Theorem Prover: Coq (coqc)")
     print(f"Total Claims Analyzed: {results['summary']['total_claims']}")
     print(f"Conflicts Detected: {results['summary']['conflicts_detected']}")
     print()
@@ -198,7 +198,7 @@ def main():
         # Final summary
         print("\n🎯 COMPREHENSIVE DEMONSTRATION SUMMARY:")
         print("=" * 50)
-        print(f"Framework Performance:")
+        print("Framework Performance:")
         print(f"  • Total analysis time: {analysis_time:.2f} seconds")
         print(f"  • Claims processed: {metrics['total_claims']}")
         print(f"  • Mathematical theorems proven: {metrics['proven_count']}")
@@ -206,12 +206,12 @@ def main():
         print(f"  • Conflicts resolved: {metrics['conflicts_resolved']}")
         print(f"  • Success rate: {metrics['success_rate']:.1%}")
         
-        print(f"\nFormal Verification Capabilities:")
+        print("\nFormal Verification Capabilities:")
         print(f"  • Maximum factorial complexity: factorial {metrics['max_factorial']} = {5040 if metrics['max_factorial'] >= 7 else '?'}")
         print(f"  • Average proof time: {metrics['avg_proof_time']:.1f}ms per theorem")
-        print(f"  • Real Coq theorem prover integration: ✅")
-        print(f"  • Mathematical ground truth establishment: ✅")
-        print(f"  • Multi-agent conflict resolution: ✅")
+        print("  • Real Coq theorem prover integration: ✅")
+        print("  • Mathematical ground truth establishment: ✅")
+        print("  • Multi-agent conflict resolution: ✅")
         
         if metrics['success_rate'] >= 0.8:
             print("\n🏆 COMPREHENSIVE FORMAL VERIFICATION SUCCESS!")
@@ -224,9 +224,9 @@ def main():
             print("\n⚠️ VERIFICATION NEEDS IMPROVEMENT")
             print("   Consider investigating proof generation patterns.")
             
-        print(f"\n🔬 Research Contribution:")
-        print(f"   Novel intersection of formal verification + cognitive dissonance detection")
-        print(f"   Real-world application of theorem proving to multi-agent belief conflicts")
+        print("\n🔬 Research Contribution:")
+        print("   Novel intersection of formal verification + cognitive dissonance detection")
+        print("   Real-world application of theorem proving to multi-agent belief conflicts")
         print(f"   Production-ready framework with {metrics['avg_proof_time']:.0f}ms average proof time")
         
         return 0

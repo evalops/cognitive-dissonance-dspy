@@ -1,6 +1,5 @@
 """Verifier modules for detecting and resolving cognitive dissonance."""
 
-import random
 import logging
 import dspy
 

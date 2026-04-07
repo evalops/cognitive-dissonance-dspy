@@ -188,7 +188,10 @@ class UncertaintyQuantifier:
         # Weighted average (recent factors get higher weight)
         if confidence_factors:
             weights = [1.2**i for i in range(len(confidence_factors))]
-            weighted_sum = sum(cf * w for cf, w in zip(confidence_factors, weights))
+            weighted_sum = sum(
+                cf * w
+                for cf, w in zip(confidence_factors, weights, strict=True)
+            )
             total_weight = sum(weights)
             return min(weighted_sum / total_weight, 1.0)
         
@@ -221,7 +224,7 @@ class UncertaintyQuantifier:
         
         # Collect calibration data
         self.calibration_data = []
-        for pred, correct in zip(predictions, ground_truth):
+        for pred, correct in zip(predictions, ground_truth, strict=True):
             uncertainty = self.compute_uncertainty(pred)
             self.calibration_data.append({
                 'confidence': uncertainty['confidence_score'],

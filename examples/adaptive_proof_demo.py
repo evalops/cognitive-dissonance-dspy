@@ -8,14 +8,13 @@ by learning successful proof strategies and applying them to new problems.
 
 import time
 import logging
-from typing import List
 
 from formal_verification import (
     FormalVerificationConflictDetector,
     Claim,
     PropertyType
 )
-from formal_verification.proof_strategies import AdaptiveProver, ProofStrategyLearner
+from formal_verification.proof_strategies import AdaptiveProver
 from formal_verification.code_analyzer import CodeAnalyzer, SpecificationSynthesizer
 
 # Setup logging
@@ -189,7 +188,7 @@ def demonstrate_adaptive_learning():
     
     if strategies:
         print("\n📚 Learned Proof Patterns:")
-        for key, strategy in list(strategies.items())[:3]:  # Show first 3
+        for _key, strategy in list(strategies.items())[:3]:  # Show first 3
             print(f"   • {strategy.pattern_type}: {strategy.tactics_sequence}")
             print(f"     Success rate: {strategy.success_rate:.1%}, Avg time: {strategy.avg_proof_time_ms:.1f}ms")
     
@@ -250,7 +249,7 @@ def demonstrate_proof_improvement():
     # Show improvement
     if len(batch_times) >= 2:
         speedup = batch_times[0] / batch_times[-1]
-        print(f"\n🚀 Performance Improvement:")
+        print("\n🚀 Performance Improvement:")
         print(f"   First batch: {batch_times[0]:.1f}ms")
         print(f"   Last batch: {batch_times[-1]:.1f}ms")
         print(f"   Speedup: {speedup:.1f}x")
@@ -263,13 +262,13 @@ def main():
     print("Starting Adaptive Proof System Demo...\n")
     
     # Demonstrate code analysis
-    code_specs = demonstrate_code_analysis()
+    demonstrate_code_analysis()
     
     # Demonstrate adaptive learning
     learning_stats = demonstrate_adaptive_learning()
     
     # Demonstrate improvement over time
-    batch_times = demonstrate_proof_improvement()
+    demonstrate_proof_improvement()
     
     print("\n" + "=" * 60)
     print("🎯 KEY ACHIEVEMENTS:")

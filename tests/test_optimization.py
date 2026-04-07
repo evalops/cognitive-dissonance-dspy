@@ -1,6 +1,5 @@
 """Tests for optimization module."""
 
-import pytest
 import dspy
 from cognitive_dissonance.optimization import (
     GEPAOptimizer,

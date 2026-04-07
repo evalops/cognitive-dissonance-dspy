@@ -217,7 +217,6 @@ def get_external_knowledge(url: Optional[str] = None) -> Dict[str, Any]:
         Dictionary with knowledge data
     """
     import os
-    import requests
     
     if url is None:
         url = os.getenv("WIKI1K_URL", "http://20.102.90.50:2017/wiki1k")

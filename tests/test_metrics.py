@@ -1,6 +1,5 @@
 """Tests for metrics module."""
 
-import pytest
 import dspy
 from cognitive_dissonance.metrics import (
     dissonance_detection_accuracy,
@@ -10,7 +9,6 @@ from cognitive_dissonance.metrics import (
     blended_metric_factory,
     confidence_weighted_accuracy
 )
-from cognitive_dissonance.verifier import CognitiveDissonanceResolver
 
 
 class TestDissonanceDetectionAccuracy:
@@ -181,7 +179,6 @@ class TestAgreementMetric:
                 pred.has_dissonance = "yes"
                 return pred
         
-        agent1 = MockAgent()
         agent2 = MockAgent()
         
         metric = agreement_metric_factory(agent2)

@@ -8,7 +8,6 @@ and how it can convert test suites into formal specifications.
 
 import time
 import logging
-from typing import List
 
 from formal_verification import (
     FormalVerificationConflictDetector,
@@ -215,13 +214,13 @@ def main():
     print("Starting Proof Debugging and Inference Demo...\n")
     
     # Demonstrate proof debugging
-    debugging_results = demonstrate_proof_debugging()
+    demonstrate_proof_debugging()
     
     # Demonstrate specification inference
-    inferred_specs = demonstrate_spec_inference()
+    demonstrate_spec_inference()
     
     # Demonstrate guided proof development
-    guided_examples = demonstrate_guided_proof_development()
+    demonstrate_guided_proof_development()
     
     print("\n" + "=" * 60)
     print("🎯 KEY CAPABILITIES DEMONSTRATED:")

@@ -167,7 +167,7 @@ def demonstrate_software_verification():
         print(f"Found {len(conflict_results['conflicts'])} conflicts:")
         for spec1, spec2 in conflict_results['conflicts']:
             print(f"  • {spec1.claim.agent_id}: '{spec1.claim.claim_text[:40]}...'")
-            print(f"    vs")
+            print("    vs")
             print(f"    {spec2.claim.agent_id}: '{spec2.claim.claim_text[:40]}...'")
             print()
     
@@ -183,7 +183,7 @@ def demonstrate_software_verification():
         for prop_type, claim in proven_properties[:5]:  # Show first 5
             print(f"  • [{prop_type}] {claim[:50]}...")
     
-    print(f"\n🏆 Agent Rankings by Correctness:")
+    print("\n🏆 Agent Rankings by Correctness:")
     rankings = results['resolution']['agent_rankings']
     for agent, accuracy in sorted(rankings.items(), key=lambda x: x[1], reverse=True)[:5]:
         print(f"  {agent}: {accuracy:.0%} accuracy")
@@ -256,7 +256,7 @@ def main():
     verified, unverified = demonstrate_software_verification()
     
     # Run code review scenario
-    review_results = demonstrate_code_review_scenario()
+    demonstrate_code_review_scenario()
     
     print("\n" + "=" * 60)
     print("🎯 KEY INSIGHTS:")

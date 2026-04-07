@@ -5,7 +5,7 @@ import logging
 from dspy.teleprompt import BootstrapFewShot
 
 from .config import ExperimentConfig
-from .verifier import CognitiveDissonanceResolver, BeliefAgent, DissonanceDetector
+from .verifier import CognitiveDissonanceResolver
 from .data import get_dev_labeled, get_train_unlabeled, validate_dataset
 from .metrics import (
     dissonance_detection_accuracy,
@@ -15,7 +15,7 @@ from .metrics import (
     confidence_weighted_accuracy
 )
 from .evaluation import evaluate, agreement_rate, analyze_errors
-from .optimization import create_advanced_optimizer, GEPAOptimizer, EnsembleOptimizer
+from .optimization import create_advanced_optimizer, GEPAOptimizer
 from .uncertainty import UncertaintyQuantifier, EnhancedConfidenceScorer
 
 logger = logging.getLogger(__name__)

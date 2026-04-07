@@ -1,6 +1,5 @@
 """Tests for uncertainty module."""
 
-import pytest
 import dspy
 from cognitive_dissonance.uncertainty import (
     UncertaintyQuantifier,

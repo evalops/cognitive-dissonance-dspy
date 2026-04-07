@@ -63,7 +63,7 @@ def print_analysis_results(results: dict):
     """Print formatted analysis results."""
     print("🔍 FORMAL VERIFICATION COGNITIVE DISSONANCE ANALYSIS")
     print("=" * 60)
-    print(f"Domain: Mathematical Properties")
+    print("Domain: Mathematical Properties")
     print(f"Total Claims: {results['summary']['total_claims']}")
     print(f"Conflicts Detected: {results['summary']['conflicts_detected']}")
     print()

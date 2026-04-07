@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-from typing import Optional
 
 from .config import ExperimentConfig, setup_logging
 from .experiment import (
@@ -295,7 +294,7 @@ def main():
         print(f"Final reconciliation quality: {summary['final_reconciliation']:.3f}")
         
         if summary.get('error_analysis'):
-            print(f"\nError Analysis:")
+            print("\nError Analysis:")
             print(f"  Error rate: {summary['error_analysis']['error_rate']:.3f}")
             print(f"  False positive rate: {summary['error_analysis']['false_positive_rate']:.3f}")
             print(f"  False negative rate: {summary['error_analysis']['false_negative_rate']:.3f}")
@@ -313,18 +312,18 @@ def main():
         print(f"Final reconciliation quality: {summary['final_reconciliation']:.3f}")
         
         if results.confidence_analysis:
-            print(f"\nConfidence Analysis:")
+            print("\nConfidence Analysis:")
             print(f"  Average confidence: {results.confidence_analysis['avg_confidence']:.3f}")
             print(f"  Average uncertainty: {results.confidence_analysis['avg_uncertainty']:.3f}")
             print(f"  High confidence predictions: {results.confidence_analysis['high_confidence_predictions']}")
         
         if results.uncertainty_metrics:
-            print(f"\nUncertainty Metrics:")
+            print("\nUncertainty Metrics:")
             print(f"  Calibration error: {results.uncertainty_metrics['calibration_error']:.3f}")
             print(f"  Calibration samples: {results.uncertainty_metrics['num_calibration_samples']}")
         
         if results.optimization_history:
-            print(f"\nOptimization History:")
+            print("\nOptimization History:")
             for entry in results.optimization_history[-3:]:  # Show last 3 iterations
                 print(f"  Iteration {entry['iteration']}: {entry['score']:.3f}")
     

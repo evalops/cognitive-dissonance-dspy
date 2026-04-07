@@ -1,16 +1,15 @@
 """Tests for OpenAI Agents SDK integration."""
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 import json
 
 from formal_verification.structured_models import (
     FormalizableClaim,
-    ClaimCategory,
-    ClaimExtractionResult
+    ClaimCategory
 )
 from formal_verification.openai_agents import OpenAIClaimExtractor
-from formal_verification.guardrails import ClaimGuardrails, GuardrailViolation
+from formal_verification.guardrails import ClaimGuardrails
 from formal_verification.hybrid_resolver import HybridCognitiveDissonanceResolver
 
 
@@ -269,7 +268,7 @@ class TestHybridResolver:
         mock_prover = MagicMock()
         mock_prover_class.return_value = mock_prover
 
-        from formal_verification.types import ProofResult, FormalSpec, Claim, PropertyType
+        from formal_verification.types import ProofResult
         mock_proof_result = ProofResult(
             spec=MagicMock(),
             proven=True,

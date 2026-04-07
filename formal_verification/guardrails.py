@@ -6,7 +6,7 @@ successfully translated to Coq specifications before being passed to the prover.
 
 import logging
 import re
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Tuple
 from dataclasses import dataclass
 
 from .structured_models import FormalizableClaim, ClaimCategory
@@ -112,8 +112,8 @@ class ClaimGuardrails:
                 violations.append(GuardrailViolation(
                     rule_name="arithmetic_format",
                     severity="error",
-                    message=f"Arithmetic claim must match 'N + M = R' pattern",
-                    suggestion=f"Reformat as 'N + M = R' with actual numbers"
+                    message="Arithmetic claim must match 'N + M = R' pattern",
+                    suggestion="Reformat as 'N + M = R' with actual numbers"
                 ))
 
         elif claim.category == ClaimCategory.FACTORIAL:
@@ -121,7 +121,7 @@ class ClaimGuardrails:
                 violations.append(GuardrailViolation(
                     rule_name="factorial_format",
                     severity="error",
-                    message=f"Factorial claim must match 'factorial N = M' pattern",
+                    message="Factorial claim must match 'factorial N = M' pattern",
                     suggestion="Use format: 'factorial 5 = 120'"
                 ))
 
@@ -130,7 +130,7 @@ class ClaimGuardrails:
                 violations.append(GuardrailViolation(
                     rule_name="inequality_format",
                     severity="error",
-                    message=f"Inequality must use symbols: <, >, <=, >=",
+                    message="Inequality must use symbols: <, >, <=, >=",
                     suggestion="Use format: '3 < 5' or '10 >= 7'"
                 ))
 
@@ -164,7 +164,7 @@ class ClaimGuardrails:
                 violations.append(GuardrailViolation(
                     rule_name="natural_language_artifact",
                     severity="warning",
-                    message=f"Claim contains natural language artifacts",
+                    message="Claim contains natural language artifacts",
                     suggestion=suggestion
                 ))
 
@@ -195,7 +195,7 @@ class ClaimGuardrails:
                 violations.append(GuardrailViolation(
                     rule_name="translator_compatibility",
                     severity="error",
-                    message=f"Claim cannot be translated to Coq specification",
+                    message="Claim cannot be translated to Coq specification",
                     suggestion=(
                         f"Claim category is {claim.category.value}. "
                         "Ensure claim text matches expected pattern for this category."

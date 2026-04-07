@@ -111,7 +111,7 @@ def create_search_claims() -> List[Claim]:
 
 def print_algorithm_analysis_results(results: dict, domain_name: str):
     """Print formatted algorithm verification results."""
-    print(f"🔍 ALGORITHM CORRECTNESS FORMAL VERIFICATION")
+    print("🔍 ALGORITHM CORRECTNESS FORMAL VERIFICATION")
     print("=" * 60)
     print(f"Domain: {domain_name}")
     print(f"Total Claims: {results['summary']['total_claims']}")

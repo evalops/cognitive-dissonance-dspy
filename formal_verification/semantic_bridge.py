@@ -7,7 +7,7 @@ measurable assertions within natural language disputes.
 
 import logging
 import re
-from typing import Dict, List, Optional, Tuple, Set
+from typing import List, Optional
 from dataclasses import dataclass
 from enum import Enum
 
@@ -176,7 +176,7 @@ class SubjectiveTermExtractor:
                     confidence=0.4,
                     measurable_property=comp_type,
                     verification_approach=f"Benchmark comparison for {comp_type}",
-                    grounding_evidence=[f"Comparative language indicates objective difference"]
+                    grounding_evidence=["Comparative language indicates objective difference"]
                 )
                 components.append(component)
         

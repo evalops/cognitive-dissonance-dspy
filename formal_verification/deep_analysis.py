@@ -9,10 +9,9 @@ and security invariants. It's the foundation for verifying production code.
 import ast
 import re
 import logging
-from typing import List, Dict, Optional, Set, Tuple, Any, Union
-from dataclasses import dataclass, field
+from typing import List, Dict, Optional, Set
+from dataclasses import dataclass
 from enum import Enum
-import hashlib
 
 from .types import Claim, FormalSpec, PropertyType
 
@@ -289,7 +288,6 @@ class DeepProgramAnalyzer:
             return claims
         
         shared_vars = set()
-        lock_usage = []
         
         for node in ast.walk(tree):
             # Look for lock operations
@@ -797,7 +795,7 @@ Admitted.
             # This is complex and would require sophisticated analysis
             # For now, provide a template
             
-            coq_code = f"""
+            coq_code = """
 Require Import Lia.
 
 (* Loop termination proof would require well-founded recursion *)
@@ -857,7 +855,7 @@ Admitted.
         # Security properties are often high-level and context-dependent
         # This would be a template for more specific analysis
         
-        coq_code = f"""
+        coq_code = """
 Require Import Logic.
 
 (* Security properties would be domain-specific *)

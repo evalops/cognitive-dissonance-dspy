@@ -6,15 +6,13 @@ with much higher accuracy than the unstructured DSPy approach.
 
 import os
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 from openai import OpenAI
 
 from .structured_models import (
     FormalizableClaim,
     ClaimExtractionResult,
-    ClaimCategory,
-    ClaimConflict,
-    ProofStrategy
+    ClaimCategory
 )
 from .types import Claim, PropertyType
 from .translator import ClaimTranslator

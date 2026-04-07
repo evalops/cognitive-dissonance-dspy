@@ -1,7 +1,7 @@
 """Advanced optimization techniques for cognitive dissonance detection."""
 
 import logging
-from typing import List, Dict, Any, Optional, Callable, Union
+from typing import List, Dict, Any, Optional, Callable
 import dspy
 
 from dspy.teleprompt import BootstrapFewShot
@@ -73,24 +73,6 @@ class GEPAOptimizer:
             except Exception as e:
                 logger.warning(f"Error getting prediction for reflection: {e}")
                 continue
-        
-        # Create reflection prompt
-        reflection_input = f"""
-        Analyze the cognitive dissonance detection system performance:
-        
-        Current Performance: {performance:.3f}
-        
-        Sample Predictions vs Expected:
-        {self._format_predictions(predictions)}
-        
-        Based on this analysis, identify:
-        1. What patterns are working well?
-        2. What specific errors are occurring?
-        3. What improvements could be made to prompts or reasoning?
-        4. What domain-specific knowledge might be missing?
-        
-        Provide concrete suggestions for improvement.
-        """
         
         # Use reflection model or fallback to basic analysis
         try:
@@ -374,7 +356,7 @@ class EnsembleModule(dspy.Module):
         weighted_dissonance = 0.0
         reconciled_texts = []
         
-        for pred, weight in zip(predictions, self.weights):
+        for pred, weight in zip(predictions, self.weights, strict=True):
             dissonance = getattr(pred, 'has_dissonance', 'no').lower()
             if 'yes' in dissonance:
                 weighted_dissonance += weight

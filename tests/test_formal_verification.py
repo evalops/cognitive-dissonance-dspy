@@ -225,6 +225,25 @@ class TestCoqProver:
         assert result.solver_status == "formalized_unproved"
         assert result.assumptions_present is True
 
+    def test_assumption_based_spec_is_rejected_without_coq(self):
+        """Unsound specs should be rejected before Coq availability checks matter."""
+        with patch.object(CoqProver, '_check_binary', return_value=False):
+            prover = CoqProver(use_cache=False)
+
+        claim = Claim("test", "test claim", PropertyType.CORRECTNESS, 0.5, time.time())
+        spec = FormalSpec(
+            claim,
+            "test spec",
+            "Theorem test : True. Proof. Admitted.",
+            {},
+        )
+
+        result = prover.prove_specification(spec)
+
+        assert result.proven is False
+        assert result.solver_status == "formalized_unproved"
+        assert result.assumptions_present is True
+
 
 class TestProofStatus:
     """Test shared proof-status normalization helpers."""

@@ -124,7 +124,7 @@ def test_concrete_mathematical_proofs():
                 if key_error:
                     print(f"  Mathematical error: {key_error}")
                 else:
-                    print(f"  Error: Proof verification failed")
+                    print("  Error: Proof verification failed")
             
             print()
         
@@ -163,7 +163,7 @@ def main():
     results, success_count = test_concrete_mathematical_proofs()
     
     if results:
-        print(f"\n🎯 CONCRETE THEOREM PROVING DEMONSTRATION:")
+        print("\n🎯 CONCRETE THEOREM PROVING DEMONSTRATION:")
         print("=" * 50)
         print(f"Concrete Mathematical Claims: {len(results['proof_results'])}")
         print(f"Successfully Proven: {success_count}")
