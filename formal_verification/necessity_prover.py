@@ -94,11 +94,11 @@ class MathematicalStructureAnalyzer:
 
         self.inductive_patterns = {
             # Factorial definition
-            r"factorial\s*\(\s*(\d+)\s*\)\s*=\s*(\d+)": self._factorial_necessity,
+            r"factorial\s*\(?\s*(\d+)\s*\)?\s*=\s*(\d+)": (self._factorial_necessity),
             # Fibonacci sequence
-            r"fibonacci\s*\(\s*(\d+)\s*\)\s*=\s*(\d+)": self._fibonacci_necessity,
+            r"fibonacci\s*\(?\s*(\d+)\s*\)?\s*=\s*(\d+)": (self._fibonacci_necessity),
             # GCD computation
-            r"gcd\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)\s*=\s*(\d+)": self._gcd_necessity,
+            r"gcd\s*\(?\s*(\d+)\s*,\s*(\d+)\s*\)?\s*=\s*(\d+)": (self._gcd_necessity),
             # Summation patterns
             r"sum\s*\(\s*1\s*to\s*(\d+)\s*\)\s*=\s*(\d+)": self._summation_necessity,
         }
@@ -574,14 +574,16 @@ class NecessityProofIntegrator:
         # Try necessity-based proof first
         necessity_result = self.necessity_prover.prove_by_necessity(claim)
 
-        if necessity_result.proven and self.fallback_prover:
+        if (
+            necessity_result.proven or necessity_result.counter_example
+        ) and self.fallback_prover:
             try:
                 verified_result = self._verify_with_fallback(claim, necessity_result)
                 if verified_result is not None:
                     if verified_result.proven or verified_result.is_definitive_disproof:
                         return verified_result
                     logger.warning(
-                        "Fallback prover did not confirm necessity proof; "
+                        "Fallback prover did not confirm necessity result; "
                         "keeping derived result"
                     )
             except Exception as e:

@@ -30,7 +30,7 @@
   urlcolor=EvalOpsAccent,
   pdftitle={EvalOps Research Report: Cognitive Dissonance DSPy},
   pdfauthor={Jonathan Haas},
-  pdfsubject={Research report on proof-oriented conflict resolution in multi-agent LLM systems},
+  pdfsubject={Empirical study of proof-oriented conflict resolution in multi-agent LLM systems},
   pdfcreator={Tectonic}
 }
 
@@ -51,12 +51,6 @@
   {\large\bfseries\color{EvalOpsInk}}
   {\thesubsection}
   {0.65em}
-  {}
-
-\titleformat{\subsubsection}
-  {\normalsize\bfseries\color{EvalOpsInk}}
-  {\thesubsubsection}
-  {0.6em}
   {}
 
 \pagestyle{fancy}
@@ -97,14 +91,14 @@
 \begin{titlepage}
 \thispagestyle{empty}
 
-\vspace*{1.6cm}
+\vspace*{1.5cm}
 
 \begin{center}
 {\Large\color{EvalOpsSlate}\textbf{EVALOPS RESEARCH TECHNICAL REPORT}\par}
 \vspace{0.65cm}
 {\Huge\bfseries\color{EvalOpsInk}Cognitive Dissonance DSPy\par}
 \vspace{0.2cm}
-{\Large\color{EvalOpsBlue}Formal Verification for Conflict Resolution in Multi-Agent LLM Systems\par}
+{\Large\color{EvalOpsBlue}An Empirical Study of Proof-Oriented Conflict Resolution in Multi-Agent LLM Systems\par}
 \end{center}
 
 \vspace{0.8cm}
@@ -118,72 +112,76 @@
 \textbf{Email} & \texttt{jonathan@evalops.dev} \\
 \textbf{Organization} & EvalOps \\
 \textbf{Prepared} & 2026-04-07 \\
-\textbf{Repository snapshot} & commit \texttt{6a76740} \\
-\textbf{Document type} & Internal research whitepaper / technical assessment \\
+\textbf{Study source revision} & \texttt{d11d492-dirty} \\
+\textbf{Document type} & Experimental technical report \\
 \end{tabularx}
 
 \vspace{0.8cm}
 
 \begin{summarybox}
-\textbf{Report scope.} This report evaluates the Cognitive Dissonance DSPy
-repository as a research artifact. It focuses on problem framing, architecture,
-proof semantics, hybrid verification design, validation status, limitations,
-and the next steps required to turn the current prototype into a stronger
-empirical research program.
+\textbf{Study objective.} This report evaluates whether the repository can move
+agent disagreement from debate into proof. The work reported here is based on
+actual experiments run from \nolinkurl{research/run_study.py}, not on static
+repository claims.
 \end{summarybox}
 
 \vfill
 
 \begin{calloutbox}
 \textbf{Suggested citation}\\
-Haas, Jonathan. \emph{Cognitive Dissonance DSPy: Formal Verification for
-Conflict Resolution in Multi-Agent LLM Systems}. EvalOps Research Technical
-Report, 2026-04-07.
+Haas, Jonathan. \emph{Cognitive Dissonance DSPy: An Empirical Study of
+Proof-Oriented Conflict Resolution in Multi-Agent LLM Systems}. EvalOps
+Research Technical Report, 2026-04-07.
 \end{calloutbox}
 
 \vfill
 
 {\small\color{EvalOpsSlate}
-This report was authored from repository-local documentation, implementation
-files, tests, and CI configuration.}
+This report is grounded in repository-local experiments, generated study
+artifacts, local test runs, and a live OpenAI-compatible extraction benchmark
+executed on 2026-04-07.}
 
 \end{titlepage}
 
 \begin{abstract}
-Cognitive Dissonance DSPy is a research prototype that attempts to resolve
-formalizable disagreements between language-model agents through proof rather
-than conversational arbitration. The system combines DSPy-based claim handling,
-natural-language-to-formal-spec translation, necessity-driven proof discovery,
-hybrid SMT and Coq proving, and a trust-aware proof-status model that
-distinguishes machine-checked results from weaker forms of evidence.
+This report evaluates the current state of Cognitive Dissonance DSPy as a
+research artifact. The central question is whether a multi-agent LLM system can
+resolve formalizable disagreements through proof instead of through debate or
+confidence aggregation. To answer that question, I ran a curated symbolic
+verification benchmark, a live natural-language extraction benchmark against an
+OpenAI-compatible endpoint, and a small stability check.
 
-This report evaluates the repository as a technical research artifact rather
-than as a demo. Its central finding is that the project's most important
-contribution is epistemic discipline: the codebase does not treat generated
-formal text, compiled proof scripts, solver outputs, and independently checked
-proofs as equivalent. The repository now presents a credible architecture, real
-CI coverage for \texttt{coqc}/\texttt{coqchk}, explicit persistence semantics,
-and a growing reproducibility story, while still showing major open problems in
-translation breadth, benchmark maturity, and semantic calibration.
+The main result is that the current pipeline saturates the repository's
+internal benchmark once Coq is available locally. Direct pattern matching
+translates only 25\% of the formalizable natural-language cases, while the
+current extraction pipeline reaches 100\% canonicalization accuracy on the same
+set. With \texttt{coqc} and \texttt{coqchk} installed, the formal benchmark
+becomes 16/16 decisive and the formalizable slice of the live extraction
+benchmark becomes 12/12 decisive. Six of those 12 extraction cases are
+machine-checked locally, while the remainder resolve through SMT proofs or
+decisive refutations. The strongest conclusion is therefore no longer ``proof
+is still the bottleneck on this benchmark,'' but rather ``the benchmark is no
+longer hard enough to be the main source of uncertainty.''
 \end{abstract}
 
 \section*{Executive Summary}
 
 \begin{summarybox}
 \begin{itemize}
-  \item \textbf{Core idea.} Route formalizable agent disagreements into a proof
-  pipeline and use proof outcomes, not debate, as the resolution mechanism.
-  \item \textbf{Strongest contribution.} A normalized trust model that
-  distinguishes machine-checked, SMT-derived, assumption-based, and
-  inconclusive outcomes.
-  \item \textbf{Distinctive technique.} Necessity-based proof discovery that
-  resolves some claims through mathematical structure before broader search.
-  \item \textbf{Current status.} The repository has green local tests, a green
-  multi-version CI matrix, a Coq smoke job, cache-schema versioning, and a much
-  cleaner engineering baseline than a typical proof-integrated demo.
-  \item \textbf{Main gaps.} Pattern-driven translation, heuristic semantic
-  bridging, and the lack of a rigorous benchmark protocol remain the dominant
-  research limitations.
+  \item \textbf{Direct finding.} On the curated extraction benchmark, direct
+  translation succeeds on only 3 of 12 formalizable natural-language claims,
+  while the extraction pipeline produces exact canonical forms for all 12.
+  \item \textbf{Coq-enabled result.} With local \texttt{coqc} and
+  \texttt{coqchk} available, the symbolic benchmark reaches 16/16 decisive
+  outcomes and the formalizable extraction slice reaches 12/12 decisive
+  outcomes.
+  \item \textbf{Evidence mix.} Those decisive outcomes are not all equivalent:
+  the formal benchmark contains 3 machine-checked cases, while the extraction
+  benchmark contains 6 machine-checked cases, 3 SMT proofs, and 3 decisive
+  refutations.
+  \item \textbf{Research implication.} The system's key value today is honest
+  evidence typing: SMT-backed, derived, machine-checked, and inconclusive
+  outcomes are kept distinct rather than merged into a single ``proved'' label.
 \end{itemize}
 \end{summarybox}
 
@@ -192,512 +190,393 @@ translation breadth, benchmark maturity, and semantic calibration.
 \hypersetup{pageanchor=true}
 \pagenumbering{arabic}
 
-\section{Introduction}
+\section{Objective}
 
-Multi-agent LLM systems often disagree. In most deployed or experimental
-systems, those disagreements are handled through debate, ranking, confidence
-aggregation, or arbitration prompts. Those methods are acceptable when the
-underlying issue is genuinely subjective or underspecified. They are much less
-appropriate when the disputed claim is formal and decidable.
+Most multi-agent systems handle disagreement with prompts, debate, voting, or
+confidence aggregation. Those strategies are appropriate when the disagreement
+is subjective. They are weaker when the disputed claim is formalizable.
 
-If two agents disagree about whether \texttt{2 + 2 = 4}, whether a factorial
-claim is correct, or whether a simple software property holds, a confidence-
-weighted debate is the wrong instrument. The correct instrument is some form of
-formal verification. Cognitive Dissonance DSPy is built around that thesis:
-when a dispute is formalizable, stop arguing and attempt to prove it
-\cite{repo_readme,fv_readme}.
+This repository explores a different policy:
+
+\begin{quote}
+If a claim can be translated into a formal object, attempt proof before
+arbitration.
+\end{quote}
+
+The goal of this study was not to restate the architecture, but to run real
+experiments and determine what the system currently does, what it does not yet
+do, and where the next research effort should go.
 
 \section{Research Questions}
 
-This report evaluates the repository against four practical research questions.
+The study focused on three practical questions.
 
 \begin{enumerate}
-  \item \textbf{RQ1:} Does the architecture provide a coherent route from agent
-  disagreement to proof-backed resolution?
-  \item \textbf{RQ2:} Does the implementation distinguish clearly between
-  strong and weak proof evidence?
-  \item \textbf{RQ3:} Does the repository support a credible validation and
-  reproducibility story?
-  \item \textbf{RQ4:} What research gaps remain before the framework can
-  support stronger empirical claims?
+  \item \textbf{RQ1:} Does necessity-enhanced verification materially improve
+  symbolic claim handling?
+  \item \textbf{RQ2:} Does the OpenAI-compatible extraction pipeline improve
+  translation success over direct pattern matching on natural-language claims?
+  \item \textbf{RQ3:} After successful extraction, how much of the remaining
+  problem is still in proof rather than extraction?
 \end{enumerate}
 
-\section{Methodology}
+\section{Experimental Setup}
 
-This report is based on repository-local evidence rather than an external
-literature survey. The analysis used four sources:
+\subsection{Code and Provenance}
 
-\begin{enumerate}
-  \item repository documentation in the root and
-  \texttt{formal\_verification/}
-  \item direct inspection of core implementation files
-  \item direct inspection of CI and persistence mechanisms
-  \item local validation commands executed against the checked-out codebase
-\end{enumerate}
+All study artifacts were generated by \nolinkurl{research/run_study.py}. The
+study metadata recorded the source revision as \texttt{d11d492-dirty}, meaning
+the experiments were run on top of commit \texttt{d11d492} with local
+uncommitted modifications that are part of the final repository state produced
+by this work. The exact experiment outputs are stored in:
 
-The implementation snapshot used here is commit \texttt{6a76740}. On that
-snapshot, the local validation command
-\texttt{.venv/bin/python -m pytest -q} produced \texttt{228 passed, 2 skipped},
-with the skipped tests corresponding to local Coq smoke checks that require
-\texttt{coqc} and \texttt{coqchk} to be installed on the host machine
-\cite{coq_smoke_tests}.
+\begin{itemize}
+  \item \nolinkurl{research/results/study_results.json}
+  \item \nolinkurl{research/results/study_summary.md}
+\end{itemize}
 
-\section{System Overview}
+\subsection{Local Environment}
 
-\subsection{Conceptual Pipeline}
-
-At a high level, the repository implements the following workflow:
-
-\begin{enumerate}
-  \item DSPy agents extract beliefs or claims from source texts.
-  \item The system detects cognitive dissonance or contradiction between those
-  claims.
-  \item Claims are classified into mathematical, algorithmic, software,
-  physical, subjective, or unverifiable categories.
-  \item Formalizable claims are translated or routed into proof targets.
-  \item The proof stack attempts resolution through necessity analysis, hybrid
-  SMT reasoning, or Coq-based proving and checking.
-  \item Results are normalized into a stable proof-status vocabulary and then
-  used to decide whether the framework should resolve deterministically,
-  probabilistically, or diagnostically.
-\end{enumerate}
-
-\subsection{Primary Components}
-
-\begin{longtable}{>{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.62\linewidth}}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.32\linewidth} >{\raggedright\arraybackslash}p{0.58\linewidth}}
 \toprule
-\textbf{Component} & \textbf{Research role} \\
+\textbf{Item} & \textbf{Observed configuration} \\
 \midrule
-\small\nolinkurl{cognitive_dissonance/verifier.py} &
-DSPy agents for claim extraction, contradiction detection, and reconciliation. \\
-\small\nolinkurl{cognitive_dissonance/mathematical_resolver.py} &
-Main orchestration layer that combines probabilistic agents with formal
-verification and semantic bridging \cite{math_resolver}. \\
-\small\nolinkurl{formal_verification/translator.py} &
-Pattern-based natural-language-to-specification translation for claims that can
-be sent toward Coq or hybrid proving \cite{translator}. \\
-\small\nolinkurl{formal_verification/prover.py} &
-Coq interface that compiles proof scripts, rejects assumption markers, and uses
-\texttt{coqchk} to mark only independently checked proofs as machine-checked
-\cite{coq_prover}. \\
-\small\nolinkurl{formal_verification/detector.py} &
-Formal-verification orchestrator that translates claims, detects conflicts,
-applies proving backends, and integrates proof repair \cite{detector}. \\
-\small\nolinkurl{formal_verification/necessity_prover.py} &
-Necessity-first proving layer for mathematical claims whose truth follows from
-definitional, inductive, or deductive structure \cite{necessity_prover}. \\
-\small\nolinkurl{formal_verification/lemma_discovery.py} &
-Automatic proof-repair machinery that analyzes failure modes and synthesizes
-helper lemmas or repair strategies \cite{lemma_discovery}. \\
-\small\nolinkurl{formal_verification/deep_analysis.py} &
-Program-property extraction for memory safety, concurrency, termination,
-performance, and related static claims \cite{deep_analysis}. \\
-\small\nolinkurl{formal_verification/semantic_bridge.py} &
-Heuristic decomposition of subjective claims into objective, measurable, or
-mathematical subclaims suitable for verification attempts \cite{semantic_bridge}. \\
-\small\nolinkurl{formal_verification/proof_cache.py} and
-\nolinkurl{formal_verification/proof_learning.py} &
-Persistence and learning-oriented infrastructure for cached proof results,
-strategy prediction, and stale-schema rejection \cite{proof_cache,proof_learning}. \\
+Python & \texttt{3.12.8} \\
+SMT solver & \texttt{z3-solver} installed locally \\
+Coq local availability & \texttt{coqc} and \texttt{coqchk} available \\
+Live extraction provider & OpenRouter-compatible endpoint \\
+Model & \texttt{openai/gpt-4.1-mini} \\
+Extraction temperature & \texttt{0.0} \\
+Study date & 2026-04-07 \\
 \bottomrule
 \end{longtable}
 
-\section{Core Technical Contributions}
+This matters because the local study now exercises the full proof pipeline
+rather than falling back to an SMT-only or no-Coq configuration.
 
-\subsection{Trust-Aware Proof Semantics}
+\subsection{Evidence Policy}
 
-The strongest design decision in the repository is the refusal to flatten all
-proof-looking outcomes into a single notion of success. The normalized
-\texttt{ProofStatus} model in \nolinkurl{formal_verification/types.py} includes
-machine-checked, SMT-proved, derived, refuted, formalized-but-unproved,
-compiled-but-unchecked, checker-failed, timeout, and unavailable outcomes
-\cite{types}.
-
-This matters because it prevents the system from overstating certainty. In
-particular:
+The study intentionally separates \emph{decisive} and \emph{optimistic}
+outcomes.
 
 \begin{itemize}
-  \item Assumption-bearing Coq specifications are rejected before execution and
-  treated as formalized but unproved.
-  \item A compiled proof is not treated as ground truth until the independent
-  proof checker succeeds.
-  \item Solver-derived successes can inform resolution without being conflated
-  with independently checked proof objects.
+  \item \textbf{Decisive:} statuses strong enough to resolve truth or falsity
+  directly, such as \texttt{smt\_proved} and \texttt{smt\_refuted}.
+  \item \textbf{Optimistic:} statuses that include derived support such as
+  \texttt{derived\_proved} and \texttt{derived\_refuted}. These do not count as
+  decisive evidence.
 \end{itemize}
 
-As a research contribution, this is more important than any single theorem the
-system proves. It establishes an explicit evidence hierarchy for
-proof-integrated agent systems.
+This distinction is not bookkeeping. It is the central epistemic discipline of
+the project.
 
-\subsection{Necessity-Based Proof Discovery}
+\section{Benchmarks}
 
-The necessity prover is the most distinctive algorithmic idea in the codebase.
-Rather than launching generic search immediately, it tries to determine what
-\emph{must} follow from mathematical structure. The implementation currently
-handles:
+\subsection{Formal Verification Benchmark}
+
+The symbolic benchmark contains 16 claims across seven families:
 
 \begin{itemize}
-  \item arithmetic equalities and inequalities
-  \item factorial claims
-  \item Fibonacci claims
-  \item GCD claims
-  \item closed-form summation claims
-  \item identity-style statements such as \texttt{n + 0 = n}
+  \item arithmetic
+  \item multiplication
+  \item subtraction
+  \item factorial
+  \item Fibonacci
+  \item GCD
+  \item inequalities
 \end{itemize}
 
-This is not a universal theorem prover. It is a routing and proof-construction
-layer for domains where mathematical necessity can be recognized cheaply and
-interpreted clearly. Its research value lies in the claim that some disputes
-should be resolved by structure-aware proving before broader search begins.
-
-\subsection{Hybrid Verification Stack}
-
-The detector supports several verification modes:
+Each family includes true and false examples. The benchmark compares two
+conditions:
 
 \begin{itemize}
-  \item Coq-only proving
-  \item Z3 plus Coq hybrid solving
-  \item necessity-enhanced proving on top of either base prover
-  \item automated repair via lemma discovery
+  \item hybrid verification with necessity enabled
+  \item hybrid verification without necessity
 \end{itemize}
 
-This arrangement matters because different claims are amenable to different
-backends. Arithmetic or constraint-heavy claims often fit SMT reasoning.
-Others benefit from theorem-oriented proof scripts or proof-structure
-synthesis. The normalized status model lets these backends coexist without
-pretending they all produce the same kind of evidence.
+\subsection{Extraction Benchmark}
 
-\subsection{Semantic Bridging of Subjective Language}
-
-The semantic bridge attempts to extract objective targets from language that
-would normally be dismissed as purely subjective. Terms such as
-\texttt{efficient}, \texttt{secure}, \texttt{reliable}, \texttt{readable}, and
-\texttt{scalable} are mapped to candidate objective components such as
-execution time, complexity, error rate, input validation, memory safety, or
-code complexity \cite{semantic_bridge}.
-
-This is a useful research direction because many practical disagreements contain
-both subjective framing and objective substructure. The bridge does not solve
-the semantics problem completely, but it gives the framework a path for
-converting some qualitative disputes into partially measurable ones.
-
-\subsection{Repair, Caching, and Strategy Learning}
-
-The repository also contains a second layer of research ambition:
+The natural-language benchmark contains 16 cases:
 
 \begin{itemize}
-  \item proof-failure analysis and lemma suggestion
-  \item on-disk proof caching with schema versioning
-  \item proof-learning persistence for historical attempts and strategy
-  prediction
+  \item 12 formalizable utterances
+  \item 4 unformalizable subjective controls
 \end{itemize}
 
-Taken together, these pieces point toward an adaptive verification environment
-that not only proves claims but also learns from previous proving behavior and
-avoids repeating stale or redundant work.
-
-\section{Implementation Footprint}
-
-Across \texttt{cognitive\_dissonance/}, \texttt{formal\_verification/},
-\texttt{tests/}, and \texttt{examples/}, the repository currently contains:
+The extraction study compares:
 
 \begin{itemize}
-  \item 55 Python source files
-  \item 18{,}547 lines of Python
-  \item 12 Python files in \texttt{cognitive\_dissonance/}
-  \item 16 Python files in \texttt{formal\_verification/}
-  \item 16 test files
-  \item 11 example files
+  \item direct translation from raw natural language
+  \item the structured extraction pipeline followed by translation and proof
 \end{itemize}
 
-This is a moderately sized research prototype, not a one-off demo. That scale
-matters because verification semantics, persistence, CI, and style
-normalization become part of the research artifact itself.
+\subsection{Stability Check}
 
-\section{Validation and Reproducibility}
+A small repeated-measures check runs extraction twice on four representative
+cases:
 
-\subsection{Engineering-Verified Snapshot}
+\begin{itemize}
+  \item arithmetic true
+  \item factorial true
+  \item implication
+  \item subjective control
+\end{itemize}
 
-The following status items were directly verified from the repository at commit
-\texttt{6a76740}:
+This is not a full calibration study. It is only a basic check for
+deterministic behavior at temperature 0.0.
 
-\begin{longtable}{>{\raggedright\arraybackslash}p{0.34\linewidth} >{\raggedright\arraybackslash}p{0.58\linewidth}}
+\section{Results}
+
+\subsection{RQ1: Necessity and Symbolic Verification}
+
+\begin{center}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Item} & \textbf{Observed status} \\
+\textbf{Condition} & \textbf{Cases} & \textbf{Decisive cov.} & \textbf{Decisive acc.} & \textbf{Optimistic acc.} \\
 \midrule
-Local test suite &
-\texttt{230} tests collected; \texttt{228 passed}, \texttt{2 skipped}. \\
-Local Coq availability &
-The two skipped tests are local Coq smoke tests that require
-\texttt{coqc} and \texttt{coqchk}. \\
-GitHub Actions matrix &
-Green on Python \texttt{3.10}, \texttt{3.11}, and \texttt{3.12}. \\
-Coq CI coverage &
-Separate \texttt{coq-smoke} job installs Coq and executes a real
-\texttt{coqc}/\texttt{coqchk} smoke path \cite{ci_workflow,coq_smoke_tests}. \\
-Persistence hardening &
-Proof cache and proof-learning history include explicit schema versions and
-discard stale entries rather than trusting incompatible old data
-\cite{proof_cache,proof_learning,persistence_tests}. \\
-Current lint debt &
-\texttt{318} remaining Ruff findings, all classified as \texttt{E501}
-long lines. \\
+Hybrid + necessity & 16 & 100.0\% & 100.0\% & 100.0\% \\
+Hybrid without necessity & 16 & 100.0\% & 100.0\% & 100.0\% \\
 \bottomrule
-\end{longtable}
+\end{tabular}
+\end{center}
 
-\subsection{Repository-Reported Metrics}
+Mean proof time was approximately 154.0\,ms in both conditions on this
+benchmark. Both conditions also produced 3 machine-checked positive cases:
+factorial, Fibonacci, and GCD.
 
-The repository documentation reports several performance and success-rate
-figures, including:
+\textbf{Interpretation.} With Coq available locally, the symbolic benchmark is
+fully decisive in both conditions. Necessity therefore has no measurable effect
+on headline accuracy or coverage on this suite. That is not evidence that
+necessity is unhelpful in general; it is evidence that this benchmark no longer
+separates the two conditions.
+
+\subsection{RQ2: Extraction Versus Direct Translation}
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Result} \\
+\midrule
+Formalizable natural-language cases & 12 \\
+Direct translator success & 25.0\% \\
+Extractor formalizability accuracy (all 16 cases) & 100.0\% \\
+Extractor exact canonical match (formalizable cases) & 100.0\% \\
+Translation success after extraction & 100.0\% \\
+End-to-end decisive coverage after extraction & 100.0\% \\
+Machine-checked formalizable cases after extraction & 6 \\
+Mean extraction latency & 2747\,ms/case \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Interpretation.} On the curated benchmark, the extraction pipeline now
+completely solves the canonicalization problem. Every formalizable
+natural-language case was converted into the exact canonical claim expected by
+the benchmark, all four subjective controls were rejected, and every
+formalizable case reached a decisive downstream result.
+
+\subsection{RQ3: Proof After Successful Extraction}
+
+After perfect canonicalization on the benchmark, decisive proof coverage no
+longer remains limited:
 
 \begin{itemize}
-  \item 15 claims with an 80\% success rate
-  \item average proof time of roughly 179.7ms
-  \item proof-caching speedups on repeated proofs
-  \item strong arithmetic and mathematical-function success rates
+  \item end-to-end decisive coverage on formalizable extraction cases:
+  100.0\%
+  \item end-to-end decisive accuracy on formalizable extraction cases:
+  100.0\%
 \end{itemize}
 
-These values are useful as research signals, but they should be treated as
-repository-reported benchmarks rather than independently audited experimental
-results. The engineering foundation is improving, but a mature empirical story
-still needs fixed datasets, archived benchmark commands, seed control, and
-clear reporting of machine-checked versus weaker proof outcomes.
+In concrete terms, all 12 formalizable natural-language cases were resolved
+decisively after extraction. The evidence mix is:
+
+\begin{itemize}
+  \item \textbf{machine-checked:} factorial, Fibonacci, GCD, implication,
+  universal quantification, and existential quantification
+  \item \textbf{SMT-proved:} arithmetic true, multiplication true, and
+  inequality true
+  \item \textbf{decisive refutations:} arithmetic false, subtraction false,
+  and inequality false
+\end{itemize}
+
+\textbf{Interpretation.} On the current internal suite, proof is no longer the
+measured bottleneck once Coq is installed locally. The remaining limitation is
+that this benchmark is now too easy relative to the repository's current
+capability.
+
+\subsection{Stability}
+
+The repeated extraction check reached a 100.0\% stable-case rate over 4 cases
+and 2 trials per case. This is a small result, but it suggests that the
+pipeline is operationally stable under deterministic decoding on the chosen
+provider and model.
 
 \section{Findings}
 
-\subsection{Finding 1: The Framework Raises the Standard of Evidence}
+\subsection{Finding 1: Extraction Was the First Bottleneck}
 
-The repository's clearest success is that it upgrades the standard of evidence
-for a subset of agent disagreements. The system no longer has to choose between
-``pure prompt debate'' and ``pretending every formal-looking output is a
-proof.'' It can represent multiple levels of proof confidence explicitly.
+The benchmark data shows a clean before-and-after story. Direct translation from
+raw natural language succeeded on only 3 of 12 formalizable cases. The
+extraction pipeline pushed that to 12 of 12. That closes one important gap.
 
-\subsection{Finding 2: The Architecture Is Research-Meaningful}
+With local Coq available, however, the end-to-end problem disappears on this
+suite. That means the benchmark has become a confirmation harness rather than a
+stress test.
 
-The project sits at a useful intersection of:
+\subsection{Finding 2: This Benchmark No Longer Separates Necessity from Non-Necessity}
 
-\begin{itemize}
-  \item multi-agent reasoning
-  \item formal verification
-  \item theorem proving
-  \item hybrid symbolic-probabilistic systems
-\end{itemize}
+Both symbolic benchmark conditions now reach 100\% decisive coverage and 100\%
+decisive accuracy. That means this benchmark can no longer tell us whether
+necessity provides unique value under harder conditions. A stronger ablation
+needs harder recursive and logical cases.
 
-The repository is strongest where these threads are integrated into a coherent
-resolution policy rather than demonstrated independently.
+\subsection{Finding 3: Evidence Strength Still Varies Even When Accuracy Saturates}
 
-\subsection{Finding 3: The Reproducibility Story Is Becoming Credible}
+The current extraction benchmark resolves all 12 formalizable cases decisively,
+but only 6 of those are machine-checked. The rest are SMT proofs or decisive
+refutations. That distinction matters because a 100\% headline number can hide
+different levels of evidential strength.
 
-Schema-version handling, Coq smoke tests in CI, explicit proof-status
-semantics, and a steadily improving code-quality baseline materially strengthen
-the repository as a research artifact. These are the kinds of features that
-allow the system to be trusted across revisions, not just during a one-time
-demo.
+\subsection{Finding 4: The Proof-Status Model Is Working as Intended}
 
-\subsection{Finding 4: Translation and Benchmarking Remain the Main Gaps}
+The repository does not flatten derived support into decisive proof. That
+decision now has experimental value: without it, the study would overstate the
+system's capability. With it, the study can say something precise:
 
-The project still relies heavily on pattern-driven translation and repo-level
-benchmark claims. This is the main gap between a strong prototype and a
-research result that can support stronger comparative or scientific claims.
-
-\section{Limitations}
-
-\subsection{Pattern-Driven Translation}
-
-The natural-language-to-formal-spec translation layer remains template-heavy.
-This works for arithmetic and a constrained set of algorithmic or
-software-property claims, but it limits generality and makes coverage sensitive
-to surface phrasing.
-
-\subsection{Heuristic Semantic Bridging}
-
-The semantic bridge is useful, but it is still heuristic. Its objectivity
-levels, confidence scores, and generated verification targets are hand-crafted.
-They are not yet backed by a formal semantics or a calibration study.
-
-\subsection{Incomplete Benchmark Story}
-
-The repository includes examples, tests, and reported metrics, but it does not
-yet present a benchmark protocol with the level of rigor expected for a mature
-research evaluation. In particular, the project still needs:
-
-\begin{itemize}
-  \item fixed benchmark inputs
-  \item archived benchmark outputs
-  \item ablation studies
-  \item separate reporting for machine-checked versus weaker proof outcomes
-\end{itemize}
-
-\subsection{Remaining Repository Normalization Work}
-
-The codebase is much cleaner than before, but line-length lint debt remains.
-This is not the central scientific issue, but it still affects maintainability
-and outside reproducibility.
+\begin{quote}
+This benchmark is solved, but only part of it is machine-checked.
+\end{quote}
 
 \section{Threats to Validity}
 
-\subsection{Construct Validity}
+\subsection{Small Internal Benchmark}
 
-The system's strongest results apply to claims that are already formalizable or
-close to formalizable. Measured success may therefore say as much about routing
-and pattern coverage as it does about general open-domain reasoning.
+The benchmark set is small and authored within the project. That makes it
+useful for engineering truth, but weak for strong claims about generalization.
 
-\subsection{Internal Validity}
+\subsection{Local Coq Availability Changes the Result Materially}
 
-Some reported performance metrics come from repository documentation rather than
-from a preserved benchmark harness. Without frozen inputs and archived outputs,
-their stability across revisions is hard to assess.
+Installing Coq locally turned the earlier partial results into full decisive
+coverage on this benchmark. That is useful, but it also means any report that
+ignores environment configuration would be misleading. The benchmark should be
+interpreted together with the local proof-toolchain state.
 
-\subsection{External Validity}
+\subsection{Provider Dependence}
 
-The framework is currently strongest on arithmetic, first-order fragments,
-structured software properties, and heuristic decompositions of subjective
-claims. It should not yet be generalized to the full space of agent
-disagreements.
+The live extraction results depend on one provider configuration on one date:
+OpenRouter-compatible routing with \texttt{openai/gpt-4.1-mini} at temperature
+0.0. Different models or provider settings could behave differently.
 
-\section{Recommended Next Steps}
+\subsection{Benchmark-Aware Improvement}
 
-The highest-value next steps are:
+This work used the observed failures to improve the system and rerun the study.
+That is the correct engineering loop, but it also means the final benchmark
+results are partially the result of targeted iteration against the benchmark's
+failure modes.
 
-\begin{enumerate}
-  \item Build a reproducible benchmark suite with explicit categories for
-  mathematical, algorithmic, software, and semantically bridged claims.
-  \item Report outcomes by evidence strength:
-  machine-checked, SMT-proved, derived, formalized-unproved, and inconclusive.
-  \item Expand the translation layer beyond narrow templates, especially for
-  algorithmic correctness and program invariants.
-  \item Compare necessity-first routing against pure hybrid proving as an
-  ablation.
-  \item Evaluate whether semantic bridging improves practical resolution quality
-  without increasing false confidence.
-  \item Continue repository hardening until the remaining style debt is gone
-  and the benchmark path is fully automated.
-\end{enumerate}
+\section{Reproducibility}
+
+The study can be reproduced from repository-local artifacts.
+
+Current local validation status after installing Coq:
+\texttt{248 passed, 1 skipped} from
+\texttt{.venv/bin/python -m pytest -q}, plus a passing live provider-backed
+integration test against the configured OpenAI-compatible endpoint.
+
+\subsection{Commands}
+
+\begin{calloutbox}
+\texttt{.venv/bin/python research/run\_study.py}
+\end{calloutbox}
+
+\begin{calloutbox}
+\texttt{OPENAI\_API\_KEY=... OPENAI\_BASE\_URL=... OPENAI\_MODEL=...}\\
+\texttt{.venv/bin/python research/run\_study.py --temperature 0.0 --stability-trials 2}
+\end{calloutbox}
+
+\begin{calloutbox}
+\texttt{.venv/bin/python -m pytest -q}
+\end{calloutbox}
+
+\subsection{Artifacts}
+
+\begin{itemize}
+  \item \nolinkurl{research/benchmarks/formal_verification_benchmark.json}
+  \item \nolinkurl{research/benchmarks/extraction_benchmark.json}
+  \item \nolinkurl{research/results/study_results.json}
+  \item \nolinkurl{research/results/study_summary.md}
+\end{itemize}
 
 \section{Conclusion}
 
-Cognitive Dissonance DSPy is already more than a conceptual demo. It is a
-nontrivial research prototype for proof-oriented conflict resolution in
-multi-agent LLM systems, with a meaningful architecture, explicit proof-trust
-semantics, real CI for Coq smoke coverage, and increasingly serious
-reproducibility work.
+This repository now supports a defensible experimental claim:
 
-Its strongest contribution is architectural and epistemic. The framework treats
-formal verification as a first-class resolution policy and insists that proof
-strength be represented honestly. Its main remaining work is empirical and
-semantic: richer translation, stronger benchmarks, and better-justified
-bridging from subjective language to objective verification targets.
+\begin{quote}
+On a small internal benchmark with Coq installed locally, Cognitive Dissonance
+DSPy can canonicalize formalizable natural-language disagreements and resolve
+them decisively end to end.
+\end{quote}
+
+That is stronger than the earlier no-Coq result, but it does not mean the
+general problem is solved. The next research task is no longer ``fix the
+current benchmark,'' but ``build a benchmark that is difficult enough to
+measure where the pipeline still fails, while continuing to report evidence
+strength honestly.''
 
 \section{References}
 
 \begin{thebibliography}{99}
 \small
 
-\bibitem{repo_readme}
-EvalOps. \emph{Cognitive Dissonance DSPy README}. Repository artifact, commit
-\texttt{6a76740}, 2026.
+\bibitem{study_runner}
+EvalOps. \emph{Study runner}. Repository artifact,
+\nolinkurl{research/run_study.py}, source revision \texttt{d11d492-dirty},
+2026.
 
-\bibitem{fv_readme}
-EvalOps. \emph{Formal Verification Framework README}. Repository artifact,
-\nolinkurl{formal_verification/README.md}, commit \texttt{6a76740}, 2026.
+\bibitem{study_results}
+EvalOps. \emph{Generated study results}. Repository artifact,
+\nolinkurl{research/results/study_results.json}, source revision
+\texttt{d11d492-dirty}, 2026.
+
+\bibitem{study_summary}
+EvalOps. \emph{Generated study summary}. Repository artifact,
+\nolinkurl{research/results/study_summary.md}, source revision
+\texttt{d11d492-dirty}, 2026.
+
+\bibitem{readme}
+EvalOps. \emph{Repository README}. Repository artifact, \nolinkurl{README.md},
+source revision \texttt{d11d492-dirty}, 2026.
 
 \bibitem{types}
-EvalOps. \emph{Proof status and verification types}. Repository artifact,
-\nolinkurl{formal_verification/types.py}, commit \texttt{6a76740}, 2026.
-
-\bibitem{coq_prover}
-EvalOps. \emph{Coq prover interface and machine-checking path}. Repository
-artifact, \nolinkurl{formal_verification/prover.py}, commit \texttt{6a76740},
-2026.
-
-\bibitem{translator}
-EvalOps. \emph{Natural-language claim translator}. Repository artifact,
-\nolinkurl{formal_verification/translator.py}, commit \texttt{6a76740}, 2026.
+EvalOps. \emph{Proof status model}. Repository artifact,
+\nolinkurl{formal_verification/types.py}, source revision
+\texttt{d11d492-dirty}, 2026.
 
 \bibitem{detector}
-EvalOps. \emph{Formal verification conflict detector}. Repository artifact,
-\nolinkurl{formal_verification/detector.py}, commit \texttt{6a76740}, 2026.
+EvalOps. \emph{Formal verification detector}. Repository artifact,
+\nolinkurl{formal_verification/detector.py}, source revision
+\texttt{d11d492-dirty}, 2026.
 
-\bibitem{math_resolver}
-EvalOps. \emph{Mathematical cognitive dissonance resolver}. Repository
-artifact, \nolinkurl{cognitive_dissonance/mathematical_resolver.py}, commit
-\texttt{6a76740}, 2026.
+\bibitem{openai_agents}
+EvalOps. \emph{OpenAI-compatible extraction pipeline}. Repository artifact,
+\nolinkurl{formal_verification/openai_agents.py}, source revision
+\texttt{d11d492-dirty}, 2026.
 
 \bibitem{necessity_prover}
-EvalOps. \emph{Necessity-based proof discovery}. Repository artifact,
-\nolinkurl{formal_verification/necessity_prover.py}, commit \texttt{6a76740},
-2026.
+EvalOps. \emph{Necessity-based proof layer}. Repository artifact,
+\nolinkurl{formal_verification/necessity_prover.py}, source revision
+\texttt{d11d492-dirty}, 2026.
 
-\bibitem{lemma_discovery}
-EvalOps. \emph{Automated lemma discovery and proof repair}. Repository
-artifact, \nolinkurl{formal_verification/lemma_discovery.py}, commit
-\texttt{6a76740}, 2026.
+\bibitem{translator}
+EvalOps. \emph{Claim translator}. Repository artifact,
+\nolinkurl{formal_verification/translator.py}, source revision
+\texttt{d11d492-dirty}, 2026.
 
-\bibitem{deep_analysis}
-EvalOps. \emph{Deep program analysis for verification targets}. Repository
-artifact, \nolinkurl{formal_verification/deep_analysis.py}, commit
-\texttt{6a76740}, 2026.
-
-\bibitem{semantic_bridge}
-EvalOps. \emph{Semantic bridge for grounding subjective claims}. Repository
-artifact, \nolinkurl{formal_verification/semantic_bridge.py}, commit
-\texttt{6a76740}, 2026.
-
-\bibitem{proof_cache}
-EvalOps. \emph{Proof cache and schema versioning}. Repository artifact,
-\nolinkurl{formal_verification/proof_cache.py}, commit \texttt{6a76740}, 2026.
-
-\bibitem{proof_learning}
-EvalOps. \emph{Proof-learning persistence and strategy history}. Repository
-artifact, \nolinkurl{formal_verification/proof_learning.py}, commit
-\texttt{6a76740}, 2026.
-
-\bibitem{ci_workflow}
-EvalOps. \emph{Continuous integration workflow}. Repository artifact,
-\nolinkurl{.github/workflows/ci.yml}, commit \texttt{6a76740}, 2026.
-
-\bibitem{coq_smoke_tests}
-EvalOps. \emph{Coq smoke tests}. Repository artifact,
-\nolinkurl{tests/test_coq_smoke.py}, commit \texttt{6a76740}, 2026.
-
-\bibitem{persistence_tests}
-EvalOps. \emph{Persistence and schema-version tests}. Repository artifact,
-\nolinkurl{tests/test_proof_persistence.py}, commit \texttt{6a76740}, 2026.
+\bibitem{z3_prover}
+EvalOps. \emph{Hybrid and SMT proving}. Repository artifact,
+\nolinkurl{formal_verification/z3_prover.py}, source revision
+\texttt{d11d492-dirty}, 2026.
 
 \end{thebibliography}
-
-\appendix
-
-\section{Repository Snapshot}
-
-This report reflects the repository state at commit \texttt{6a76740}. The
-implementation snapshot used for the analysis included:
-
-\begin{itemize}
-  \item 55 Python files across core code, tests, and examples
-  \item 18{,}547 lines of Python
-  \item a green multi-version CI matrix
-  \item a green Coq smoke job
-  \item \texttt{318} remaining Ruff findings, all of them line-length related
-\end{itemize}
-
-\section{Validation Commands}
-
-The following commands were used as direct validation inputs for this report:
-
-\begin{itemize}
-  \item \texttt{.venv/bin/python -m pytest -q}
-  \item \texttt{tectonic --outdir reports reports/cognitive\_dissonance\_research\_report.tex}
-  \item \texttt{gh run watch <run-id> --exit-status --interval 10}
-\end{itemize}
-
-\vfill
-
-\begin{center}
-\small
-\textbf{Jonathan Haas}\\
-\texttt{jonathan@evalops.dev}\\
-EvalOps
-\end{center}
 
 \end{document}

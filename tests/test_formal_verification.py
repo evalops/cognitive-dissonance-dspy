@@ -22,9 +22,9 @@ class TestClaimTranslator:
         """Test translator initialization."""
         translator = ClaimTranslator()
 
-        assert hasattr(translator, 'memory_patterns')
-        assert hasattr(translator, 'complexity_patterns')
-        assert hasattr(translator, 'correctness_patterns')
+        assert hasattr(translator, "memory_patterns")
+        assert hasattr(translator, "complexity_patterns")
+        assert hasattr(translator, "correctness_patterns")
 
     def test_memory_safety_translation(self):
         """Test memory safety claim translation."""
@@ -35,7 +35,7 @@ class TestClaimTranslator:
             claim_text="This function is memory safe",
             property_type=PropertyType.MEMORY_SAFETY,
             confidence=0.8,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         code = "fn test_function() { /* code */ }"
@@ -43,7 +43,10 @@ class TestClaimTranslator:
 
         assert spec is not None
         assert "test_function" in spec.spec_text
-        assert "buffer overflow" in spec.spec_text.lower() or "memory safe" in spec.spec_text.lower()
+        assert (
+            "buffer overflow" in spec.spec_text.lower()
+            or "memory safe" in spec.spec_text.lower()
+        )
         assert "Coq" in spec.coq_code or "Require" in spec.coq_code
 
     def test_complexity_translation(self):
@@ -55,7 +58,7 @@ class TestClaimTranslator:
             claim_text="This algorithm has time complexity O(n log n)",
             property_type=PropertyType.TIME_COMPLEXITY,
             confidence=0.9,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         code = "fn sort_algorithm() { /* code */ }"
@@ -75,7 +78,7 @@ class TestClaimTranslator:
             claim_text="This function sorts the array correctly",
             property_type=PropertyType.CORRECTNESS,
             confidence=0.95,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         code = "fn quicksort() { /* sorting code */ }"
@@ -96,7 +99,7 @@ class TestClaimTranslator:
             claim_text="This is an unsupported claim type",
             property_type=PropertyType.CORRECTNESS,
             confidence=0.5,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         code = "fn unknown_function() { /* code */ }"
@@ -114,6 +117,46 @@ class TestClaimTranslator:
         # Test without function definition
         assert translator._extract_function_name("let x = 5;") == "function"
 
+    def test_canonical_function_claim_translation(self):
+        """Canonical extractor outputs should translate without format drift."""
+        translator = ClaimTranslator()
+
+        fibonacci_claim = Claim(
+            agent_id="test",
+            claim_text="fibonacci 8 = 21",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.9,
+            timestamp=time.time(),
+        )
+        fibonacci_spec = translator.translate(fibonacci_claim, "")
+
+        assert fibonacci_spec is not None
+        assert "fibonacci 8 = 21" in fibonacci_spec.spec_text.lower()
+
+        gcd_claim = Claim(
+            agent_id="test",
+            claim_text="gcd 12, 8 = 4",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.9,
+            timestamp=time.time(),
+        )
+        gcd_spec = translator.translate(gcd_claim, "")
+
+        assert gcd_spec is not None
+        assert "gcd(12, 8) = 4" in gcd_spec.spec_text.lower()
+
+        exists_claim = Claim(
+            agent_id="test",
+            claim_text="exists x such that x > 0",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.9,
+            timestamp=time.time(),
+        )
+        exists_spec = translator.translate(exists_claim, "")
+
+        assert exists_spec is not None
+        assert "exists" in exists_spec.spec_text.lower()
+
 
 class TestCoqProver:
     """Test Coq theorem prover interface."""
@@ -123,9 +166,9 @@ class TestCoqProver:
         prover = CoqProver(timeout_seconds=10)
 
         assert prover.timeout_seconds == 10
-        assert hasattr(prover, 'coq_available')
+        assert hasattr(prover, "coq_available")
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_coq_availability_check(self, mock_run):
         """Test Coq availability checking."""
         # Mock successful coqc --version
@@ -142,10 +185,12 @@ class TestCoqProver:
 
     def test_prove_specification_no_coq(self):
         """Test proof attempt when Coq is not available."""
-        with patch.object(CoqProver, '_check_binary', return_value=False):
+        with patch.object(CoqProver, "_check_binary", return_value=False):
             prover = CoqProver(use_cache=False)
 
-            claim = Claim("test", "test claim", PropertyType.CORRECTNESS, 0.5, time.time())
+            claim = Claim(
+                "test", "test claim", PropertyType.CORRECTNESS, 0.5, time.time()
+            )
             spec = FormalSpec(claim, "test spec", "test coq code", {})
 
             result = prover.prove_specification(spec)
@@ -154,7 +199,7 @@ class TestCoqProver:
             assert "not available" in result.error_message
             assert result.proof_time_ms == 0
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_successful_proof(self, mock_run):
         """Test successful proof execution."""
         compile_result = Mock(returncode=0, stdout=b"", stderr=b"")
@@ -163,13 +208,17 @@ class TestCoqProver:
 
         with patch.object(
             CoqProver,
-            '_check_binary',
+            "_check_binary",
             side_effect=lambda binary: binary in {"coqc", "coqchk"},
         ):
             prover = CoqProver(use_cache=False)
 
-            claim = Claim("test", "test claim", PropertyType.CORRECTNESS, 0.5, time.time())
-            spec = FormalSpec(claim, "test spec", "Theorem test : True. Proof. exact I. Qed.", {})
+            claim = Claim(
+                "test", "test claim", PropertyType.CORRECTNESS, 0.5, time.time()
+            )
+            spec = FormalSpec(
+                claim, "test spec", "Theorem test : True. Proof. exact I. Qed.", {}
+            )
 
             result = prover.prove_specification(spec)
 
@@ -179,7 +228,7 @@ class TestCoqProver:
             assert result.solver_status == "machine_checked"
             assert result.checker_name == "coqchk"
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_failed_proof(self, mock_run):
         """Test failed proof execution."""
         mock_run.return_value.returncode = 1
@@ -187,13 +236,17 @@ class TestCoqProver:
 
         with patch.object(
             CoqProver,
-            '_check_binary',
+            "_check_binary",
             side_effect=lambda binary: binary in {"coqc", "coqchk"},
         ):
             prover = CoqProver(use_cache=False)
 
-            claim = Claim("test", "test claim", PropertyType.CORRECTNESS, 0.5, time.time())
-            spec = FormalSpec(claim, "test spec", "Theorem false : False. Proof. Qed.", {})
+            claim = Claim(
+                "test", "test claim", PropertyType.CORRECTNESS, 0.5, time.time()
+            )
+            spec = FormalSpec(
+                claim, "test spec", "Theorem false : False. Proof. Qed.", {}
+            )
 
             result = prover.prove_specification(spec)
 
@@ -206,7 +259,7 @@ class TestCoqProver:
         """Specs with Admitted or Axiom should not count as proofs."""
         with patch.object(
             CoqProver,
-            '_check_binary',
+            "_check_binary",
             side_effect=lambda binary: binary in {"coqc", "coqchk"},
         ):
             prover = CoqProver(use_cache=False)
@@ -227,7 +280,7 @@ class TestCoqProver:
 
     def test_assumption_based_spec_is_rejected_without_coq(self):
         """Unsound specs should be rejected before Coq availability checks matter."""
-        with patch.object(CoqProver, '_check_binary', return_value=False):
+        with patch.object(CoqProver, "_check_binary", return_value=False):
             prover = CoqProver(use_cache=False)
 
         claim = Claim("test", "test claim", PropertyType.CORRECTNESS, 0.5, time.time())
@@ -274,27 +327,39 @@ class TestProofStatus:
 
     def test_resolve_defaults_conservatively_for_solver_outputs(self):
         """Implicit solver statuses should use safe defaults by prover type."""
-        assert ProofStatus.resolve(
-            None,
-            proven=True,
-            prover_name="coq",
-        ) is ProofStatus.COMPILED_UNCHECKED
-        assert ProofStatus.resolve(
-            None,
-            proven=False,
-            prover_name="z3",
-        ) is ProofStatus.INCONCLUSIVE
-        assert ProofStatus.resolve(
-            None,
-            proven=False,
-            prover_name="z3",
-            counter_example={"x": 1},
-        ) is ProofStatus.SMT_REFUTED
-        assert ProofStatus.resolve(
-            None,
-            proven=True,
-            prover_name="hybrid",
-        ) is ProofStatus.DERIVED_PROVED
+        assert (
+            ProofStatus.resolve(
+                None,
+                proven=True,
+                prover_name="coq",
+            )
+            is ProofStatus.COMPILED_UNCHECKED
+        )
+        assert (
+            ProofStatus.resolve(
+                None,
+                proven=False,
+                prover_name="z3",
+            )
+            is ProofStatus.INCONCLUSIVE
+        )
+        assert (
+            ProofStatus.resolve(
+                None,
+                proven=False,
+                prover_name="z3",
+                counter_example={"x": 1},
+            )
+            is ProofStatus.SMT_REFUTED
+        )
+        assert (
+            ProofStatus.resolve(
+                None,
+                proven=True,
+                prover_name="hybrid",
+            )
+            is ProofStatus.DERIVED_PROVED
+        )
 
 
 class TestConflictDetector:
@@ -323,8 +388,20 @@ class TestConflictDetector:
 
         detector = ConflictDetector()
 
-        claim1 = Claim("alice", "This function is memory safe", PropertyType.MEMORY_SAFETY, 0.9, time.time())
-        claim2 = Claim("bob", "This function has buffer overflow", PropertyType.MEMORY_SAFETY, 0.8, time.time())
+        claim1 = Claim(
+            "alice",
+            "This function is memory safe",
+            PropertyType.MEMORY_SAFETY,
+            0.9,
+            time.time(),
+        )
+        claim2 = Claim(
+            "bob",
+            "This function has buffer overflow",
+            PropertyType.MEMORY_SAFETY,
+            0.8,
+            time.time(),
+        )
 
         spec1 = FormalSpec(claim1, "spec1", "coq1", {})
         spec2 = FormalSpec(claim2, "spec2", "coq2", {})
@@ -339,8 +416,20 @@ class TestConflictDetector:
 
         detector = ConflictDetector()
 
-        claim1 = Claim("alice", "This function sorts arrays", PropertyType.CORRECTNESS, 0.9, time.time())
-        claim2 = Claim("bob", "This function has O(n log n) complexity", PropertyType.TIME_COMPLEXITY, 0.8, time.time())
+        claim1 = Claim(
+            "alice",
+            "This function sorts arrays",
+            PropertyType.CORRECTNESS,
+            0.9,
+            time.time(),
+        )
+        claim2 = Claim(
+            "bob",
+            "This function has O(n log n) complexity",
+            PropertyType.TIME_COMPLEXITY,
+            0.8,
+            time.time(),
+        )
 
         spec1 = FormalSpec(claim1, "spec1", "coq1", {})
         spec2 = FormalSpec(claim2, "spec2", "coq2", {})
@@ -357,9 +446,9 @@ class TestFormalVerificationConflictDetector:
         """Test detector initialization."""
         detector = FormalVerificationConflictDetector()
 
-        assert hasattr(detector, 'translator')
-        assert hasattr(detector, 'prover')
-        assert hasattr(detector, 'conflict_detector')
+        assert hasattr(detector, "translator")
+        assert hasattr(detector, "prover")
+        assert hasattr(detector, "conflict_detector")
 
     def test_solver_proofs_are_not_marked_unresolved(self):
         """Solver-backed proofs should not also appear as unresolved."""
@@ -403,9 +492,15 @@ class TestFormalVerificationConflictDetector:
         detector = FormalVerificationConflictDetector()
 
         # Create mock proof results
-        claim1 = Claim("alice", "correct claim", PropertyType.CORRECTNESS, 0.9, time.time())
-        claim2 = Claim("alice", "another correct claim", PropertyType.CORRECTNESS, 0.8, time.time())
-        claim3 = Claim("bob", "incorrect claim", PropertyType.CORRECTNESS, 0.7, time.time())
+        claim1 = Claim(
+            "alice", "correct claim", PropertyType.CORRECTNESS, 0.9, time.time()
+        )
+        claim2 = Claim(
+            "alice", "another correct claim", PropertyType.CORRECTNESS, 0.8, time.time()
+        )
+        claim3 = Claim(
+            "bob", "incorrect claim", PropertyType.CORRECTNESS, 0.7, time.time()
+        )
 
         spec1 = FormalSpec(claim1, "spec1", "coq1", {})
         spec2 = FormalSpec(claim2, "spec2", "coq2", {})
@@ -420,7 +515,7 @@ class TestFormalVerificationConflictDetector:
         rankings = detector._rank_agents_by_correctness(results)
 
         assert rankings["alice"] == 1.0  # 100% accuracy
-        assert rankings["bob"] == 0.0    # 0% accuracy
+        assert rankings["bob"] == 0.0  # 0% accuracy
         assert next(iter(rankings)) == "alice"  # Alice ranked first
 
     def test_summary_generation(self):
@@ -431,34 +526,41 @@ class TestFormalVerificationConflictDetector:
         results = [
             ProofResult(None, True, 100, None, None, solver_status="machine_checked"),
             ProofResult(None, False, 150, "error", None, solver_status="refuted"),
-            ProofResult(None, False, 75, None, None, solver_status="formalized_unproved"),
+            ProofResult(
+                None, False, 75, None, None, solver_status="formalized_unproved"
+            ),
         ]
 
         conflicts = [("conflict1", "conflict2")]
 
         summary = detector._generate_summary(results, conflicts)
 
-        assert summary['total_claims'] == 3
-        assert summary['mathematically_proven'] == 1
-        assert summary['derived_proofs'] == 0
-        assert summary['mathematically_disproven'] == 1
-        assert summary['conflicts_detected'] == 1
-        assert summary['average_proof_time_ms'] == (100 + 150 + 75) / 3
-        assert summary['has_ground_truth'] is True
+        assert summary["total_claims"] == 3
+        assert summary["mathematically_proven"] == 1
+        assert summary["derived_proofs"] == 0
+        assert summary["mathematically_disproven"] == 1
+        assert summary["conflicts_detected"] == 1
+        assert summary["average_proof_time_ms"] == (100 + 150 + 75) / 3
+        assert summary["has_ground_truth"] is True
 
 
 class TestIntegration:
     """Integration tests with mocked Coq."""
 
-    @patch.object(CoqProver, 'prove_specification')
+    @patch.object(CoqProver, "prove_specification")
     def test_full_analysis_flow(self, mock_prove):
         """Test complete analysis workflow."""
+
         # Mock successful and failed proofs
         def mock_proof_side_effect(spec):
             if "2 + 2 = 4" in spec.claim.claim_text:
-                return ProofResult(spec, True, 100, None, None, solver_status="machine_checked")
+                return ProofResult(
+                    spec, True, 100, None, None, solver_status="machine_checked"
+                )
             else:
-                return ProofResult(spec, False, 100, "Proof failed", None, solver_status="refuted")
+                return ProofResult(
+                    spec, False, 100, "Proof failed", None, solver_status="refuted"
+                )
 
         mock_prove.side_effect = mock_proof_side_effect
 
@@ -466,12 +568,12 @@ class TestIntegration:
 
         claims = [
             Claim("alice", "2 + 2 = 4", PropertyType.CORRECTNESS, 0.9, time.time()),
-            Claim("bob", "2 + 2 = 5", PropertyType.CORRECTNESS, 0.8, time.time())
+            Claim("bob", "2 + 2 = 5", PropertyType.CORRECTNESS, 0.8, time.time()),
         ]
 
         results = detector.analyze_claims(claims)
 
-        assert len(results['original_claims']) == 2
-        assert len(results['proof_results']) >= 1  # At least one should translate
-        assert results['summary']['total_claims'] >= 1
-        assert 'agent_rankings' in results['resolution']
+        assert len(results["original_claims"]) == 2
+        assert len(results["proof_results"]) >= 1  # At least one should translate
+        assert results["summary"]["total_claims"] >= 1
+        assert "agent_rankings" in results["resolution"]

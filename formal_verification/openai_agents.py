@@ -44,6 +44,22 @@ VARIABLE_KEYS = (
     "minimum",
 )
 
+NUMBER_WORDS = {
+    "zero": "0",
+    "one": "1",
+    "two": "2",
+    "three": "3",
+    "four": "4",
+    "five": "5",
+    "six": "6",
+    "seven": "7",
+    "eight": "8",
+    "nine": "9",
+    "ten": "10",
+    "eleven": "11",
+    "twelve": "12",
+}
+
 
 # Agent instructions for different specializations
 TRIAGE_AGENT_INSTRUCTIONS = """You are a Claim Triage Agent for formal verification.
@@ -205,6 +221,7 @@ class OpenAIClaimExtractor:
         base_url: str | None = None,
         app_name: str | None = None,
         site_url: str | None = None,
+        temperature: float | None = None,
     ):
         """Initialize the OpenAI claim extractor.
 
@@ -214,6 +231,7 @@ class OpenAIClaimExtractor:
             base_url: Optional OpenAI-compatible API base URL
             app_name: Optional client title header for compatible providers
             site_url: Optional referer header for compatible providers
+            temperature: Optional decoding temperature for extraction calls
         """
         default_headers = {}
         resolved_app_name = app_name or os.getenv("OPENAI_APP_NAME")
@@ -235,6 +253,7 @@ class OpenAIClaimExtractor:
 
         self.client = OpenAI(**client_kwargs)
         self.model = model
+        self.temperature = temperature
         self.translator = ClaimTranslator()
         self._uses_compatible_base_url = bool(
             resolved_base_url and "api.openai.com" not in resolved_base_url
@@ -256,10 +275,7 @@ class OpenAIClaimExtractor:
         """Return a provider-compatible schema for extracted variables."""
         return {
             "type": "object",
-            "properties": {
-                key: {"type": "string"}
-                for key in VARIABLE_KEYS
-            },
+            "properties": {key: {"type": "string"} for key in VARIABLE_KEYS},
             "additionalProperties": False,
         }
 
@@ -276,6 +292,13 @@ class OpenAIClaimExtractor:
                 "schema": schema,
             },
         }
+
+    def _completion_kwargs(self) -> dict[str, Any]:
+        """Shared completion kwargs for structured extraction calls."""
+        kwargs: dict[str, Any] = {}
+        if self.temperature is not None:
+            kwargs["temperature"] = self.temperature
+        return kwargs
 
     def _instruction_text(self, instruction: str) -> str:
         """Add portable JSON guidance for compatible providers."""
@@ -388,7 +411,7 @@ class OpenAIClaimExtractor:
         start = text.find("{")
         end = text.rfind("}")
         if start != -1 and end != -1 and end > start:
-            candidates.append(text[start:end + 1].strip())
+            candidates.append(text[start : end + 1].strip())
 
         for candidate in candidates:
             try:
@@ -400,11 +423,278 @@ class OpenAIClaimExtractor:
 
         raise ValueError("Provider did not return a valid JSON object")
 
-    def extract_claim(
+    @staticmethod
+    def _normalize_rule_text(text: str) -> str:
+        """Lowercase and trim light punctuation for rule-based extraction."""
+        normalized = text.strip().lower()
+        return re.sub(r"[.?!]+$", "", normalized)
+
+    @staticmethod
+    def _normalize_symbol_token(token: str) -> str | None:
+        """Convert simple number words or variable names into canonical tokens."""
+        normalized = token.strip().lower().strip(",.")
+        if re.fullmatch(r"\d+", normalized):
+            return normalized
+        if normalized in NUMBER_WORDS:
+            return NUMBER_WORDS[normalized]
+        if re.fullmatch(r"[a-zA-Z_]\w*", normalized):
+            return normalized
+        return None
+
+    def _canonicalize_predicate(self, text: str) -> str | None:
+        """Normalize simple arithmetic and inequality predicates."""
+        normalized = self._normalize_rule_text(text)
+        symbolic_match = re.fullmatch(
+            r"([a-zA-Z_]\w*|\d+)\s*(<=|>=|<|>|=)\s*([a-zA-Z_]\w*|\d+)",
+            normalized,
+        )
+        if symbolic_match:
+            return (
+                f"{symbolic_match.group(1)} {symbolic_match.group(2)} "
+                f"{symbolic_match.group(3)}"
+            )
+
+        arithmetic_patterns = [
+            (r"(\w+)\s+plus\s+(\w+)\s+(?:equals|is)\s+(\w+)", "+"),
+            (r"(\w+)\s+minus\s+(\w+)\s+(?:equals|is)\s+(\w+)", "-"),
+            (r"(\w+)\s+(?:times|multiplied by)\s+(\w+)\s+(?:equals|is)\s+(\w+)", "*"),
+        ]
+        for pattern, operator in arithmetic_patterns:
+            match = re.fullmatch(pattern, normalized)
+            if not match:
+                continue
+            left = self._normalize_symbol_token(match.group(1))
+            right = self._normalize_symbol_token(match.group(2))
+            result = self._normalize_symbol_token(match.group(3))
+            if left and right and result:
+                return f"{left} {operator} {right} = {result}"
+
+        inequality_patterns = [
+            (r"(\w+)\s+is\s+greater\s+than\s+or\s+equal\s+to\s+(\w+)", ">="),
+            (r"(\w+)\s+is\s+less\s+than\s+or\s+equal\s+to\s+(\w+)", "<="),
+            (r"(\w+)\s+is\s+greater\s+than\s+(\w+)", ">"),
+            (r"(\w+)\s+is\s+less\s+than\s+(\w+)", "<"),
+        ]
+        for pattern, operator in inequality_patterns:
+            match = re.fullmatch(pattern, normalized)
+            if not match:
+                continue
+            left = self._normalize_symbol_token(match.group(1))
+            right = self._normalize_symbol_token(match.group(2))
+            if left and right:
+                return f"{left} {operator} {right}"
+
+        return None
+
+    def _infer_category_from_claim_text(self, claim_text: str) -> ClaimCategory | None:
+        """Infer the strongest category directly from canonical claim text."""
+        normalized = self._normalize_rule_text(claim_text)
+
+        patterns = [
+            (r"^factorial\b", ClaimCategory.FACTORIAL),
+            (r"^fibonacci\b", ClaimCategory.FIBONACCI),
+            (r"^gcd\b", ClaimCategory.GCD),
+            (r"^if\b.*\bthen\b|implies", ClaimCategory.LOGIC_IMPLICATION),
+            (r"^forall\b|^for\s+all\b", ClaimCategory.LOGIC_FORALL),
+            (r"^exists\b|^there\s+exists\b", ClaimCategory.LOGIC_EXISTS),
+            (r"^\d+\s*\*\s*\d+\s*=\s*\d+$", ClaimCategory.MULTIPLICATION),
+            (r"^\d+\s*-\s*\d+\s*=\s*\d+$", ClaimCategory.SUBTRACTION),
+            (r"^\d+\s*[<>]=?\s*\d+$", ClaimCategory.INEQUALITY),
+            (r"^\d+\s*\+\s*\d+\s*=\s*\d+$", ClaimCategory.ARITHMETIC),
+        ]
+        for pattern, category in patterns:
+            if re.search(pattern, normalized):
+                return category
+
+        return None
+
+    def _build_claim(
         self,
-        text: str,
-        code_context: str = ""
-    ) -> ClaimExtractionResult:
+        *,
+        category: ClaimCategory,
+        claim_text: str,
+        confidence: float,
+        variables: dict[str, str],
+        pattern_hints: list[str],
+        reasoning: str,
+        function_name: str | None = None,
+    ) -> FormalizableClaim:
+        """Construct a claim after inferring the most specific category."""
+        inferred_category = self._infer_category_from_claim_text(claim_text)
+        final_category = inferred_category or category
+        return FormalizableClaim(
+            category=final_category,
+            claim_text=claim_text,
+            confidence=confidence,
+            variables=variables,
+            pattern_hints=pattern_hints,
+            function_name=function_name,
+            reasoning=reasoning,
+        )
+
+    def _rule_based_claim(self, text: str) -> FormalizableClaim | None:
+        """Use lightweight deterministic normalization for obvious claim forms."""
+        normalized = self._normalize_rule_text(text)
+
+        arithmetic_patterns = [
+            (
+                r"(\w+)\s+plus\s+(\w+)\s+(?:equals|is)\s+(\w+)",
+                ClaimCategory.ARITHMETIC,
+                "+",
+            ),
+            (
+                r"(\w+)\s+(?:times|multiplied by)\s+(\w+)\s+(?:equals|is)\s+(\w+)",
+                ClaimCategory.MULTIPLICATION,
+                "*",
+            ),
+            (
+                r"(\w+)\s+minus\s+(\w+)\s+(?:equals|is)\s+(\w+)",
+                ClaimCategory.SUBTRACTION,
+                "-",
+            ),
+        ]
+        for pattern, category, operator in arithmetic_patterns:
+            match = re.fullmatch(pattern, normalized)
+            if not match:
+                continue
+            left = self._normalize_symbol_token(match.group(1))
+            right = self._normalize_symbol_token(match.group(2))
+            result = self._normalize_symbol_token(match.group(3))
+            if left and right and result:
+                return self._build_claim(
+                    category=category,
+                    claim_text=f"{left} {operator} {right} = {result}",
+                    confidence=0.9,
+                    variables={"left": left, "right": right, "result": result},
+                    pattern_hints=[category.value],
+                    reasoning="Rule-based normalization of arithmetic language.",
+                )
+
+        function_patterns = [
+            (
+                r"(?:the\s+)?factorial(?:\s+of)?\s+(\w+)\s+(?:equals|is)\s+(\w+)",
+                ClaimCategory.FACTORIAL,
+                "factorial {input} = {output}",
+            ),
+            (
+                r"fibonacci(?:\s+of)?\s+(\w+)\s+(?:equals|is)\s+(\w+)",
+                ClaimCategory.FIBONACCI,
+                "fibonacci {input} = {output}",
+            ),
+            (
+                r"(?:the\s+)?gcd(?:\s+of)?\s+(\w+)\s+(?:and|,)\s+(\w+)\s+(?:equals|is)\s+(\w+)",
+                ClaimCategory.GCD,
+                "gcd({a}, {b}) = {result}",
+            ),
+        ]
+        for pattern, category, template in function_patterns:
+            match = re.fullmatch(pattern, normalized)
+            if not match:
+                continue
+            if category == ClaimCategory.GCD:
+                a = self._normalize_symbol_token(match.group(1))
+                b = self._normalize_symbol_token(match.group(2))
+                result = self._normalize_symbol_token(match.group(3))
+                if a and b and result:
+                    return self._build_claim(
+                        category=category,
+                        claim_text=template.format(a=a, b=b, result=result),
+                        confidence=0.9,
+                        variables={"a": a, "b": b, "result": result},
+                        pattern_hints=["gcd"],
+                        reasoning="Rule-based normalization of number-theory language.",
+                    )
+            else:
+                input_value = self._normalize_symbol_token(match.group(1))
+                output_value = self._normalize_symbol_token(match.group(2))
+                if input_value and output_value:
+                    return self._build_claim(
+                        category=category,
+                        claim_text=template.format(
+                            input=input_value,
+                            output=output_value,
+                        ),
+                        confidence=0.9,
+                        variables={"input": input_value, "output": output_value},
+                        pattern_hints=[category.value],
+                        reasoning=(
+                            "Rule-based normalization of recursive math language."
+                        ),
+                    )
+
+        inequality_patterns = [
+            (r"(\w+)\s+is\s+greater\s+than\s+or\s+equal\s+to\s+(\w+)", ">="),
+            (r"(\w+)\s+is\s+less\s+than\s+or\s+equal\s+to\s+(\w+)", "<="),
+            (r"(\w+)\s+is\s+greater\s+than\s+(\w+)", ">"),
+            (r"(\w+)\s+is\s+less\s+than\s+(\w+)", "<"),
+        ]
+        for pattern, operator in inequality_patterns:
+            match = re.fullmatch(pattern, normalized)
+            if not match:
+                continue
+            left = self._normalize_symbol_token(match.group(1))
+            right = self._normalize_symbol_token(match.group(2))
+            if left and right:
+                return self._build_claim(
+                    category=ClaimCategory.INEQUALITY,
+                    claim_text=f"{left} {operator} {right}",
+                    confidence=0.9,
+                    variables={"left": left, "right": right},
+                    pattern_hints=["inequality"],
+                    reasoning="Rule-based normalization of comparison language.",
+                )
+
+        implication_match = re.fullmatch(r"if\s+(.+?),\s+then\s+(.+)", normalized)
+        if implication_match:
+            hypothesis = self._canonicalize_predicate(implication_match.group(1))
+            conclusion = self._canonicalize_predicate(implication_match.group(2))
+            if hypothesis and conclusion:
+                return self._build_claim(
+                    category=ClaimCategory.LOGIC_IMPLICATION,
+                    claim_text=f"if {hypothesis} then {conclusion}",
+                    confidence=0.85,
+                    variables={
+                        "hypothesis": hypothesis,
+                        "conclusion": conclusion,
+                    },
+                    pattern_hints=["if", "then"],
+                    reasoning="Rule-based normalization of implication language.",
+                )
+
+        forall_match = re.fullmatch(r"for\s+all\s+([a-zA-Z_]\w*),\s+(.+)", normalized)
+        if forall_match:
+            variable = forall_match.group(1)
+            property_text = self._canonicalize_predicate(forall_match.group(2))
+            if property_text:
+                return self._build_claim(
+                    category=ClaimCategory.LOGIC_FORALL,
+                    claim_text=f"forall {variable}, {property_text}",
+                    confidence=0.85,
+                    variables={"variable": variable, "property": property_text},
+                    pattern_hints=["forall"],
+                    reasoning="Rule-based normalization of universal quantification.",
+                )
+
+        exists_match = re.fullmatch(
+            r"there\s+exists\s+([a-zA-Z_]\w*)\s+such\s+that\s+(.+)",
+            normalized,
+        )
+        if exists_match:
+            variable = exists_match.group(1)
+            property_text = self._canonicalize_predicate(exists_match.group(2))
+            if property_text:
+                return self._build_claim(
+                    category=ClaimCategory.LOGIC_EXISTS,
+                    claim_text=f"exists {variable} such that {property_text}",
+                    confidence=0.85,
+                    variables={"variable": variable, "property": property_text},
+                    pattern_hints=["exists"],
+                    reasoning="Rule-based normalization of existential quantification.",
+                )
+
+        return None
+
+    def extract_claim(self, text: str, code_context: str = "") -> ClaimExtractionResult:
         """Extract a formalizable claim from text.
 
         Args:
@@ -420,12 +710,20 @@ class OpenAIClaimExtractor:
         triage_result = self._triage_claim(text)
 
         if not triage_result["is_formalizable"]:
+            rule_based_claim = self._rule_based_claim(text)
+            if rule_based_claim is not None:
+                return ClaimExtractionResult(
+                    claim=rule_based_claim,
+                    is_formalizable=True,
+                    reasoning=rule_based_claim.reasoning,
+                    original_text=text,
+                )
             return ClaimExtractionResult(
                 claim=None,
                 is_formalizable=False,
                 reasoning=triage_result["reasoning"],
                 alternative_formulation=triage_result.get("suggestion"),
-                original_text=text
+                original_text=text,
             )
 
         raw_category = triage_result["category"]
@@ -434,41 +732,101 @@ class OpenAIClaimExtractor:
         try:
             category = ClaimCategory(normalized_category)
         except ValueError:
+            rule_based_claim = self._rule_based_claim(text)
+            if rule_based_claim is not None:
+                return ClaimExtractionResult(
+                    claim=rule_based_claim,
+                    is_formalizable=True,
+                    reasoning=rule_based_claim.reasoning,
+                    original_text=text,
+                )
             return ClaimExtractionResult(
                 claim=None,
                 is_formalizable=False,
                 reasoning=f"Category {raw_category} not yet supported",
-                original_text=text
+                original_text=text,
             )
 
         # Step 2: Route to specialized agent
-        if category in [ClaimCategory.ARITHMETIC, ClaimCategory.MULTIPLICATION,
-                       ClaimCategory.SUBTRACTION, ClaimCategory.FACTORIAL,
-                       ClaimCategory.FIBONACCI, ClaimCategory.GCD,
-                       ClaimCategory.INEQUALITY]:
+        if category in [
+            ClaimCategory.ARITHMETIC,
+            ClaimCategory.MULTIPLICATION,
+            ClaimCategory.SUBTRACTION,
+            ClaimCategory.FACTORIAL,
+            ClaimCategory.FIBONACCI,
+            ClaimCategory.GCD,
+            ClaimCategory.INEQUALITY,
+        ]:
             claim = self._extract_math_claim(text, category)
-        elif category in [ClaimCategory.LOGIC_IMPLICATION, ClaimCategory.LOGIC_FORALL,
-                         ClaimCategory.LOGIC_EXISTS]:
+        elif category in [
+            ClaimCategory.LOGIC_IMPLICATION,
+            ClaimCategory.LOGIC_FORALL,
+            ClaimCategory.LOGIC_EXISTS,
+        ]:
             claim = self._extract_logic_claim(text, category)
-        elif category in [ClaimCategory.SORTING, ClaimCategory.EXTREMUM,
-                         ClaimCategory.SUM, ClaimCategory.BINARY_SEARCH,
-                         ClaimCategory.PERMUTATION, ClaimCategory.ARRAY_BOUNDS,
-                         ClaimCategory.LOOP_TERMINATION, ClaimCategory.LIST_APPEND,
-                         ClaimCategory.MEMORY_SAFETY, ClaimCategory.TIME_COMPLEXITY]:
+        elif category in [
+            ClaimCategory.SORTING,
+            ClaimCategory.EXTREMUM,
+            ClaimCategory.SUM,
+            ClaimCategory.BINARY_SEARCH,
+            ClaimCategory.PERMUTATION,
+            ClaimCategory.ARRAY_BOUNDS,
+            ClaimCategory.LOOP_TERMINATION,
+            ClaimCategory.LIST_APPEND,
+            ClaimCategory.MEMORY_SAFETY,
+            ClaimCategory.TIME_COMPLEXITY,
+        ]:
             claim = self._extract_algorithm_claim(text, category, code_context)
         else:
             return ClaimExtractionResult(
                 claim=None,
                 is_formalizable=False,
                 reasoning=f"Category {category} not yet supported",
-                original_text=text
+                original_text=text,
             )
+
+        rule_based_claim = self._rule_based_claim(text)
+        if claim is None and rule_based_claim is not None:
+            claim = rule_based_claim
+        elif (
+            claim is not None
+            and rule_based_claim is not None
+            and claim.claim_text != rule_based_claim.claim_text
+        ):
+            # For simple canonicalizable claims, preserve the literal claim the
+            # user stated instead of a provider-normalized "corrected" variant.
+            claim = rule_based_claim
+
+        if claim is None:
+            if rule_based_claim is None:
+                return ClaimExtractionResult(
+                    claim=None,
+                    is_formalizable=False,
+                    reasoning=f"Unable to extract a canonical {category.value} claim",
+                    original_text=text,
+                )
+            claim = rule_based_claim
+
+        if not self.validate_against_translator(claim, code_context):
+            if rule_based_claim is not None and self.validate_against_translator(
+                rule_based_claim, code_context
+            ):
+                claim = rule_based_claim
+            else:
+                return ClaimExtractionResult(
+                    claim=None,
+                    is_formalizable=False,
+                    reasoning=(
+                        "Extracted claim did not match a supported translator pattern"
+                    ),
+                    original_text=text,
+                )
 
         return ClaimExtractionResult(
             claim=claim,
             is_formalizable=True,
             reasoning=claim.reasoning,
-            original_text=text
+            original_text=text,
         )
 
     def _triage_claim(self, text: str) -> dict[str, Any]:
@@ -476,12 +834,11 @@ class OpenAIClaimExtractor:
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
+                **self._completion_kwargs(),
                 messages=[
                     {
                         "role": "system",
-                        "content": self._instruction_text(
-                            TRIAGE_AGENT_INSTRUCTIONS
-                        ),
+                        "content": self._instruction_text(TRIAGE_AGENT_INSTRUCTIONS),
                     },
                     {
                         "role": "user",
@@ -527,24 +884,21 @@ class OpenAIClaimExtractor:
                 "is_formalizable": False,
                 "category": "unformalizable",
                 "reasoning": f"Error during triage: {e!s}",
-                "suggestion": ""
+                "suggestion": "",
             }
 
     def _extract_math_claim(
-        self,
-        text: str,
-        category: ClaimCategory
-    ) -> FormalizableClaim:
+        self, text: str, category: ClaimCategory
+    ) -> FormalizableClaim | None:
         """Extract a mathematical claim using the math specialist agent."""
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
+                **self._completion_kwargs(),
                 messages=[
                     {
                         "role": "system",
-                        "content": self._instruction_text(
-                            MATH_AGENT_INSTRUCTIONS
-                        ),
+                        "content": self._instruction_text(MATH_AGENT_INSTRUCTIONS),
                     },
                     {
                         "role": "user",
@@ -556,7 +910,7 @@ class OpenAIClaimExtractor:
                                 "(array of strings), reasoning (string)"
                             ),
                         ),
-                    }
+                    },
                 ],
                 response_format=self._response_format(
                     "math_claim",
@@ -589,13 +943,13 @@ class OpenAIClaimExtractor:
                 category,
             )
 
-            claim = FormalizableClaim(
+            claim = self._build_claim(
                 category=category,
                 claim_text=result["claim_text"],
                 confidence=result["confidence"],
                 variables=result["variables"],
                 pattern_hints=result["pattern_hints"],
-                reasoning=result["reasoning"]
+                reasoning=result["reasoning"],
             )
 
             logger.debug(f"Extracted math claim: {claim.claim_text}")
@@ -603,43 +957,20 @@ class OpenAIClaimExtractor:
 
         except Exception as e:
             logger.error(f"Math claim extraction failed: {e}")
-            # Fallback to simple extraction
-            fallback_claims = {
-                ClaimCategory.ARITHMETIC: "0 + 0 = 0",
-                ClaimCategory.MULTIPLICATION: "2 * 2 = 4",
-                ClaimCategory.SUBTRACTION: "2 - 1 = 1",
-                ClaimCategory.FACTORIAL: "factorial 0 = 1",
-                ClaimCategory.FIBONACCI: "fibonacci 2 = 1",
-                ClaimCategory.GCD: "gcd 1 1 = 1",
-                ClaimCategory.INEQUALITY: "0 < 1",
-            }
-
-            canonical_text = fallback_claims.get(category, "0 + 0 = 0")
-
-            return FormalizableClaim(
-                category=category,
-                claim_text=canonical_text,
-                confidence=0.3,
-                variables={},
-                pattern_hints=[],
-                reasoning=f"Fallback extraction due to error: {e!s}"
-            )
+            return self._rule_based_claim(text)
 
     def _extract_logic_claim(
-        self,
-        text: str,
-        category: ClaimCategory
-    ) -> FormalizableClaim:
+        self, text: str, category: ClaimCategory
+    ) -> FormalizableClaim | None:
         """Extract a logical claim using the logic specialist agent."""
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
+                **self._completion_kwargs(),
                 messages=[
                     {
                         "role": "system",
-                        "content": self._instruction_text(
-                            LOGIC_AGENT_INSTRUCTIONS
-                        ),
+                        "content": self._instruction_text(LOGIC_AGENT_INSTRUCTIONS),
                     },
                     {
                         "role": "user",
@@ -651,7 +982,7 @@ class OpenAIClaimExtractor:
                                 "(array of strings), reasoning (string)"
                             ),
                         ),
-                    }
+                    },
                 ],
                 response_format=self._response_format(
                     "logic_claim",
@@ -684,13 +1015,13 @@ class OpenAIClaimExtractor:
                 category,
             )
 
-            claim = FormalizableClaim(
+            claim = self._build_claim(
                 category=category,
                 claim_text=result["claim_text"],
                 confidence=result["confidence"],
                 variables=result["variables"],
                 pattern_hints=result["pattern_hints"],
-                reasoning=result["reasoning"]
+                reasoning=result["reasoning"],
             )
 
             logger.debug(f"Extracted logic claim: {claim.claim_text}")
@@ -698,21 +1029,11 @@ class OpenAIClaimExtractor:
 
         except Exception as e:
             logger.error(f"Logic claim extraction failed: {e}")
-            return FormalizableClaim(
-                category=category,
-                claim_text=text[:100],
-                confidence=0.3,
-                variables={},
-                pattern_hints=[],
-                reasoning=f"Fallback extraction due to error: {e!s}"
-            )
+            return self._rule_based_claim(text)
 
     def _extract_algorithm_claim(
-        self,
-        text: str,
-        category: ClaimCategory,
-        code_context: str
-    ) -> FormalizableClaim:
+        self, text: str, category: ClaimCategory, code_context: str
+    ) -> FormalizableClaim | None:
         """Extract an algorithm property claim using the algorithm specialist agent."""
         try:
             prompt = f"Extract {category.value} claim from: {text}"
@@ -721,12 +1042,11 @@ class OpenAIClaimExtractor:
 
             response = self.client.chat.completions.create(
                 model=self.model,
+                **self._completion_kwargs(),
                 messages=[
                     {
                         "role": "system",
-                        "content": self._instruction_text(
-                            ALGORITHM_AGENT_INSTRUCTIONS
-                        ),
+                        "content": self._instruction_text(ALGORITHM_AGENT_INSTRUCTIONS),
                     },
                     {
                         "role": "user",
@@ -739,7 +1059,7 @@ class OpenAIClaimExtractor:
                                 "(string or null), reasoning (string)"
                             ),
                         ),
-                    }
+                    },
                 ],
                 response_format=self._response_format(
                     "algorithm_claim",
@@ -773,14 +1093,14 @@ class OpenAIClaimExtractor:
                 category,
             )
 
-            claim = FormalizableClaim(
+            claim = self._build_claim(
                 category=category,
                 claim_text=result["claim_text"],
                 confidence=result["confidence"],
                 variables=result["variables"],
                 pattern_hints=result["pattern_hints"],
                 function_name=result.get("function_name"),
-                reasoning=result["reasoning"]
+                reasoning=result["reasoning"],
             )
 
             logger.debug(f"Extracted algorithm claim: {claim.claim_text}")
@@ -788,19 +1108,10 @@ class OpenAIClaimExtractor:
 
         except Exception as e:
             logger.error(f"Algorithm claim extraction failed: {e}")
-            return FormalizableClaim(
-                category=category,
-                claim_text=text[:100],
-                confidence=0.3,
-                variables={},
-                pattern_hints=[],
-                reasoning=f"Fallback extraction due to error: {e!s}"
-            )
+            return self._rule_based_claim(text)
 
     def validate_against_translator(
-        self,
-        claim: FormalizableClaim,
-        code: str = ""
+        self, claim: FormalizableClaim, code: str = ""
     ) -> bool:
         """Validate that a claim can be translated to Coq.
 
@@ -816,7 +1127,7 @@ class OpenAIClaimExtractor:
             claim_text=claim.claim_text,
             property_type=PropertyType.CORRECTNESS,
             confidence=claim.confidence,
-            timestamp=0.0
+            timestamp=0.0,
         )
 
         result = self.translator.translate(dummy_claim, code)

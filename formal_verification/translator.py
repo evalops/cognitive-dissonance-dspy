@@ -20,6 +20,7 @@ class ClaimTranslator:
             (r"for\s*all\s+(.+?),\s*(.+)", self._forall_spec),
             (r"forall\s+(.+?),\s*(.+)", self._forall_spec),
             (r"there\s+exists\s+(.+?)\s+such\s+that\s+(.+)", self._exists_spec),
+            (r"exists\s+(.+?)\s+such\s+that\s+(.+)", self._exists_spec),
             (r"exists\s+(.+?),\s*(.+)", self._exists_spec),
         ]
 
@@ -32,21 +33,36 @@ class ClaimTranslator:
         ]
 
         self.memory_patterns = [
-            (r"memory safe|no buffer overflow|no use.after.free", self._memory_safety_spec),
+            (
+                r"memory safe|no buffer overflow|no use.after.free",
+                self._memory_safety_spec,
+            ),
             (r"buffer overflow|memory corruption|segfault", self._memory_safety_spec),
         ]
 
         self.complexity_patterns = [
-            (r"[Oo]\(([^)]+)\)|time complexity.*[Oo]\(([^)]+)\)", self._complexity_spec),
+            (
+                r"[Oo]\(([^)]+)\)|time complexity.*[Oo]\(([^)]+)\)",
+                self._complexity_spec,
+            ),
             (r"linear time|[Oo]\(n\)", self._complexity_spec),
             (r"constant time|[Oo]\(1\)", self._complexity_spec),
         ]
 
         self.correctness_patterns = [
-            (r"sorts? the array|sorting|sorted|correctly sorts", self._sorting_correctness_spec),
-            (r"returns? the (maximum|minimum)|finds the (maximum|minimum)", self._extremum_correctness_spec),
+            (
+                r"sorts? the array|sorting|sorted|correctly sorts",
+                self._sorting_correctness_spec,
+            ),
+            (
+                r"returns? the (maximum|minimum)|finds the (maximum|minimum)",
+                self._extremum_correctness_spec,
+            ),
             (r"computes? the sum", self._sum_correctness_spec),
-            (r"binary.?search.*returns.*correct.*index|binary.?search.*finds.*element", self._binary_search_correctness_spec),
+            (
+                r"binary.?search.*returns.*correct.*index|binary.?search.*finds.*element",
+                self._binary_search_correctness_spec,
+            ),
             (r"preserves all elements|permutation", self._permutation_correctness_spec),
         ]
 
@@ -55,15 +71,24 @@ class ClaimTranslator:
             (r"(\d+)\s*\*\s*(\d+)\s*=\s*(\d+)", self._multiplication_spec),
             (r"(\d+)\s*-\s*(\d+)\s*=\s*(\d+)", self._subtraction_spec),
             (r"factorial\s*\(?(\d+)\)?\s*(?:=|equals)\s*(\d+)", self._factorial_spec),
-            (r"fibonacci\s+(\d+)\s*=\s*(\d+)", self._fibonacci_spec),
-            (r"gcd\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)\s*=\s*(\d+)", self._gcd_spec),
+            (r"fibonacci\s*\(?\s*(\d+)\s*\)?\s*=\s*(\d+)", self._fibonacci_spec),
+            (
+                r"gcd\s*\(?\s*(\d+)\s*,\s*(\d+)\s*\)?\s*=\s*(\d+)",
+                self._gcd_spec,
+            ),
             (r"max\s*\(\s*\[([\d,\s]+)\]\s*\)\s*returns?\s*(\d+)", self._max_spec),
         ]
 
         # Software property patterns
         self.software_patterns = [
-            (r"accessing\s+array\[(\d+)\].*length.*?(\d+).*?(safe|unsafe|overflow)", self._array_bounds_spec),
-            (r"for\s+loop.*?(\d+).*?to.*?(\w+)\s+terminates", self._loop_termination_spec),
+            (
+                r"accessing\s+array\[(\d+)\].*length.*?(\d+).*?(safe|unsafe|overflow)",
+                self._array_bounds_spec,
+            ),
+            (
+                r"for\s+loop.*?(\d+).*?to.*?(\w+)\s+terminates",
+                self._loop_termination_spec,
+            ),
             (r"while\s*\(\s*true\s*\).*?terminates", self._infinite_loop_spec),
             (r"list\s+size\s+increases.*?after\s+append", self._list_append_spec),
         ]
@@ -140,7 +165,9 @@ class ClaimTranslator:
         """Generate memory safety specification."""
         func_name = self._extract_function_name(code)
 
-        spec_text = f"Function {func_name} does not cause buffer overflows or use-after-free"
+        spec_text = (
+            f"Function {func_name} does not cause buffer overflows or use-after-free"
+        )
         coq_code = f"""
 Require Import List.
 Require Import Arith.
@@ -161,7 +188,7 @@ Admitted.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"func_name": func_name}
+            variables={"func_name": func_name},
         )
 
     def _extremum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
@@ -188,7 +215,7 @@ Admitted.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"func_name": func_name}
+            variables={"func_name": func_name},
         )
 
     def _sum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
@@ -221,7 +248,7 @@ Admitted.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"func_name": func_name}
+            variables={"func_name": func_name},
         )
 
     def _arithmetic_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -244,7 +271,7 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"left": str(left), "middle": str(middle), "right": str(right)}
+            variables={"left": str(left), "middle": str(middle), "right": str(right)},
         )
 
     def _factorial_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -273,7 +300,7 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"input": str(input_val), "output": str(output_val)}
+            variables={"input": str(input_val), "output": str(output_val)},
         )
 
     def _implication_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -287,12 +314,17 @@ Qed.
 
         # Extract variables from expressions
         import re
-        variables = set(re.findall(r'\b[a-z]\b', hypothesis + " " + conclusion))
+
+        variables = set(re.findall(r"\b[a-z]\b", hypothesis + " " + conclusion))
 
         if variables:
             # Handle implications with variables
             var_decls = ", ".join([f"{v} : nat" for v in sorted(variables)])
-            spec_text = f"Implication: forall {', '.join(sorted(variables))}, if {hypothesis} then {conclusion}"
+            quantified_vars = ", ".join(sorted(variables))
+            spec_text = (
+                f"Implication: forall {quantified_vars}, "
+                f"if {hypothesis} then {conclusion}"
+            )
             coq_code = f"""
 Require Import Arith.
 Require Import Lia.
@@ -321,7 +353,7 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"hypothesis": hypothesis, "conclusion": conclusion}
+            variables={"hypothesis": hypothesis, "conclusion": conclusion},
         )
 
     def _forall_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -359,7 +391,7 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"variable": variable, "property": property_text}
+            variables={"variable": variable, "property": property_text},
         )
 
     def _exists_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -384,7 +416,7 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"variable": variable, "property": property_text}
+            variables={"variable": variable, "property": property_text},
         )
 
     def _inequality_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -419,7 +451,7 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"left": str(left), "right": str(right), "op": op}
+            variables={"left": str(left), "right": str(right), "op": op},
         )
 
     def _multiplication_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -442,7 +474,7 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"left": str(left), "right": str(right), "result": str(result)}
+            variables={"left": str(left), "right": str(right), "result": str(result)},
         )
 
     def _subtraction_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -465,7 +497,7 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"left": str(left), "right": str(right), "result": str(result)}
+            variables={"left": str(left), "right": str(right), "result": str(result)},
         )
 
     def _fibonacci_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -495,7 +527,7 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"n": str(n), "result": str(result)}
+            variables={"n": str(n), "result": str(result)},
         )
 
     def _gcd_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -521,7 +553,7 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"a": str(a), "b": str(b), "result": str(result)}
+            variables={"a": str(a), "b": str(b), "result": str(result)},
         )
 
     def _parse_expression(self, expr: str) -> str:
@@ -535,10 +567,10 @@ Qed.
         expr = expr.replace(" times ", " * ")
 
         # Handle variable references
-        expr = re.sub(r'\b(x|y|n|m)\b', r'\1', expr)
+        expr = re.sub(r"\b(x|y|n|m)\b", r"\1", expr)
 
         # Handle numeric comparisons
-        expr = re.sub(r'(\d+)\s*=\s*(\d+)', r'\1 = \2', expr)
+        expr = re.sub(r"(\d+)\s*=\s*(\d+)", r"\1 = \2", expr)
 
         return expr
 
@@ -548,7 +580,7 @@ Qed.
         result = int(match.group(2))
 
         # Parse array elements
-        elements = [int(x.strip()) for x in array_str.split(',')]
+        elements = [int(x.strip()) for x in array_str.split(",")]
 
         spec_text = f"Max of [{', '.join(map(str, elements))}] returns {result}"
         coq_code = f"""
@@ -577,7 +609,7 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"array": str(elements), "result": str(result)}
+            variables={"array": str(elements), "result": str(result)},
         )
 
     def _array_bounds_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -588,7 +620,11 @@ Qed.
 
         is_safe = "safe" in safety
 
-        spec_text = f"Array access at index {index} with length {length} is {'safe' if is_safe else 'unsafe'}"
+        safety_text = "safe" if is_safe else "unsafe"
+        spec_text = (
+            f"Array access at index {index} with length {length} is "
+            f"{safety_text}"
+        )
 
         if is_safe:
             # Prove safety
@@ -617,7 +653,7 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"index": str(index), "length": str(length)}
+            variables={"index": str(index), "length": str(length)},
         )
 
     def _loop_termination_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -658,11 +694,11 @@ Qed.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"start": start, "end": end}
+            variables={"start": start, "end": end},
         )
 
     def _infinite_loop_spec(self, claim: Claim, code: str, match) -> FormalSpec:
-        """Generate specification for infinite loop (should fail to prove termination)."""
+        """Generate specification for an infinite-loop termination claim."""
         spec_text = "While(true) loop terminates"
         coq_code = """
 Require Import Arith.
@@ -675,10 +711,7 @@ Admitted.
 """
 
         return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={}
+            claim=claim, spec_text=spec_text, coq_code=coq_code, variables={}
         )
 
     def _list_append_spec(self, claim: Claim, code: str, match) -> FormalSpec:
@@ -701,10 +734,7 @@ Qed.
 """
 
         return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={}
+            claim=claim, spec_text=spec_text, coq_code=coq_code, variables={}
         )
 
     def _complexity_spec(self, claim: Claim, code: str, match=None) -> FormalSpec:
@@ -737,7 +767,7 @@ Admitted.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"func_name": func_name, "complexity": complexity}
+            variables={"func_name": func_name, "complexity": complexity},
         )
 
     def _sorting_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
@@ -765,7 +795,7 @@ Admitted.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"func_name": func_name}
+            variables={"func_name": func_name},
         )
 
     def _binary_search_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
@@ -778,7 +808,8 @@ Require Import List.
 Require Import Arith.
 Require Import Sorted.
 
-Definition {func_name}_correct (input: list nat) (target: nat) (result: option nat) : Prop :=
+Definition {func_name}_correct
+  (input: list nat) (target: nat) (result: option nat) : Prop :=
   match result with
   | Some idx => idx < length input /\\ nth idx input 0 = target
   | None => ~In target input
@@ -786,7 +817,9 @@ Definition {func_name}_correct (input: list nat) (target: nat) (result: option n
 
 Theorem {func_name}_search_correct :
   forall input target, LocallySorted le input ->
-    exists result, {func_name} input target = result /\\ {func_name}_correct input target result.
+    exists result,
+      {func_name} input target = result /\\
+      {func_name}_correct input target result.
 Proof.
   (* Proof would verify binary search correctness *)
 Admitted.
@@ -796,7 +829,7 @@ Admitted.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"func_name": func_name}
+            variables={"func_name": func_name},
         )
 
     def _permutation_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
@@ -823,5 +856,5 @@ Admitted.
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"func_name": func_name}
+            variables={"func_name": func_name},
         )

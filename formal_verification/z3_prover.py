@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 # Check if Z3 is available
 try:
     from z3 import *
+
     Z3_AVAILABLE = True
 except ImportError:
     Z3_AVAILABLE = False
@@ -21,6 +22,7 @@ except ImportError:
 
 class Z3ProofType(Enum):
     """Types of proofs Z3 can handle."""
+
     SATISFIABILITY = "sat"
     VALIDITY = "valid"
     MODEL_CHECKING = "model"
@@ -31,6 +33,7 @@ class Z3ProofType(Enum):
 @dataclass
 class Z3ProofResult:
     """Result from Z3 proof attempt."""
+
     claim: str
     proof_type: Z3ProofType
     result: str  # sat, unsat, unknown
@@ -91,20 +94,48 @@ class Z3Translator:
     def _is_arithmetic_claim(self, claim: str) -> bool:
         """Check if claim is arithmetic."""
         import re
-        return bool(re.search(r'\d+\s*[+\-*/=<>]', claim))
+
+        return bool(re.search(r"\d+\s*[+\-*/=<>]", claim))
 
     def _translate_arithmetic(self, claim: str) -> Any | None:
         """Translate arithmetic claim to Z3."""
         import re
 
         # Simple arithmetic: "10 + 15 = 25"
-        match = re.search(r'(\d+)\s*\+\s*(\d+)\s*=\s*(\d+)', claim)
+        match = re.search(r"(\d+)\s*\+\s*(\d+)\s*=\s*(\d+)", claim)
         if match:
             a, b, c = int(match.group(1)), int(match.group(2)), int(match.group(3))
             return a + b == c
 
+        # Numeric multiplication: "3 * 4 = 12"
+        match = re.search(r"(\d+)\s*\*\s*(\d+)\s*=\s*(\d+)", claim)
+        if match:
+            a, b, c = int(match.group(1)), int(match.group(2)), int(match.group(3))
+            return a * b == c
+
+        # Numeric subtraction: "10 - 3 = 7"
+        match = re.search(r"(\d+)\s*-\s*(\d+)\s*=\s*(\d+)", claim)
+        if match:
+            a, b, c = int(match.group(1)), int(match.group(2)), int(match.group(3))
+            return a - b == c
+
+        # Numeric inequalities: "3 < 5", "10 >= 7"
+        match = re.search(r"(\d+)\s*(<=|>=|<|>)\s*(\d+)", claim)
+        if match:
+            left = int(match.group(1))
+            operator = match.group(2)
+            right = int(match.group(3))
+
+            if operator == "<":
+                return left < right
+            if operator == ">":
+                return left > right
+            if operator == "<=":
+                return left <= right
+            return left >= right
+
         # Multiplication: "x * 2 = 15"
-        match = re.search(r'(\w+)\s*\*\s*(\d+)\s*=\s*(\d+)', claim)
+        match = re.search(r"([a-zA-Z_]\w*)\s*\*\s*(\d+)\s*=\s*(\d+)", claim)
         if match:
             var_name = match.group(1)
             multiplier = int(match.group(2))
@@ -114,7 +145,7 @@ class Z3Translator:
             return self.variables[var_name] * multiplier == result
 
         # Inequality: "x < 10"
-        match = re.search(r'(\w+)\s*<\s*(\d+)', claim)
+        match = re.search(r"([a-zA-Z_]\w*)\s*<\s*(\d+)", claim)
         if match:
             var_name = match.group(1)
             value = int(match.group(2))
@@ -125,7 +156,7 @@ class Z3Translator:
             return self.variables[var_name] < value
 
         # Greater than: "x > 5"
-        match = re.search(r'(\w+)\s*>\s*(\d+)', claim)
+        match = re.search(r"([a-zA-Z_]\w*)\s*>\s*(\d+)", claim)
         if match:
             var_name = match.group(1)
             value = int(match.group(2))
@@ -134,7 +165,7 @@ class Z3Translator:
             return self.variables[var_name] > value
 
         # Complex arithmetic with variables: "x + y = 10"
-        match = re.search(r'(\w+)\s*\+\s*(\w+)\s*=\s*(\d+)', claim)
+        match = re.search(r"(\w+)\s*\+\s*(\w+)\s*=\s*(\d+)", claim)
         if match:
             var1, var2 = match.group(1), match.group(2)
             result = int(match.group(3))
@@ -153,9 +184,9 @@ class Z3Translator:
         # Array bounds: "array[i] is safe when 0 <= i < length"
         if "safe" in claim.lower() and "array" in claim.lower():
             # Create array and index variables
-            array_var = Array('array', IntSort(), IntSort())
-            i = Int('i')
-            length = Int('length')
+            array_var = Array("array", IntSort(), IntSort())
+            i = Int("i")
+            length = Int("length")
 
             # Safety condition
             _ = array_var
@@ -164,14 +195,15 @@ class Z3Translator:
         # Array sorted: "array is sorted"
         if "sorted" in claim.lower():
             # Create array
-            array_var = Array('array', IntSort(), IntSort())
-            length = Int('length')
+            array_var = Array("array", IntSort(), IntSort())
+            length = Int("length")
 
             # Sorted property
-            i = Int('i')
-            return ForAll([i],
-                Implies(And(i >= 0, i < length - 1),
-                       array_var[i] <= array_var[i + 1]))
+            i = Int("i")
+            return ForAll(
+                [i],
+                Implies(And(i >= 0, i < length - 1), array_var[i] <= array_var[i + 1]),
+            )
 
         return None
 
@@ -181,7 +213,7 @@ class Z3Translator:
 
         # Universal quantification: "forall x, x + 0 = x"
         if "forall" in claim.lower():
-            match = re.search(r'forall\s+(\w+),?\s*(.+)', claim.lower())
+            match = re.search(r"forall\s+(\w+),?\s*(.+)", claim.lower())
             if match:
                 var_name = match.group(1)
                 property_text = match.group(2)
@@ -200,15 +232,15 @@ class Z3Translator:
                     return ForAll([x], x > 0)
                 elif ">= 0" in property_text and "loop_counter" in property_text:
                     # Special case for loop invariants
-                    loop_counter = Int('loop_counter')
+                    loop_counter = Int("loop_counter")
                     return ForAll([loop_counter], loop_counter >= 0)
 
         # Existential: "exists x such that x > 10"
         if "exists" in claim.lower():
             # More flexible pattern matching
             patterns = [
-                r'exists\s+(\w+).*?that\s+(\w+\s*[<>=]+\s*\d+)',
-                r'exists\s+(\w+).*?(\w+\s*[<>=]+\s*\d+)',
+                r"exists\s+(\w+).*?that\s+(\w+\s*[<>=]+\s*\d+)",
+                r"exists\s+(\w+).*?(\w+\s*[<>=]+\s*\d+)",
             ]
 
             for pattern in patterns:
@@ -221,27 +253,27 @@ class Z3Translator:
 
                     # Parse condition
                     if ">" in condition:
-                        value = int(re.search(r'\d+', condition).group())
+                        value = int(re.search(r"\d+", condition).group())
                         return Exists([x], x > value)
                     elif "<" in condition:
-                        value = int(re.search(r'\d+', condition).group())
+                        value = int(re.search(r"\d+", condition).group())
                         return Exists([x], x < value)
 
         # Implication: "if x > 0 then x + 1 > 1"
         if "if" in claim.lower() and "then" in claim.lower():
-            match = re.search(r'if\s+(.+?)\s+then\s+(.+)', claim.lower())
+            match = re.search(r"if\s+(.+?)\s+then\s+(.+)", claim.lower())
             if match:
                 hypothesis = match.group(1)
                 conclusion = match.group(2)
 
-                x = Int('x')
+                x = Int("x")
 
                 # Parse hypothesis and conclusion
                 if "x > 0" in hypothesis and "x + 1 > 1" in conclusion:
                     return ForAll([x], Implies(x > 0, x + 1 > 1))
                 elif ">= 0" in hypothesis and "succeeds" in conclusion:
                     # Software validation pattern
-                    input_var = Int('input')
+                    input_var = Int("input")
                     # We can't prove "succeeds" directly, but we can model it
                     return ForAll([input_var], Implies(input_var >= 0, True))
 
@@ -273,7 +305,7 @@ class Z3Prover:
         self.solver = Solver()
 
         # Set Z3 options
-        set_param('timeout', timeout_ms)
+        set_param("timeout", timeout_ms)
 
     def prove_claim(self, claim_text: str) -> Z3ProofResult:
         """Prove a claim using Z3.
@@ -295,7 +327,7 @@ class Z3Prover:
                 proof_type=Z3ProofType.VALIDITY,
                 result="unknown",
                 time_ms=0,
-                statistics={"error": "Could not translate claim"}
+                statistics={"error": "Could not translate claim"},
             )
 
         # Reset solver
@@ -315,9 +347,9 @@ class Z3Prover:
                 claim=claim_text,
                 proof_type=Z3ProofType.VALIDITY,
                 result="valid",
-                proof=self._get_proof() if hasattr(self.solver, 'proof') else None,
+                proof=self._get_proof() if hasattr(self.solver, "proof") else None,
                 time_ms=proof_time,
-                statistics=self.solver.statistics()
+                statistics=self.solver.statistics(),
             )
 
         elif result == sat:
@@ -329,7 +361,7 @@ class Z3Prover:
                 result="invalid",
                 model=self._extract_model(model),
                 time_ms=proof_time,
-                statistics=self.solver.statistics()
+                statistics=self.solver.statistics(),
             )
 
         else:  # unknown
@@ -338,7 +370,7 @@ class Z3Prover:
                 proof_type=Z3ProofType.VALIDITY,
                 result="unknown",
                 time_ms=proof_time,
-                statistics=self.solver.statistics()
+                statistics=self.solver.statistics(),
             )
 
     def check_satisfiability(self, constraints: list[str]) -> Z3ProofResult:
@@ -371,7 +403,7 @@ class Z3Prover:
                 result="satisfiable",
                 model=self._extract_model(model),
                 time_ms=proof_time,
-                statistics=self.solver.statistics()
+                statistics=self.solver.statistics(),
             )
 
         elif result == unsat:
@@ -379,9 +411,9 @@ class Z3Prover:
                 claim=" AND ".join(constraints),
                 proof_type=Z3ProofType.SATISFIABILITY,
                 result="unsatisfiable",
-                proof=self._get_proof() if hasattr(self.solver, 'proof') else None,
+                proof=self._get_proof() if hasattr(self.solver, "proof") else None,
                 time_ms=proof_time,
-                statistics=self.solver.statistics()
+                statistics=self.solver.statistics(),
             )
 
         else:
@@ -390,7 +422,7 @@ class Z3Prover:
                 proof_type=Z3ProofType.SATISFIABILITY,
                 result="unknown",
                 time_ms=proof_time,
-                statistics=self.solver.statistics()
+                statistics=self.solver.statistics(),
             )
 
     def find_counter_example(self, claim_text: str) -> dict[str, Any] | None:
@@ -432,7 +464,7 @@ class Z3Prover:
         """Get proof from solver if available."""
         # Z3 proof extraction (when enabled)
         try:
-            if hasattr(self.solver, 'proof'):
+            if hasattr(self.solver, "proof"):
                 return str(self.solver.proof())
         except Exception:
             pass
@@ -459,11 +491,16 @@ class HybridProver:
 
         # Legacy stats for backward compatibility
         self.success_stats = {
-            'coq': {'attempts': 0, 'successes': 0},
-            'z3': {'attempts': 0, 'successes': 0}
+            "coq": {"attempts": 0, "successes": 0},
+            "z3": {"attempts": 0, "successes": 0},
         }
 
-    def prove_claim(self, claim_text: str, preferred_prover: str | None = None, code: str = "") -> dict[str, Any]:
+    def prove_claim(
+        self,
+        claim_text: str,
+        preferred_prover: str | None = None,
+        code: str = "",
+    ) -> dict[str, Any]:
         """Prove a claim using intelligent prover selection.
 
         Args:
@@ -482,18 +519,28 @@ class HybridProver:
             claim_text=claim_text,
             property_type=PropertyType.CORRECTNESS,
             confidence=0.9,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         # Get learning-based strategy recommendation
         if not preferred_prover:
             strategy = self.learner.predict_optimal_strategy(claim, code)
-            prover_choice = strategy['recommended_prover']
-            logger.info(f"Learning system recommends {prover_choice} for '{claim_text[:30]}...' "
-                       f"(confidence: {strategy['confidence']:.1%}, reasoning: {strategy['reasoning']})")
+            prover_choice = strategy["recommended_prover"]
+            logger.info(
+                "Learning system recommends %s for '%s...' "
+                "(confidence: %.1f%%, reasoning: %s)",
+                prover_choice,
+                claim_text[:30],
+                strategy["confidence"] * 100,
+                strategy["reasoning"],
+            )
         else:
             prover_choice = preferred_prover
-            strategy = {'confidence': 0.8, 'reasoning': 'User specified', 'suggested_tactics': []}
+            strategy = {
+                "confidence": 0.8,
+                "reasoning": "User specified",
+                "suggested_tactics": [],
+            }
 
         # Attempt proof with chosen prover
         start_time = time.time()
@@ -504,61 +551,88 @@ class HybridProver:
 
         # Record attempt for learning
         from .types import ProofResult
+
         learning_result = ProofResult(
             spec=None,  # Not needed for learning
-            proven=result['proven'],
-            proof_time_ms=result['time_ms'],
-            error_message=result.get('error', ''),
+            proven=result["proven"],
+            proof_time_ms=result["time_ms"],
+            error_message=result.get("error", ""),
             proof_output=f"Prover: {result['prover']}",
-            counter_example=result.get('counter_example', {}),
-            prover_name=result['prover'],
+            counter_example=result.get("counter_example", {}),
+            prover_name=result["prover"],
             solver_status=ProofStatus.resolve(
-                result.get('solver_status'),
-                proven=result['proven'],
-                prover_name=result['prover'],
-                counter_example=result.get('counter_example', {}),
+                result.get("solver_status"),
+                proven=result["proven"],
+                prover_name=result["prover"],
+                counter_example=result.get("counter_example", {}),
             ).value,
-            checker_name=result.get('checker_name'),
-            assumptions_present=result.get('assumptions_present', False),
+            checker_name=result.get("checker_name"),
+            assumptions_present=result.get("assumptions_present", False),
         )
 
-        self.learner.record_proof_attempt(claim, result['prover'], learning_result, code)
+        self.learner.record_proof_attempt(
+            claim, result["prover"], learning_result, code
+        )
 
         # If first attempt fails and we have flexibility, try the other prover
-        if not result['proven'] and not preferred_prover and self.z3_prover:
-            logger.info(f"First attempt with {prover_choice} failed, trying alternative prover")
+        if not result["proven"] and not preferred_prover and self.z3_prover:
+            logger.info(
+                "First attempt with %s failed, trying alternative prover",
+                prover_choice,
+            )
 
             alternative_prover = "coq" if prover_choice == "z3" else "z3"
-            alternative_result = self._prove_with_z3(claim_text) if alternative_prover == "z3" else self._prove_with_coq(claim_text)
+            alternative_result = (
+                self._prove_with_z3(claim_text)
+                if alternative_prover == "z3"
+                else self._prove_with_coq(claim_text)
+            )
 
             # Record alternative attempt
             alt_learning_result = ProofResult(
                 spec=None,
-                proven=alternative_result['proven'],
-                proof_time_ms=alternative_result['time_ms'],
-                error_message=alternative_result.get('error', ''),
+                proven=alternative_result["proven"],
+                proof_time_ms=alternative_result["time_ms"],
+                error_message=alternative_result.get("error", ""),
                 proof_output=f"Prover: {alternative_result['prover']}",
-                counter_example=alternative_result.get('counter_example', {}),
-                prover_name=alternative_result['prover'],
+                counter_example=alternative_result.get("counter_example", {}),
+                prover_name=alternative_result["prover"],
                 solver_status=ProofStatus.resolve(
-                    alternative_result.get('solver_status'),
-                    proven=alternative_result['proven'],
-                    prover_name=alternative_result['prover'],
-                    counter_example=alternative_result.get('counter_example', {}),
+                    alternative_result.get("solver_status"),
+                    proven=alternative_result["proven"],
+                    prover_name=alternative_result["prover"],
+                    counter_example=alternative_result.get("counter_example", {}),
                 ).value,
-                checker_name=alternative_result.get('checker_name'),
-                assumptions_present=alternative_result.get('assumptions_present', False),
+                checker_name=alternative_result.get("checker_name"),
+                assumptions_present=alternative_result.get(
+                    "assumptions_present", False
+                ),
             )
 
-            self.learner.record_proof_attempt(claim, alternative_result['prover'], alt_learning_result, code)
+            self.learner.record_proof_attempt(
+                claim,
+                alternative_result["prover"],
+                alt_learning_result,
+                code,
+            )
 
-            # Use alternative result if it succeeded
-            if alternative_result['proven']:
+            alternative_status = ProofStatus.resolve(
+                alternative_result.get("solver_status"),
+                proven=alternative_result["proven"],
+                prover_name=alternative_result["prover"],
+                counter_example=alternative_result.get("counter_example", {}),
+            )
+
+            # Keep a more decisive alternative result, including refutations.
+            if (
+                alternative_result["proven"]
+                or alternative_status.is_definitive_disproof
+            ):
                 result = alternative_result
 
         # Add learning metadata to result
-        result['learning_strategy'] = strategy
-        result['total_proof_time'] = (time.time() - start_time) * 1000
+        result["learning_strategy"] = strategy
+        result["total_proof_time"] = (time.time() - start_time) * 1000
 
         return result
 
@@ -567,23 +641,47 @@ class HybridProver:
         claim_lower = claim_text.lower()
 
         # Z3 is better for:
-        if any(pattern in claim_lower for pattern in [
-            "satisfiable", "constraint", "counter-example",
-            "array", "bit", "optimize", "minimize", "maximize"
-        ]):
+        if any(
+            pattern in claim_lower
+            for pattern in [
+                "satisfiable",
+                "constraint",
+                "counter-example",
+                "array",
+                "bit",
+                "optimize",
+                "minimize",
+                "maximize",
+            ]
+        ):
             return "z3" if self.z3_prover else "coq"
 
         # Coq is better for:
-        if any(pattern in claim_lower for pattern in [
-            "induction", "recursive", "lemma", "theorem",
-            "sort", "permutation", "factorial", "fibonacci"
-        ]):
+        if any(
+            pattern in claim_lower
+            for pattern in [
+                "induction",
+                "recursive",
+                "lemma",
+                "theorem",
+                "sort",
+                "permutation",
+                "factorial",
+                "fibonacci",
+            ]
+        ):
             return "coq"
 
         # Use adaptive selection based on success rates
-        if self.success_stats['z3']['attempts'] > 10:
-            z3_rate = self.success_stats['z3']['successes'] / self.success_stats['z3']['attempts']
-            coq_rate = self.success_stats['coq']['successes'] / self.success_stats['coq']['attempts']
+        if self.success_stats["z3"]["attempts"] > 10:
+            z3_rate = (
+                self.success_stats["z3"]["successes"]
+                / self.success_stats["z3"]["attempts"]
+            )
+            coq_rate = (
+                self.success_stats["coq"]["successes"]
+                / self.success_stats["coq"]["attempts"]
+            )
 
             if z3_rate > coq_rate:
                 return "z3" if self.z3_prover else "coq"
@@ -600,32 +698,33 @@ class HybridProver:
             claim_text=claim_text,
             property_type=PropertyType.CORRECTNESS,
             confidence=0.9,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         # Translate and prove
         from .translator import ClaimTranslator
+
         translator = ClaimTranslator()
         spec = translator.translate(claim, "")
 
         if not spec:
-            return {'proven': False, 'prover': 'coq', 'error': 'Coq translation failed'}
+            return {"proven": False, "prover": "coq", "error": "Coq translation failed"}
 
         result = self.coq_prover.prove_specification(spec)
 
         # Update statistics
-        self.success_stats['coq']['attempts'] += 1
+        self.success_stats["coq"]["attempts"] += 1
         if result.proven:
-            self.success_stats['coq']['successes'] += 1
+            self.success_stats["coq"]["successes"] += 1
 
         return {
-            'proven': result.proven,
-            'prover': 'coq',
-            'time_ms': result.proof_time_ms,
-            'error': result.error_message,
-            'solver_status': result.solver_status,
-            'checker_name': result.checker_name,
-            'assumptions_present': result.assumptions_present,
+            "proven": result.proven,
+            "prover": "coq",
+            "time_ms": result.proof_time_ms,
+            "error": result.error_message,
+            "solver_status": result.solver_status,
+            "checker_name": result.checker_name,
+            "assumptions_present": result.assumptions_present,
         }
 
     def _prove_with_z3(self, claim_text: str) -> dict[str, Any]:
@@ -633,19 +732,30 @@ class HybridProver:
         result = self.z3_prover.prove_claim(claim_text)
 
         # Update statistics
-        self.success_stats['z3']['attempts'] += 1
+        self.success_stats["z3"]["attempts"] += 1
         if result.result == "valid":
-            self.success_stats['z3']['successes'] += 1
+            self.success_stats["z3"]["successes"] += 1
+
+        if result.result == "valid":
+            solver_status = ProofStatus.SMT_PROVED.value
+            counter_example = result.model
+        elif result.result == "invalid":
+            solver_status = ProofStatus.SMT_REFUTED.value
+            counter_example = result.model
+        else:
+            solver_status = ProofStatus.INCONCLUSIVE.value
+            counter_example = None
 
         return {
-            'proven': result.result == "valid",
-            'prover': 'z3',
-            'time_ms': result.time_ms,
-            'counter_example': result.model,
-            'statistics': result.statistics,
-            'solver_status': (
-                ProofStatus.SMT_PROVED.value
-                if result.result == "valid"
-                else ProofStatus.SMT_REFUTED.value
+            "proven": result.result == "valid",
+            "prover": "z3",
+            "time_ms": result.time_ms,
+            "counter_example": counter_example,
+            "statistics": result.statistics,
+            "solver_status": solver_status,
+            "error": (
+                result.statistics.get("error")
+                if isinstance(result.statistics, dict)
+                else None
             ),
         }

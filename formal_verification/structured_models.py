@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class ClaimCategory(str, Enum):
     """Categories of claims aligned with translator patterns."""
+
     ARITHMETIC = "arithmetic"
     MULTIPLICATION = "multiplication"
     SUBTRACTION = "subtraction"
@@ -34,6 +35,7 @@ class ClaimCategory(str, Enum):
 
 class ConfidenceLevel(str, Enum):
     """Confidence levels for claims."""
+
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
@@ -55,16 +57,15 @@ class FormalizableClaim(BaseModel):
         description="""The extracted claim in NORMALIZED canonical form. Examples:
         - Arithmetic: '2 + 2 = 4' (NOT 'two plus two equals four')
         - Factorial: 'factorial 5 = 120' (NOT 'the factorial of 5 is 120')
-        - Logic: 'if x > 5 then x > 3' (NOT 'when x is greater than 5, x must be greater than 3')
+        - Logic: 'if x > 5 then x > 3'
+          (NOT 'when x is greater than 5, x must be greater than 3')
         - Sorting: 'sorts the array' (NOT 'the function sorts the input correctly')
         - Inequality: '3 < 5' (NOT 'three is less than five')
         """
     )
 
     confidence: float = Field(
-        ge=0.0,
-        le=1.0,
-        description="Confidence level from 0.0 to 1.0"
+        ge=0.0, le=1.0, description="Confidence level from 0.0 to 1.0"
     )
 
     variables: dict[str, str] = Field(
@@ -73,7 +74,7 @@ class FormalizableClaim(BaseModel):
         - For '2 + 2 = 4': {'left': '2', 'right': '2', 'result': '4'}
         - For 'factorial 5 = 120': {'input': '5', 'output': '120'}
         - For 'if x > 5 then x > 3': {'variable': 'x'}
-        """
+        """,
     )
 
     pattern_hints: list[str] = Field(
@@ -83,12 +84,12 @@ class FormalizableClaim(BaseModel):
         - ['sorts', 'array'] for sorting claims
         - ['if', 'then'] for implication claims
         - ['forall'] for universal quantification
-        """
+        """,
     )
 
     function_name: str | None = Field(
         default=None,
-        description="The function name if the claim is about a specific function"
+        description="The function name if the claim is about a specific function",
     )
 
     reasoning: str = Field(
@@ -96,47 +97,88 @@ class FormalizableClaim(BaseModel):
         and which Coq pattern it maps to"""
     )
 
-    @field_validator('claim_text')
+    @field_validator("claim_text")
     @classmethod
     def validate_claim_format(cls, v: str, info) -> str:
         """Validate that claim text matches expected patterns based on category."""
-        category = info.data.get('category')
+        category = info.data.get("category")
 
         if not category:
             return v
 
         # Validation rules per category
         if category == ClaimCategory.ARITHMETIC:
-            if not re.search(r'\d+\s*\+\s*\d+\s*=\s*\d+', v):
+            if not re.search(r"\d+\s*\+\s*\d+\s*=\s*\d+", v):
                 raise ValueError(
                     f"Arithmetic claim must match pattern 'N + M = R'. Got: {v}"
                 )
 
+        elif category == ClaimCategory.MULTIPLICATION:
+            if not re.search(r"\d+\s*\*\s*\d+\s*=\s*\d+", v):
+                raise ValueError(
+                    f"Multiplication claim must match pattern 'N * M = R'. Got: {v}"
+                )
+
+        elif category == ClaimCategory.SUBTRACTION:
+            if not re.search(r"\d+\s*-\s*\d+\s*=\s*\d+", v):
+                raise ValueError(
+                    f"Subtraction claim must match pattern 'N - M = R'. Got: {v}"
+                )
+
         elif category == ClaimCategory.FACTORIAL:
-            if not re.search(r'factorial\s*\(?\d+\)?\s*(?:=|equals)\s*\d+', v, re.IGNORECASE):
+            if not re.search(
+                r"factorial\s*\(?\d+\)?\s*(?:=|equals)\s*\d+", v, re.IGNORECASE
+            ):
                 raise ValueError(
                     f"Factorial claim must match pattern 'factorial N = M'. Got: {v}"
                 )
 
+        elif category == ClaimCategory.FIBONACCI:
+            if not re.search(
+                r"fibonacci\s*\(?\d+\)?\s*(?:=|equals)\s*\d+", v, re.IGNORECASE
+            ):
+                raise ValueError(
+                    f"Fibonacci claim must match pattern 'fibonacci N = M'. Got: {v}"
+                )
+
+        elif category == ClaimCategory.GCD:
+            if not re.search(
+                r"gcd\s*\(?\s*\d+\s*,\s*\d+\s*\)?\s*(?:=|equals)\s*\d+",
+                v,
+                re.IGNORECASE,
+            ):
+                raise ValueError(
+                    f"GCD claim must match pattern 'gcd(N, M) = R'. Got: {v}"
+                )
+
         elif category == ClaimCategory.INEQUALITY:
-            if not re.search(r'\d+\s*[<>]=?\s*\d+', v):
+            if not re.search(r"\d+\s*[<>]=?\s*\d+", v):
                 raise ValueError(
                     f"Inequality claim must match pattern 'N < M' or 'N > M'. Got: {v}"
                 )
 
         elif category == ClaimCategory.LOGIC_FORALL:
-            if not re.search(r'for\s*all|forall', v, re.IGNORECASE):
+            if not re.search(r"for\s*all|forall", v, re.IGNORECASE):
                 raise ValueError(
                     f"Forall claim must contain 'forall' or 'for all'. Got: {v}"
                 )
 
         elif category == ClaimCategory.LOGIC_IMPLICATION and not re.search(
-            r'if\s+.+\s+then|.+\s+implies\s+',
+            r"if\s+.+\s+then|.+\s+implies\s+",
             v,
             re.IGNORECASE,
         ):
             raise ValueError(
                 f"Implication claim must contain 'if...then' or 'implies'. Got: {v}"
+            )
+
+        elif category == ClaimCategory.LOGIC_EXISTS and not re.search(
+            r"exists\s+\w+\s+such\s+that",
+            v,
+            re.IGNORECASE,
+        ):
+            raise ValueError(
+                f"Exists claim must contain 'exists ... such that'. Got: {v}"
             )
 
         return v
@@ -147,26 +189,22 @@ class ClaimExtractionResult(BaseModel):
 
     claim: FormalizableClaim | None = Field(
         default=None,
-        description="The extracted formalizable claim, or None if unformalizable"
+        description="The extracted formalizable claim, or None if unformalizable",
     )
 
     is_formalizable: bool = Field(
         description="Whether the claim can be formalized in Coq"
     )
 
-    reasoning: str = Field(
-        description="Explanation of the extraction decision"
-    )
+    reasoning: str = Field(description="Explanation of the extraction decision")
 
     alternative_formulation: str | None = Field(
         default=None,
         description="""If unformalizable, suggest how the claim could be
-        reformulated to be formalizable"""
+        reformulated to be formalizable""",
     )
 
-    original_text: str = Field(
-        description="The original input text for reference"
-    )
+    original_text: str = Field(description="The original input text for reference")
 
 
 class ClaimConflict(BaseModel):
@@ -175,9 +213,7 @@ class ClaimConflict(BaseModel):
     claim1: FormalizableClaim
     claim2: FormalizableClaim
 
-    are_contradictory: bool = Field(
-        description="Whether the claims are contradictory"
-    )
+    are_contradictory: bool = Field(description="Whether the claims are contradictory")
 
     reasoning: str = Field(
         description="Explanation of why the claims conflict or don't conflict"
@@ -186,7 +222,7 @@ class ClaimConflict(BaseModel):
     conflict_type: str | None = Field(
         default=None,
         description="""Type of conflict: 'value_mismatch', 'logical_contradiction',
-        'property_violation', etc."""
+        'property_violation', etc.""",
     )
 
 
@@ -210,14 +246,20 @@ class ProofStrategy(BaseModel):
         - ['Arith'] for arithmetic
         - ['List', 'Permutation', 'Sorted'] for sorting
         - ['Lia'] for linear integer arithmetic
-        """
+        """,
     )
 
     estimated_difficulty: str = Field(
-        description="Difficulty: 'trivial', 'simple', 'moderate', 'complex', 'requires_lemmas'"
+        description=(
+            "Difficulty: 'trivial', 'simple', 'moderate', 'complex', "
+            "'requires_lemmas'"
+        )
     )
 
     potential_issues: list[str] = Field(
         default_factory=list,
-        description="Potential issues that might prevent proof: type mismatches, missing lemmas, etc."
+        description=(
+            "Potential issues that might prevent proof: type mismatches, "
+            "missing lemmas, etc."
+        ),
     )

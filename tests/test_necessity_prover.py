@@ -54,6 +54,12 @@ class TestMathematicalStructureAnalyzer:
         assert evidence.confidence == 0.0
         assert "factorial computation error" in evidence.supporting_facts[0].lower()
 
+        # Canonical extractor output without parentheses should also work
+        evidence = analyzer.analyze_claim("factorial 6 = 720")
+        assert evidence is not None
+        assert evidence.necessity_type == NecessityType.INDUCTIVE
+        assert evidence.confidence == 1.0
+
     def test_fibonacci_necessity_detection(self):
         """Test detection of Fibonacci necessity patterns."""
         analyzer = MathematicalStructureAnalyzer()
@@ -71,6 +77,26 @@ class TestMathematicalStructureAnalyzer:
         assert evidence.necessity_type == NecessityType.INDUCTIVE
         assert evidence.confidence == 0.0
         assert "fibonacci error" in evidence.supporting_facts[0].lower()
+
+        # Canonical extractor output without parentheses should also work
+        evidence = analyzer.analyze_claim("fibonacci 8 = 21")
+        assert evidence is not None
+        assert evidence.necessity_type == NecessityType.INDUCTIVE
+        assert evidence.confidence == 0.95
+
+    def test_gcd_necessity_detection_accepts_optional_parentheses(self):
+        """GCD necessity detection should accept canonical and parenthesized forms."""
+        analyzer = MathematicalStructureAnalyzer()
+
+        evidence = analyzer.analyze_claim("gcd(12, 8) = 4")
+        assert evidence is not None
+        assert evidence.necessity_type == NecessityType.DEDUCTIVE
+        assert evidence.confidence == 1.0
+
+        evidence = analyzer.analyze_claim("gcd 12, 8 = 4")
+        assert evidence is not None
+        assert evidence.necessity_type == NecessityType.DEDUCTIVE
+        assert evidence.confidence == 1.0
 
     def test_definitional_necessity_patterns(self):
         """Test detection of definitional necessity patterns."""
@@ -131,7 +157,7 @@ class TestNecessityBasedProver:
             claim_text="2 + 2 = 4",
             property_type=PropertyType.CORRECTNESS,
             confidence=0.9,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = prover.prove_by_necessity(claim)
@@ -139,7 +165,9 @@ class TestNecessityBasedProver:
         assert result.proven is True
         assert result.error_message is None
         assert result.proof_time_ms > 0
-        assert "necessity-based prover: proven by deductive" in result.proof_output.lower()
+        assert (
+            "necessity-based prover: proven by deductive" in result.proof_output.lower()
+        )
         assert "arithmetic computation" in result.proof_output
 
     def test_failed_necessity_proof(self):
@@ -151,15 +179,21 @@ class TestNecessityBasedProver:
             claim_text="2 + 2 = 5",
             property_type=PropertyType.CORRECTNESS,
             confidence=0.8,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = prover.prove_by_necessity(claim)
 
         assert result.proven is False
-        assert "mathematical necessity analysis shows claim is false" in result.error_message.lower()
+        assert (
+            "mathematical necessity analysis shows claim is false"
+            in result.error_message.lower()
+        )
         assert result.proof_time_ms > 0
-        assert "necessity-based prover: disproven by deductive" in result.proof_output.lower()
+        assert (
+            "necessity-based prover: disproven by deductive"
+            in result.proof_output.lower()
+        )
         assert result.counter_example is not None
 
     def test_no_necessity_pattern_detected(self):
@@ -171,13 +205,15 @@ class TestNecessityBasedProver:
             claim_text="This algorithm is efficient",
             property_type=PropertyType.CORRECTNESS,
             confidence=0.7,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = prover.prove_by_necessity(claim)
 
         assert result.proven is False
-        assert "no mathematical necessity pattern detected" in result.error_message.lower()
+        assert (
+            "no mathematical necessity pattern detected" in result.error_message.lower()
+        )
         assert "no applicable necessity pattern" in result.proof_output.lower()
 
     def test_factorial_necessity_proof(self):
@@ -189,7 +225,7 @@ class TestNecessityBasedProver:
             claim_text="factorial(4) = 24",
             property_type=PropertyType.CORRECTNESS,
             confidence=0.95,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = prover.prove_by_necessity(claim)
@@ -208,7 +244,7 @@ class TestNecessityBasedProver:
             claim_text="3 * 4 = 12",
             property_type=PropertyType.CORRECTNESS,
             confidence=0.9,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = prover.prove_by_necessity(claim)
@@ -232,7 +268,7 @@ class TestNecessityProofIntegrator:
             claim_text="5 + 3 = 8",
             property_type=PropertyType.CORRECTNESS,
             confidence=0.9,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = integrator.prove_with_necessity_priority(claim)
@@ -252,7 +288,7 @@ class TestNecessityProofIntegrator:
             claim_text="5 + 3 = 8",
             property_type=PropertyType.CORRECTNESS,
             confidence=0.9,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = integrator.prove_with_necessity_priority(claim)
@@ -325,7 +361,7 @@ class TestNecessityProofIntegrator:
             claim_text="fibonacci(5) = 10",  # Wrong, should be 5
             property_type=PropertyType.CORRECTNESS,
             confidence=0.8,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = integrator.prove_with_necessity_priority(claim)
@@ -335,15 +371,43 @@ class TestNecessityProofIntegrator:
         # Fallback should not have been called since we have a definitive answer
         assert result.solver_status == "derived_refuted"
 
+    def test_necessity_failure_uses_fallback_for_stronger_refutation(self):
+        """False necessity results should accept a concrete fallback refutation."""
+        mock_fallback = Mock(spec=["prove_claim"])
+        mock_fallback.prove_claim.return_value = {
+            "proven": False,
+            "time_ms": 120,
+            "prover": "z3",
+            "error": "counterexample found",
+            "counter_example": {"lhs": 5, "rhs": 3},
+            "solver_status": "smt_refuted",
+        }
+        integrator = NecessityProofIntegrator(fallback_prover=mock_fallback)
+
+        claim = Claim(
+            agent_id="test",
+            claim_text="5 < 3",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.8,
+            timestamp=time.time(),
+        )
+
+        result = integrator.prove_with_necessity_priority(claim)
+
+        assert result.proven is False
+        assert result.solver_status == "smt_refuted"
+        assert result.counter_example == {"lhs": 5, "rhs": 3}
+        mock_fallback.prove_claim.assert_called_once_with("5 < 3")
+
     def test_necessity_inconclusive_with_hybrid_fallback(self):
         """Test fallback to hybrid prover when necessity is inconclusive."""
         mock_hybrid_prover = Mock(spec=["prove_claim"])
         mock_hybrid_prover.prove_claim.return_value = {
-            'proven': True,
-            'time_ms': 200,
-            'prover': 'Z3',
-            'error': None,
-            'counter_example': {}
+            "proven": True,
+            "time_ms": 200,
+            "prover": "Z3",
+            "error": None,
+            "counter_example": {},
         }
 
         integrator = NecessityProofIntegrator(fallback_prover=mock_hybrid_prover)
@@ -353,7 +417,7 @@ class TestNecessityProofIntegrator:
             claim_text="This algorithm terminates",  # No necessity pattern
             property_type=PropertyType.CORRECTNESS,
             confidence=0.7,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = integrator.prove_with_necessity_priority(claim)
@@ -361,17 +425,19 @@ class TestNecessityProofIntegrator:
         assert result.proven is True
         assert "Z3" in result.proof_output
         assert "Necessity + Fallback" in result.proof_output
-        mock_hybrid_prover.prove_claim.assert_called_once_with("This algorithm terminates")
+        mock_hybrid_prover.prove_claim.assert_called_once_with(
+            "This algorithm terminates"
+        )
 
     def test_necessity_fallback_coq_defaults_to_compiled_unchecked(self):
         """Fallback Coq results should remain unchecked unless explicitly verified."""
         mock_hybrid_prover = Mock(spec=["prove_claim"])
         mock_hybrid_prover.prove_claim.return_value = {
-            'proven': True,
-            'time_ms': 200,
-            'prover': 'coq',
-            'error': None,
-            'counter_example': {}
+            "proven": True,
+            "time_ms": 200,
+            "prover": "coq",
+            "error": None,
+            "counter_example": {},
         }
 
         integrator = NecessityProofIntegrator(fallback_prover=mock_hybrid_prover)
@@ -381,7 +447,7 @@ class TestNecessityProofIntegrator:
             claim_text="This algorithm terminates",
             property_type=PropertyType.CORRECTNESS,
             confidence=0.7,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = integrator.prove_with_necessity_priority(claim)
@@ -408,7 +474,7 @@ class TestNecessityProofIntegrator:
             claim_text="Memory safety holds for this function",  # No necessity pattern
             property_type=PropertyType.MEMORY_SAFETY,
             confidence=0.8,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = integrator.prove_with_necessity_priority(claim)
@@ -429,14 +495,16 @@ class TestNecessityProofIntegrator:
             claim_text="Unknown claim type",
             property_type=PropertyType.CORRECTNESS,
             confidence=0.5,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = integrator.prove_with_necessity_priority(claim)
 
         # Should return the original necessity result (inconclusive)
         assert result.proven is False
-        assert "no mathematical necessity pattern detected" in result.error_message.lower()
+        assert (
+            "no mathematical necessity pattern detected" in result.error_message.lower()
+        )
 
 
 class TestEnhanceProverWithNecessity:
@@ -445,13 +513,17 @@ class TestEnhanceProverWithNecessity:
     def test_enhance_hybrid_prover(self):
         """Test enhancing a hybrid prover with necessity."""
         mock_hybrid_prover = Mock(spec=["prove_claim"])
-        mock_hybrid_prover.prove_claim.return_value = {'proven': True, 'time_ms': 100, 'prover': 'Z3'}
+        mock_hybrid_prover.prove_claim.return_value = {
+            "proven": True,
+            "time_ms": 100,
+            "prover": "Z3",
+        }
 
         enhanced_prover = enhance_prover_with_necessity(mock_hybrid_prover)
 
         assert isinstance(enhanced_prover, NecessityProofIntegrator)
         assert enhanced_prover.fallback_prover == mock_hybrid_prover
-        assert hasattr(enhanced_prover, 'prove_with_necessity_priority')
+        assert hasattr(enhanced_prover, "prove_with_necessity_priority")
 
     def test_enhance_coq_prover(self):
         """Test enhancing a Coq prover with necessity."""
@@ -472,7 +544,7 @@ class TestEnhanceProverWithNecessity:
             claim_text="7 - 3 = 4",  # Should be handled by necessity
             property_type=PropertyType.CORRECTNESS,
             confidence=0.9,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = enhanced_prover.prove_with_necessity_priority(claim)

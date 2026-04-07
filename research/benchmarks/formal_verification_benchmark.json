@@ -1,0 +1,98 @@
+[
+  {
+    "id": "arith_true",
+    "claim_text": "2 + 2 = 4",
+    "family": "arithmetic",
+    "expected_truth": true
+  },
+  {
+    "id": "arith_false",
+    "claim_text": "2 + 2 = 5",
+    "family": "arithmetic",
+    "expected_truth": false
+  },
+  {
+    "id": "mult_true",
+    "claim_text": "3 * 4 = 12",
+    "family": "multiplication",
+    "expected_truth": true
+  },
+  {
+    "id": "mult_false",
+    "claim_text": "3 * 4 = 11",
+    "family": "multiplication",
+    "expected_truth": false
+  },
+  {
+    "id": "sub_true",
+    "claim_text": "10 - 3 = 7",
+    "family": "subtraction",
+    "expected_truth": true
+  },
+  {
+    "id": "sub_false",
+    "claim_text": "10 - 3 = 8",
+    "family": "subtraction",
+    "expected_truth": false
+  },
+  {
+    "id": "factorial_true",
+    "claim_text": "factorial 5 = 120",
+    "family": "factorial",
+    "expected_truth": true
+  },
+  {
+    "id": "factorial_false",
+    "claim_text": "factorial 6 = 100",
+    "family": "factorial",
+    "expected_truth": false
+  },
+  {
+    "id": "fibonacci_true",
+    "claim_text": "fibonacci 8 = 21",
+    "family": "fibonacci",
+    "expected_truth": true
+  },
+  {
+    "id": "fibonacci_false",
+    "claim_text": "fibonacci 7 = 12",
+    "family": "fibonacci",
+    "expected_truth": false
+  },
+  {
+    "id": "gcd_true",
+    "claim_text": "gcd(12, 8) = 4",
+    "family": "gcd",
+    "expected_truth": true
+  },
+  {
+    "id": "gcd_false",
+    "claim_text": "gcd(12, 8) = 6",
+    "family": "gcd",
+    "expected_truth": false
+  },
+  {
+    "id": "ineq_true_lt",
+    "claim_text": "3 < 5",
+    "family": "inequality",
+    "expected_truth": true
+  },
+  {
+    "id": "ineq_false_lt",
+    "claim_text": "5 < 3",
+    "family": "inequality",
+    "expected_truth": false
+  },
+  {
+    "id": "ineq_true_gte",
+    "claim_text": "10 >= 7",
+    "family": "inequality",
+    "expected_truth": true
+  },
+  {
+    "id": "ineq_false_gte",
+    "claim_text": "7 >= 10",
+    "family": "inequality",
+    "expected_truth": false
+  }
+]

@@ -58,6 +58,7 @@ class HybridCognitiveDissonanceResolver:
         openai_base_url: str | None = None,
         openai_app_name: str | None = None,
         openai_site_url: str | None = None,
+        openai_temperature: float | None = None,
         proof_timeout_seconds: int = 30,
         use_hybrid_prover: bool = True,
         enable_auto_repair: bool = True,
@@ -73,6 +74,7 @@ class HybridCognitiveDissonanceResolver:
             openai_base_url: Optional OpenAI-compatible API base URL
             openai_app_name: Optional provider app name/header
             openai_site_url: Optional provider site URL/referer header
+            openai_temperature: Optional decoding temperature for extraction
             proof_timeout_seconds: Timeout for proof attempts
             use_hybrid_prover: Whether to use hybrid Z3+Coq proving
             enable_auto_repair: Whether to attempt automated proof repair
@@ -86,6 +88,7 @@ class HybridCognitiveDissonanceResolver:
             base_url=openai_base_url,
             app_name=openai_app_name,
             site_url=openai_site_url,
+            temperature=openai_temperature,
         )
         self.detector = FormalVerificationConflictDetector(
             timeout_seconds=proof_timeout_seconds,
