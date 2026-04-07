@@ -47,6 +47,7 @@ unfixable = ["B"] # Don't auto-fix flake8-bugbear issues
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"] # Allow unused imports in __init__.py
+"formal_verification/z3_prover.py" = ["F403", "F405"] # Z3 exposes solver symbols via a star import
 
 [tool.ruff.lint.pydocstyle]
 convention = "google" # Use Google style docstrings

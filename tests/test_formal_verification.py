@@ -1,6 +1,5 @@
 """Tests for formal verification cognitive dissonance detection."""
 
-import pytest
 import time
 from unittest.mock import Mock, patch
 

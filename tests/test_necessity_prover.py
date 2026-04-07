@@ -2,17 +2,16 @@
 
 import pytest
 import time
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from formal_verification.necessity_prover import (
     MathematicalStructureAnalyzer,
     NecessityBasedProver,
     NecessityProofIntegrator,
     NecessityType,
-    NecessityEvidence,
     enhance_prover_with_necessity
 )
-from formal_verification import Claim, PropertyType, ProofResult, FormalSpec
+from formal_verification import Claim, PropertyType
 
 
 class TestMathematicalStructureAnalyzer:

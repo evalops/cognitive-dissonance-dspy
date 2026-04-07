@@ -7,8 +7,7 @@ tactics, it analyzes the logical structure to determine what MUST be true.
 
 import logging
 import re
-import ast
-from typing import Dict, List, Optional, Tuple, Any, Set
+from typing import List, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
 import time
@@ -141,7 +140,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
                 [f"Arithmetic error: {a} {op_symbol} {b} ≠ {result} (should be {expected})"],
-                [f"The claim contradicts basic arithmetic"],
+                ["The claim contradicts basic arithmetic"],
                 0.0,
                 {"natural_number_arithmetic"},
                 f"Counter-example: {a} {op_symbol} {b} = {expected} ≠ {result}."
@@ -172,7 +171,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
                 [f"Inequality evaluation: {a} is {op_name} {b}"],
-                [f"By the ordering of natural numbers"],
+                ["By the ordering of natural numbers"],
                 1.0,
                 {"natural_number_ordering"},
                 f"Theorem: {a} {op} {b}. Proof: By comparison of natural numbers."
@@ -181,7 +180,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
                 [f"Inequality error: {a} is not {op_name} {b}"],
-                [f"The claim contradicts natural number ordering"],
+                ["The claim contradicts natural number ordering"],
                 0.0,
                 {"natural_number_ordering"},
                 f"Counter-example: {a} {op} {b} is false."
@@ -202,9 +201,9 @@ class MathematicalStructureAnalyzer:
         if actual_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.INDUCTIVE,
-                [f"Factorial definition: n! = n × (n-1)!", f"Base case: 0! = 1! = 1"],
+                ["Factorial definition: n! = n × (n-1)!", "Base case: 0! = 1! = 1"],
                 [
-                    f"By induction on the factorial definition",
+                    "By induction on the factorial definition",
                     f"factorial({n}) = {n} × factorial({n-1}) = ... = {actual_result}"
                 ],
                 1.0,
@@ -215,7 +214,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.INDUCTIVE,
                 [f"Factorial computation error: factorial({n}) = {actual_result} ≠ {claimed_result}"],
-                [f"The claim contradicts the inductive definition of factorial"],
+                ["The claim contradicts the inductive definition of factorial"],
                 0.0,
                 {"factorial_definition"},
                 f"Counter-example: factorial({n}) = {actual_result} ≠ {claimed_result}."
@@ -236,9 +235,9 @@ class MathematicalStructureAnalyzer:
         if actual_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.INDUCTIVE,
-                [f"Fibonacci definition: F(n) = F(n-1) + F(n-2)", f"Base cases: F(0)=0, F(1)=1"],
+                ["Fibonacci definition: F(n) = F(n-1) + F(n-2)", "Base cases: F(0)=0, F(1)=1"],
                 [
-                    f"By induction on the Fibonacci recurrence relation",
+                    "By induction on the Fibonacci recurrence relation",
                     f"fibonacci({n}) follows necessarily from the recurrence"
                 ],
                 0.95,  # Slightly less certain due to computational complexity
@@ -249,7 +248,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.INDUCTIVE,
                 [f"Fibonacci error: fibonacci({n}) = {actual_result} ≠ {claimed_result}"],
-                [f"The claim contradicts the Fibonacci recurrence relation"],
+                ["The claim contradicts the Fibonacci recurrence relation"],
                 0.0,
                 {"fibonacci_definition"},
                 f"Counter-example: fibonacci({n}) = {actual_result} ≠ {claimed_result}."
@@ -270,9 +269,9 @@ class MathematicalStructureAnalyzer:
         if actual_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
-                [f"GCD definition: gcd(a,b) is the largest positive integer that divides both a and b"],
+                ["GCD definition: gcd(a,b) is the largest positive integer that divides both a and b"],
                 [
-                    f"By the Euclidean algorithm",
+                    "By the Euclidean algorithm",
                     f"gcd({a}, {b}) = {actual_result}"
                 ],
                 1.0,  
@@ -283,7 +282,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
                 [f"GCD error: gcd({a}, {b}) = {actual_result} ≠ {claimed_result}"],
-                [f"The claim contradicts the Euclidean algorithm for GCD"],
+                ["The claim contradicts the Euclidean algorithm for GCD"],
                 0.0,
                 {"euclidean_algorithm"},
                 f"Counter-example: gcd({a}, {b}) = {actual_result} ≠ {claimed_result}."
@@ -299,9 +298,9 @@ class MathematicalStructureAnalyzer:
         if expected_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
-                [f"Summation formula: ∑(i=1 to n) i = n(n+1)/2"],
+                ["Summation formula: ∑(i=1 to n) i = n(n+1)/2"],
                 [
-                    f"By the closed-form summation formula",
+                    "By the closed-form summation formula",
                     f"sum(1 to {n}) = {n}×({n}+1)/2 = {expected_result}"
                 ],
                 1.0,
@@ -312,7 +311,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
                 [f"Summation error: sum(1 to {n}) = {expected_result} ≠ {claimed_result}"],
-                [f"The claim contradicts the summation formula"],
+                ["The claim contradicts the summation formula"],
                 0.0,
                 {"summation_formula"},
                 f"Counter-example: ∑(i=1 to {n}) i = {expected_result} ≠ {claimed_result}."
@@ -432,7 +431,7 @@ class NecessityBasedProver:
         else:
             proof_output = f"Necessity-Based Prover: DISPROVEN by {evidence.necessity_type.value}\n"
             proof_output += f"Logic: {' → '.join(evidence.logical_chain)}\n"
-            error_message = f"Mathematical necessity analysis shows claim is false"
+            error_message = "Mathematical necessity analysis shows claim is false"
             counter_example = evidence.proof_sketch if "Counter-example" in evidence.proof_sketch else None
         
         return ProofResult(

@@ -697,8 +697,6 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
 
         proven_claims = [e for e in evidence if e.status == EvidenceStatus.PROVEN]
         disproven_claims = [e for e in evidence if e.status == EvidenceStatus.DISPROVEN]
-        inconclusive_claims = [e for e in evidence if e.status == EvidenceStatus.INCONCLUSIVE]
-
         proven_texts = {e.claim_text for e in proven_claims}
         disproven_texts = {e.claim_text for e in disproven_claims}
 

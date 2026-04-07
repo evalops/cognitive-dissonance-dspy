@@ -1,8 +1,7 @@
 """Tests for mathematical proof-backed cognitive dissonance resolution."""
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-import time
+from unittest.mock import Mock, patch
 
 from cognitive_dissonance.mathematical_resolver import (
     MathematicalCognitiveDissonanceResolver,
@@ -13,7 +12,7 @@ from cognitive_dissonance.mathematical_resolver import (
     ResolutionMethod,
     EvidenceStatus,
 )
-from formal_verification import Claim as FormalClaim, PropertyType, ProofResult, FormalSpec
+from formal_verification import PropertyType, ProofResult
 
 
 class TestClaimClassifier:

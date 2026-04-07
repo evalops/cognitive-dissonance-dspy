@@ -2,7 +2,7 @@
 
 import time
 import logging
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
 
@@ -150,7 +150,6 @@ class Z3Translator:
     
     def _translate_array_claim(self, claim: str) -> Optional[Any]:
         """Translate array-related claim to Z3."""
-        import re
         
         # Array bounds: "array[i] is safe when 0 <= i < length"
         if "safe" in claim.lower() and "array" in claim.lower():
@@ -603,7 +602,7 @@ class HybridProver:
     
     def _prove_with_coq(self, claim_text: str) -> Dict[str, Any]:
         """Prove using Coq."""
-        from .types import Claim, PropertyType, FormalSpec
+        from .types import Claim, PropertyType
         
         # Create claim
         claim = Claim(

@@ -4,7 +4,7 @@ import re
 import logging
 from typing import Optional
 
-from .types import Claim, FormalSpec, PropertyType
+from .types import Claim, FormalSpec
 
 logger = logging.getLogger(__name__)
 

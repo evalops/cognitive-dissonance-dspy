@@ -300,7 +300,7 @@ class FormalVerificationConflictDetector:
             else:
                 # Use Coq prover
                 result = self.prover.prove_specification(spec)
-                result.proof_output = f"Deep Analysis + Coq"
+                result.proof_output = "Deep Analysis + Coq"
             
             # Attempt repair if failed
             if not result.proven and self.auto_repair_enabled:
