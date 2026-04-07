@@ -15,6 +15,8 @@ skip_gitignore = true
 [tool.ruff]
 line-length = 88
 target-version = "py310"
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -43,8 +45,8 @@ ignore = [
 ]
 unfixable = ["B"] # Don't auto-fix flake8-bugbear issues
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"] # Allow unused imports in __init__.py
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google" # Use Google style docstrings
