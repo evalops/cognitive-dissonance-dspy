@@ -1,5 +1,4 @@
-"""
-Demonstration of OpenAI Agents SDK integration for claim extraction.
+"""Demonstration of OpenAI Agents SDK integration for claim extraction.
 
 This example shows how the new structured extraction approach improves
 upon the DSPy-based approach by:

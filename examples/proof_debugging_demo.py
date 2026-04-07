@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Demonstrate proof debugging and specification inference.
+"""Demonstrate proof debugging and specification inference.
 
 This shows how the system helps developers understand and fix proof failures,
 and how it can convert test suites into formal specifications.

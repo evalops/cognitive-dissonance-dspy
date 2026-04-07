@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Demonstrate the adaptive proof system that learns from successes.
+"""Demonstrate the adaptive proof system that learns from successes.
 
 This shows how the framework improves its proof capabilities over time
 by learning successful proof strategies and applying them to new problems.

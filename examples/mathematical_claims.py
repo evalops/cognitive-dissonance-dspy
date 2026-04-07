@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Example: Formal verification of mathematical claims with cognitive dissonance detection.
+"""Example: Formal verification of mathematical claims with cognitive dissonance detection.
 
 This example demonstrates the formal verification approach by analyzing
 conflicting mathematical claims from different agents and using Coq theorem

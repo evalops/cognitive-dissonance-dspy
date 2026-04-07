@@ -41,8 +41,7 @@ class Z3ProofResult:
 
 
 class Z3Translator:
-    """
-    Translates natural language claims to Z3 formulas.
+    """Translates natural language claims to Z3 formulas.
 
     Z3 is particularly good at:
     - Integer/real arithmetic
@@ -61,8 +60,7 @@ class Z3Translator:
         self.solver = Solver()
 
     def translate_claim(self, claim_text: str) -> Any | None:
-        """
-        Translate a claim to Z3 formula.
+        """Translate a claim to Z3 formula.
 
         Args:
             claim_text: Natural language claim
@@ -152,7 +150,6 @@ class Z3Translator:
 
     def _translate_array_claim(self, claim: str) -> Any | None:
         """Translate array-related claim to Z3."""
-
         # Array bounds: "array[i] is safe when 0 <= i < length"
         if "safe" in claim.lower() and "array" in claim.lower():
             # Create array and index variables
@@ -256,8 +253,7 @@ class Z3Translator:
 
 
 class Z3Prover:
-    """
-    Z3-based prover for formal verification.
+    """Z3-based prover for formal verification.
 
     Advantages over Coq:
     - Better at constraint solving
@@ -279,8 +275,7 @@ class Z3Prover:
         set_param('timeout', timeout_ms)
 
     def prove_claim(self, claim_text: str) -> Z3ProofResult:
-        """
-        Prove a claim using Z3.
+        """Prove a claim using Z3.
 
         Args:
             claim_text: Natural language claim
@@ -346,8 +341,7 @@ class Z3Prover:
             )
 
     def check_satisfiability(self, constraints: list[str]) -> Z3ProofResult:
-        """
-        Check if a set of constraints is satisfiable.
+        """Check if a set of constraints is satisfiable.
 
         Args:
             constraints: List of constraint strings
@@ -399,8 +393,7 @@ class Z3Prover:
             )
 
     def find_counter_example(self, claim_text: str) -> dict[str, Any] | None:
-        """
-        Find a counter-example to a claim.
+        """Find a counter-example to a claim.
 
         Args:
             claim_text: Claim to find counter-example for
@@ -446,8 +439,7 @@ class Z3Prover:
 
 
 class HybridProver:
-    """
-    Intelligent hybrid prover with learning capabilities.
+    """Intelligent hybrid prover with learning capabilities.
 
     This uses machine learning to choose the optimal prover and strategy:
     - Deep analysis of claim structure and complexity
@@ -471,8 +463,7 @@ class HybridProver:
         }
 
     def prove_claim(self, claim_text: str, preferred_prover: str | None = None, code: str = "") -> dict[str, Any]:
-        """
-        Prove a claim using intelligent prover selection.
+        """Prove a claim using intelligent prover selection.
 
         Args:
             claim_text: Claim to prove

@@ -9,8 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def dissonance_detection_accuracy(example: dspy.Example, prediction: dspy.Prediction) -> float:
-    """
-    Measure accuracy of dissonance detection.
+    """Measure accuracy of dissonance detection.
 
     Args:
         example: Ground truth example
@@ -39,8 +38,7 @@ def dissonance_detection_accuracy(example: dspy.Example, prediction: dspy.Predic
 
 
 def reconciliation_quality(example: dspy.Example, prediction: dspy.Prediction) -> float:
-    """
-    Measure quality of belief reconciliation.
+    """Measure quality of belief reconciliation.
 
     Args:
         example: Ground truth example with reconciled claim
@@ -76,8 +74,7 @@ def reconciliation_quality(example: dspy.Example, prediction: dspy.Prediction) -
 
 
 def combined_metric(example: dspy.Example, prediction: dspy.Prediction) -> float:
-    """
-    Combined metric for both detection and reconciliation.
+    """Combined metric for both detection and reconciliation.
 
     Args:
         example: Ground truth example
@@ -99,8 +96,7 @@ def combined_metric(example: dspy.Example, prediction: dspy.Prediction) -> float
 
 
 def agreement_metric_factory(other_agent: dspy.Module) -> Callable:
-    """
-    Create a metric that measures agreement with another agent.
+    """Create a metric that measures agreement with another agent.
 
     Args:
         other_agent: The other agent to agree with
@@ -138,8 +134,7 @@ def agreement_metric_factory(other_agent: dspy.Module) -> Callable:
 
 
 def blended_metric_factory(other_agent: dspy.Module, alpha: float = 0.5) -> Callable:
-    """
-    Create a blended metric combining truth and agreement.
+    """Create a blended metric combining truth and agreement.
 
     Args:
         other_agent: The other agent for agreement
@@ -182,8 +177,7 @@ def blended_metric_factory(other_agent: dspy.Module, alpha: float = 0.5) -> Call
 
 
 def confidence_weighted_accuracy(example: dspy.Example, prediction: dspy.Prediction) -> float:
-    """
-    Accuracy weighted by confidence scores.
+    """Accuracy weighted by confidence scores.
 
     Args:
         example: Ground truth example

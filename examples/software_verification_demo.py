@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Demonstrate formal verification of actual software properties.
+"""Demonstrate formal verification of actual software properties.
 
 This shows the framework verifying real code properties that agents
 might disagree about, not just abstract mathematical claims.

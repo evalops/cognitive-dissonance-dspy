@@ -265,8 +265,7 @@ class FormalVerificationConflictDetector:
         }
 
     def analyze_program_properties(self, code: str, language: str = "python") -> dict[str, Any]:
-        """
-        Perform deep analysis of program to discover and verify complex properties.
+        """Perform deep analysis of program to discover and verify complex properties.
 
         Args:
             code: Source code to analyze

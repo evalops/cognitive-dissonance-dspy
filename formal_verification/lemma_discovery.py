@@ -1,5 +1,4 @@
-"""
-Automated lemma discovery engine for proof failures.
+"""Automated lemma discovery engine for proof failures.
 
 When proofs fail, this system automatically discovers and synthesizes
 helper lemmas that would enable the proof to succeed. This is a foundational
@@ -105,8 +104,7 @@ class ErrorPatternAnalyzer:
 
 
 class LemmaDiscoveryEngine:
-    """
-    Main engine for discovering helpful lemmas from proof failures.
+    """Main engine for discovering helpful lemmas from proof failures.
 
     This analyzes failed proofs and automatically synthesizes lemmas
     that would help the proof succeed.
@@ -117,8 +115,7 @@ class LemmaDiscoveryEngine:
         self.lemma_templates = self._initialize_lemma_templates()
 
     def discover_supporting_lemmas(self, failed_result: ProofResult, original_claim: Claim) -> ProofFailureAnalysis:
-        """
-        Discover lemmas that would help a failed proof succeed.
+        """Discover lemmas that would help a failed proof succeed.
 
         Args:
             failed_result: The failed proof result
@@ -495,16 +492,14 @@ Qed.
 
 
 class AutomatedProofRepairer:
-    """
-    Automated system that attempts to repair failed proofs by adding discovered lemmas.
+    """Automated system that attempts to repair failed proofs by adding discovered lemmas.
     """
 
     def __init__(self):
         self.lemma_engine = LemmaDiscoveryEngine()
 
     def repair_failed_proof(self, failed_result: ProofResult, original_spec: FormalSpec) -> FormalSpec | None:
-        """
-        Attempt to repair a failed proof automatically.
+        """Attempt to repair a failed proof automatically.
 
         Args:
             failed_result: The failed proof result

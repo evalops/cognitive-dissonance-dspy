@@ -41,8 +41,7 @@ class ConflictAnalysis:
 
 
 class HybridCognitiveDissonanceResolver:
-    """
-    Hybrid resolver that uses:
+    """Hybrid resolver that uses:
     - OpenAI SDK for structured claim extraction
     - Guardrails for validation
     - Coq prover for formal verification
@@ -59,8 +58,7 @@ class HybridCognitiveDissonanceResolver:
         use_guardrails: bool = True,
         strict_guardrails: bool = False
     ):
-        """
-        Initialize the hybrid resolver.
+        """Initialize the hybrid resolver.
 
         Args:
             openai_api_key: OpenAI API key
@@ -92,8 +90,7 @@ class HybridCognitiveDissonanceResolver:
         text: str,
         code_context: str = ""
     ) -> ClaimAnalysis:
-        """
-        Analyze a single claim: extract, validate, translate, and prove.
+        """Analyze a single claim: extract, validate, translate, and prove.
 
         Args:
             text: Text containing the claim
@@ -189,8 +186,7 @@ class HybridCognitiveDissonanceResolver:
         texts: list[str],
         code_context: str = ""
     ) -> ConflictAnalysis:
-        """
-        Analyze multiple claims and detect conflicts.
+        """Analyze multiple claims and detect conflicts.
 
         Args:
             texts: List of texts containing claims
@@ -291,8 +287,7 @@ class HybridCognitiveDissonanceResolver:
         claim1: FormalizableClaim | None,
         claim2: FormalizableClaim | None
     ) -> bool:
-        """
-        Determine if two claims are semantically conflicting.
+        """Determine if two claims are semantically conflicting.
 
         For example:
         - "2 + 2 = 4" vs "2 + 2 = 5" (same left side, different results)
@@ -359,8 +354,7 @@ class HybridCognitiveDissonanceResolver:
         texts: list[str],
         code_context: str = ""
     ) -> dict:
-        """
-        Compare OpenAI SDK extraction with DSPy extraction.
+        """Compare OpenAI SDK extraction with DSPy extraction.
 
         This is useful for benchmarking and understanding the improvement.
 

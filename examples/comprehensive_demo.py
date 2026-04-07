@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Comprehensive Formal Verification Cognitive Dissonance Detection Demo.
+"""Comprehensive Formal Verification Cognitive Dissonance Detection Demo.
 
 This demonstrates the complete capabilities of the formal verification framework:
 - Mathematical theorem proving with real Coq integration

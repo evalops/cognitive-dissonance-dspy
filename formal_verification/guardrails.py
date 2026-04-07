@@ -33,16 +33,14 @@ class GuardrailResult:
 
 
 class ClaimGuardrails:
-    """
-    Guardrails for validating extracted claims.
+    """Guardrails for validating extracted claims.
 
     These guardrails perform multiple checks to ensure claims are
     high-quality and can be successfully formalized.
     """
 
     def __init__(self, strict: bool = True):
-        """
-        Initialize guardrails.
+        """Initialize guardrails.
 
         Args:
             strict: If True, fail on warnings. If False, only fail on errors.
@@ -56,8 +54,7 @@ class ClaimGuardrails:
         claim: FormalizableClaim,
         code_context: str = ""
     ) -> GuardrailResult:
-        """
-        Validate a claim against all guardrails.
+        """Validate a claim against all guardrails.
 
         Args:
             claim: The claim to validate
@@ -209,7 +206,7 @@ class ClaimGuardrails:
             violations.append(GuardrailViolation(
                 rule_name="translator_error",
                 severity="error",
-                message=f"Translation failed with error: {str(e)}",
+                message=f"Translation failed with error: {e!s}",
                 suggestion="Check claim format and category alignment"
             ))
 
@@ -347,8 +344,7 @@ class ClaimGuardrails:
 
 
 class GuardrailWithRetry:
-    """
-    Wrapper that allows agents to retry claim extraction if guardrails fail.
+    """Wrapper that allows agents to retry claim extraction if guardrails fail.
 
     This implements a feedback loop where guardrail violations are fed back
     to the extraction agent for correction.
@@ -360,8 +356,7 @@ class GuardrailWithRetry:
         guardrails: ClaimGuardrails,
         max_retries: int = 2
     ):
-        """
-        Initialize guardrail with retry mechanism.
+        """Initialize guardrail with retry mechanism.
 
         Args:
             extractor: OpenAIClaimExtractor instance
@@ -378,8 +373,7 @@ class GuardrailWithRetry:
         text: str,
         code_context: str = ""
     ) -> tuple[FormalizableClaim | None, GuardrailResult]:
-        """
-        Extract a claim with guardrail validation and retry on failure.
+        """Extract a claim with guardrail validation and retry on failure.
 
         Args:
             text: Text to extract claim from

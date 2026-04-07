@@ -691,7 +691,6 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
         probabilistic_confidence: float,
     ) -> tuple[ResolutionMethod, str, float, str]:
         """Resolve conflicts using mathematical evidence with fallback to probabilistic."""
-
         proven_claims = [e for e in evidence if e.status == EvidenceStatus.PROVEN]
         disproven_claims = [e for e in evidence if e.status == EvidenceStatus.DISPROVEN]
         proven_texts = {e.claim_text for e in proven_claims}

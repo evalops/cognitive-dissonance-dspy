@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Demonstrate advanced proof capabilities beyond basic arithmetic.
+"""Demonstrate advanced proof capabilities beyond basic arithmetic.
 
 This shows the enhanced translator handling:
 - Logic and implications

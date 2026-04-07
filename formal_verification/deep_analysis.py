@@ -1,5 +1,4 @@
-"""
-Deep program analysis for complex software properties.
+"""Deep program analysis for complex software properties.
 
 This module goes beyond basic arithmetic verification to analyze real software
 properties like memory safety, concurrency correctness, algorithmic properties,
@@ -72,8 +71,7 @@ class SecurityProperty:
 
 
 class DeepProgramAnalyzer:
-    """
-    Advanced program analyzer that extracts complex software properties
+    """Advanced program analyzer that extracts complex software properties
     for formal verification.
     """
 
@@ -84,8 +82,7 @@ class DeepProgramAnalyzer:
         self.algorithmic_patterns = self._initialize_algorithmic_patterns()
 
     def analyze_program(self, code: str, language: str = "python") -> dict[PropertyCategory, list[Claim]]:
-        """
-        Perform deep analysis of program to extract verifiable properties.
+        """Perform deep analysis of program to extract verifiable properties.
 
         Args:
             code: Source code to analyze
@@ -613,8 +610,7 @@ class DeepProgramAnalyzer:
 
 
 class PropertySpecificationGenerator:
-    """
-    Generates formal specifications from extracted software properties.
+    """Generates formal specifications from extracted software properties.
 
     This bridges the gap between high-level program analysis and formal verification
     by converting detected properties into verifiable formal claims.
@@ -625,8 +621,7 @@ class PropertySpecificationGenerator:
         self.spec_templates = self._initialize_spec_templates()
 
     def generate_specifications(self, code: str, language: str = "python") -> list[FormalSpec]:
-        """
-        Generate formal specifications for complex software properties.
+        """Generate formal specifications for complex software properties.
 
         Args:
             code: Source code to analyze
@@ -650,7 +645,6 @@ class PropertySpecificationGenerator:
 
     def _claim_to_formal_spec(self, claim: Claim, code: str, category: PropertyCategory) -> FormalSpec | None:
         """Convert a high-level claim to a formal specification."""
-
         if category == PropertyCategory.MEMORY_SAFETY:
             return self._generate_memory_safety_spec(claim, code)
         elif category == PropertyCategory.ALGORITHMIC:

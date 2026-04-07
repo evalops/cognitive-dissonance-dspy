@@ -102,8 +102,7 @@ def cognitive_dissonance_experiment(
     use_cot: bool = None,
     alpha_anchor: float = None,
 ) -> ExperimentResults:
-    """
-    Run the Cognitive Dissonance experiment.
+    """Run the Cognitive Dissonance experiment.
 
     Args:
         config: Experiment configuration (if None, loads from environment)
@@ -245,8 +244,7 @@ def advanced_cognitive_dissonance_experiment(
     use_cot: bool = None,
     alpha_anchor: float = None,
 ) -> ExperimentResults:
-    """
-    Run advanced cognitive dissonance experiment with enhanced optimization.
+    """Run advanced cognitive dissonance experiment with enhanced optimization.
 
     Args:
         config: Experiment configuration
@@ -470,8 +468,7 @@ def advanced_cognitive_dissonance_experiment(
 def run_ablation_study(
     base_config: ExperimentConfig = None,
 ) -> dict[str, ExperimentResults]:
-    """
-    Run an ablation study with different configurations.
+    """Run an ablation study with different configurations.
 
     Args:
         base_config: Base configuration to modify
@@ -539,8 +536,7 @@ def run_ablation_study(
 def run_confidence_analysis(
     config: ExperimentConfig = None
 ) -> dict[str, Any]:
-    """
-    Analyze the impact of confidence weighting.
+    """Analyze the impact of confidence weighting.
 
     Args:
         config: Experiment configuration

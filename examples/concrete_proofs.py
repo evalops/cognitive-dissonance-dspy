@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Example: Concrete mathematical proofs that actually succeed in Coq.
+"""Example: Concrete mathematical proofs that actually succeed in Coq.
 
 This demonstrates working formal verification with concrete, provable theorems
 rather than abstract function specifications that require implementation details.

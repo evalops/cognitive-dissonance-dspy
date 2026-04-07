@@ -11,16 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 class UncertaintyQuantifier:
-    """
-    Advanced uncertainty quantification for belief and dissonance detection.
+    """Advanced uncertainty quantification for belief and dissonance detection.
     Separates epistemic (model) uncertainty from aleatoric (data) uncertainty.
     """
 
     def __init__(self,
                  calibration_samples: int = 100,
                  confidence_bins: int = 10):
-        """
-        Initialize uncertainty quantifier.
+        """Initialize uncertainty quantifier.
 
         Args:
             calibration_samples: Number of samples for calibration
@@ -35,8 +33,7 @@ class UncertaintyQuantifier:
     def compute_uncertainty(self,
                           prediction: dspy.Prediction,
                           context: dict | None = None) -> dict[str, float]:
-        """
-        Compute multiple types of uncertainty for a prediction.
+        """Compute multiple types of uncertainty for a prediction.
 
         Args:
             prediction: DSPy prediction to analyze
@@ -71,8 +68,7 @@ class UncertaintyQuantifier:
     def _compute_epistemic_uncertainty(self,
                                      prediction: dspy.Prediction,
                                      context: dict | None = None) -> float:
-        """
-        Compute epistemic (model) uncertainty.
+        """Compute epistemic (model) uncertainty.
         This represents uncertainty about the model's knowledge.
         """
         # Factors that increase epistemic uncertainty
@@ -110,8 +106,7 @@ class UncertaintyQuantifier:
     def _compute_aleatoric_uncertainty(self,
                                      prediction: dspy.Prediction,
                                      context: dict | None = None) -> float:
-        """
-        Compute aleatoric (data) uncertainty.
+        """Compute aleatoric (data) uncertainty.
         This represents inherent uncertainty in the data/task.
         """
         factors = []
@@ -143,8 +138,7 @@ class UncertaintyQuantifier:
         return aleatoric
 
     def _compute_confidence_score(self, prediction: dspy.Prediction) -> float:
-        """
-        Compute overall confidence score for the prediction.
+        """Compute overall confidence score for the prediction.
 
         Args:
             prediction: DSPy prediction
@@ -210,8 +204,7 @@ class UncertaintyQuantifier:
         return conf_map.get(confidence.lower(), 0.5)
 
     def calibrate(self, predictions: list[dspy.Prediction], ground_truth: list[bool]):
-        """
-        Calibrate confidence scores using ground truth data.
+        """Calibrate confidence scores using ground truth data.
 
         Args:
             predictions: List of predictions with confidence scores
@@ -302,13 +295,11 @@ class UncertaintyQuantifier:
 
 
 class EnhancedConfidenceScorer:
-    """
-    Enhanced confidence scoring system that integrates uncertainty quantification.
+    """Enhanced confidence scoring system that integrates uncertainty quantification.
     """
 
     def __init__(self, uncertainty_quantifier: UncertaintyQuantifier | None = None):
-        """
-        Initialize enhanced confidence scorer.
+        """Initialize enhanced confidence scorer.
 
         Args:
             uncertainty_quantifier: Optional uncertainty quantifier instance
@@ -319,8 +310,7 @@ class EnhancedConfidenceScorer:
     def score_prediction(self,
                         prediction: dspy.Prediction,
                         context: dict | None = None) -> dict[str, float]:
-        """
-        Compute comprehensive confidence scoring for a prediction.
+        """Compute comprehensive confidence scoring for a prediction.
 
         Args:
             prediction: DSPy prediction to score
@@ -362,8 +352,7 @@ class EnhancedConfidenceScorer:
     def _compute_reliability_score(self,
                                  prediction: dspy.Prediction,
                                  uncertainty: dict[str, float]) -> float:
-        """
-        Compute overall reliability score combining confidence and uncertainty.
+        """Compute overall reliability score combining confidence and uncertainty.
 
         Args:
             prediction: DSPy prediction
@@ -397,8 +386,7 @@ class EnhancedConfidenceScorer:
         return max(0.0, min(1.0, reliability))
 
     def calibrate_scorer(self, predictions: list[dspy.Prediction], ground_truth: list[bool]):
-        """
-        Calibrate the confidence scorer using ground truth data.
+        """Calibrate the confidence scorer using ground truth data.
 
         Args:
             predictions: List of predictions
@@ -408,8 +396,7 @@ class EnhancedConfidenceScorer:
         logger.info("Confidence scorer calibration complete")
 
     def get_scoring_summary(self, predictions: list[dspy.Prediction]) -> dict[str, Any]:
-        """
-        Get summary statistics for a set of predictions.
+        """Get summary statistics for a set of predictions.
 
         Args:
             predictions: List of predictions to analyze

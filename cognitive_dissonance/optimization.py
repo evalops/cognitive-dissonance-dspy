@@ -11,8 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class GEPAOptimizer:
-    """
-    GEPA (Generative Evolution of Prompts and Answers) optimizer.
+    """GEPA (Generative Evolution of Prompts and Answers) optimizer.
     Uses LLM reflection on program trajectories to identify gaps and propose improvements.
     """
 
@@ -21,8 +20,7 @@ class GEPAOptimizer:
                  reflection_model: str | None = None,
                  max_iterations: int = 3,
                  improvement_threshold: float = 0.05):
-        """
-        Initialize GEPA optimizer.
+        """Initialize GEPA optimizer.
 
         Args:
             metric: Evaluation metric function
@@ -41,8 +39,7 @@ class GEPAOptimizer:
                              module: dspy.Module,
                              examples: list[dspy.Example],
                              performance: float) -> str:
-        """
-        Use LLM to reflect on program trajectory and identify improvements.
+        """Use LLM to reflect on program trajectory and identify improvements.
 
         Args:
             module: The module being optimized
@@ -137,8 +134,7 @@ class GEPAOptimizer:
         return reflection
 
     def compile(self, module: dspy.Module, trainset: list[dspy.Example]) -> dspy.Module:
-        """
-        Compile module using GEPA optimization strategy.
+        """Compile module using GEPA optimization strategy.
 
         Args:
             module: Module to optimize
@@ -195,16 +191,14 @@ class GEPAOptimizer:
 
 
 class EnsembleOptimizer:
-    """
-    Creates ensemble of optimized modules for improved performance.
+    """Creates ensemble of optimized modules for improved performance.
     """
 
     def __init__(self,
                  base_optimizers: list[Any],
                  ensemble_size: int = 5,
                  voting_strategy: str = "majority"):
-        """
-        Initialize ensemble optimizer.
+        """Initialize ensemble optimizer.
 
         Args:
             base_optimizers: List of optimizer instances
@@ -217,8 +211,7 @@ class EnsembleOptimizer:
         logger.debug(f"Initialized ensemble optimizer with {ensemble_size} modules")
 
     def compile(self, module: dspy.Module, trainset: list[dspy.Example]) -> 'EnsembleModule':
-        """
-        Create ensemble of optimized modules.
+        """Create ensemble of optimized modules.
 
         Args:
             module: Base module to optimize
@@ -257,8 +250,7 @@ class EnsembleOptimizer:
 
 
 class EnsembleModule(dspy.Module):
-    """
-    Ensemble module that combines predictions from multiple optimized modules.
+    """Ensemble module that combines predictions from multiple optimized modules.
     """
 
     def __init__(self, modules: list[dspy.Module], scores: list[float], voting_strategy: str = "majority"):
@@ -282,8 +274,7 @@ class EnsembleModule(dspy.Module):
         return [s / total for s in scores] if total > 0 else [1.0 / len(scores)] * len(scores)
 
     def forward(self, **kwargs) -> dspy.Prediction:
-        """
-        Forward pass through ensemble, combining predictions.
+        """Forward pass through ensemble, combining predictions.
 
         Returns:
             Combined prediction from all ensemble members
@@ -385,8 +376,7 @@ class EnsembleModule(dspy.Module):
 
 
 def create_advanced_optimizer(optimization_strategy: str = "gepa+ensemble") -> Any:
-    """
-    Factory function to create advanced optimizers.
+    """Factory function to create advanced optimizers.
 
     Args:
         optimization_strategy: Strategy to use ('gepa', 'ensemble', 'gepa+ensemble')

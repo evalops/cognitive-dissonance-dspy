@@ -9,8 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_belief_conflicts() -> list[dspy.Example]:
-    """
-    Get examples of belief conflicts for training.
+    """Get examples of belief conflicts for training.
 
     Returns:
         List of Examples with conflicting beliefs and labels
@@ -67,8 +66,7 @@ def get_belief_conflicts() -> list[dspy.Example]:
 
 
 def get_dev_labeled() -> list[dspy.Example]:
-    """
-    Get labeled development set for evaluation.
+    """Get labeled development set for evaluation.
 
     Returns:
         List of Examples with ground truth labels
@@ -111,8 +109,7 @@ def get_dev_labeled() -> list[dspy.Example]:
 
 
 def get_train_unlabeled() -> list[dspy.Example]:
-    """
-    Get unlabeled training set for co-training.
+    """Get unlabeled training set for co-training.
 
     Returns:
         List of Examples without labels
@@ -176,8 +173,7 @@ def validate_dataset(
     dataset: list[dspy.Example],
     require_labels: bool = False
 ) -> None:
-    """
-    Validate a dataset for required fields.
+    """Validate a dataset for required fields.
 
     Args:
         dataset: List of Examples to validate
@@ -208,8 +204,7 @@ def validate_dataset(
 
 
 def get_external_knowledge(url: str | None = None) -> dict[str, Any]:
-    """
-    Fetch external knowledge from API.
+    """Fetch external knowledge from API.
 
     Args:
         url: Optional URL override

@@ -25,8 +25,7 @@ def evaluate(
     display_progress: bool = True,
     return_outputs: bool = False
 ) -> float:
-    """
-    Evaluate a module on a dataset.
+    """Evaluate a module on a dataset.
 
     Args:
         module: DSPy module to evaluate
@@ -87,8 +86,7 @@ def agreement_rate(
     agent2: dspy.Module,
     dataset: list[dspy.Example]
 ) -> float:
-    """
-    Calculate agreement rate between two agents.
+    """Calculate agreement rate between two agents.
 
     Args:
         agent1: First agent
@@ -137,8 +135,7 @@ def cross_validate(
     metric: Callable | None = None,
     **module_kwargs
 ) -> dict:
-    """
-    Perform k-fold cross-validation.
+    """Perform k-fold cross-validation.
 
     Args:
         module_class: Class of module to instantiate
@@ -208,8 +205,7 @@ def analyze_errors(
     dataset: list[dspy.Example],
     metric: Callable | None = None
 ) -> dict:
-    """
-    Analyze errors made by the module.
+    """Analyze errors made by the module.
 
     Args:
         module: Module to analyze

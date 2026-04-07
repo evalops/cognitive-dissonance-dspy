@@ -37,8 +37,7 @@ class BeliefAgent(dspy.Module):
     """Agent that forms beliefs from text."""
 
     def __init__(self, use_cot: bool = False):
-        """
-        Initialize the belief agent.
+        """Initialize the belief agent.
 
         Args:
             use_cot: Whether to use Chain of Thought reasoning
@@ -49,8 +48,7 @@ class BeliefAgent(dspy.Module):
         logger.debug(f"Initialized BeliefAgent with use_cot={use_cot}")
 
     def forward(self, text: str) -> dspy.Prediction:
-        """
-        Extract a belief/claim from text.
+        """Extract a belief/claim from text.
 
         Args:
             text: Input text to analyze
@@ -86,8 +84,7 @@ class DissonanceDetector(dspy.Module):
     """Agent that detects cognitive dissonance between beliefs."""
 
     def __init__(self, use_cot: bool = False):
-        """
-        Initialize the dissonance detector.
+        """Initialize the dissonance detector.
 
         Args:
             use_cot: Whether to use Chain of Thought reasoning
@@ -98,8 +95,7 @@ class DissonanceDetector(dspy.Module):
         logger.debug(f"Initialized DissonanceDetector with use_cot={use_cot}")
 
     def forward(self, claim1: str, claim2: str) -> dspy.Prediction:
-        """
-        Detect if two claims are contradictory.
+        """Detect if two claims are contradictory.
 
         Args:
             claim1: First claim
@@ -142,8 +138,7 @@ class ReconciliationAgent(dspy.Module):
     """Agent that reconciles conflicting beliefs."""
 
     def __init__(self, use_cot: bool = False):
-        """
-        Initialize the reconciliation agent.
+        """Initialize the reconciliation agent.
 
         Args:
             use_cot: Whether to use Chain of Thought reasoning
@@ -154,8 +149,7 @@ class ReconciliationAgent(dspy.Module):
         logger.debug(f"Initialized ReconciliationAgent with use_cot={use_cot}")
 
     def forward(self, claim1: str, claim2: str, has_conflict: str = "yes") -> dspy.Prediction:
-        """
-        Reconcile two potentially conflicting claims.
+        """Reconcile two potentially conflicting claims.
 
         Args:
             claim1: First claim
@@ -200,8 +194,7 @@ class CognitiveDissonanceResolver(dspy.Module):
     """Complete system for detecting and resolving cognitive dissonance."""
 
     def __init__(self, use_cot: bool = False):
-        """
-        Initialize the complete resolver system.
+        """Initialize the complete resolver system.
 
         Args:
             use_cot: Whether to use Chain of Thought reasoning
@@ -213,8 +206,7 @@ class CognitiveDissonanceResolver(dspy.Module):
         logger.debug(f"Initialized CognitiveDissonanceResolver with use_cot={use_cot}")
 
     def forward(self, text1: str, text2: str) -> dspy.Prediction:
-        """
-        Process two texts to detect and resolve cognitive dissonance.
+        """Process two texts to detect and resolve cognitive dissonance.
 
         Args:
             text1: First text

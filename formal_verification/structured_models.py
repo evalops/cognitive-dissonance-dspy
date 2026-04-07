@@ -40,8 +40,7 @@ class ConfidenceLevel(str, Enum):
 
 
 class FormalizableClaim(BaseModel):
-    """
-    Structured claim extraction with formalizability metadata.
+    """Structured claim extraction with formalizability metadata.
 
     This model ensures claims are extracted in a format that matches
     the translator's regex patterns, significantly improving the

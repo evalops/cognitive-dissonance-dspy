@@ -161,16 +161,14 @@ CRITICAL: Use minimal, canonical phrasing. Extract function names from code cont
 
 
 class OpenAIClaimExtractor:
-    """
-    OpenAI Agents SDK-based claim extractor with structured outputs.
+    """OpenAI Agents SDK-based claim extractor with structured outputs.
 
     This replaces the DSPy-based BeliefAgent with a more structured approach
     that produces claims matching the translator's regex patterns.
     """
 
     def __init__(self, api_key: str | None = None, model: str = "gpt-4"):
-        """
-        Initialize the OpenAI claim extractor.
+        """Initialize the OpenAI claim extractor.
 
         Args:
             api_key: OpenAI API key (defaults to OPENAI_API_KEY env var)
@@ -186,8 +184,7 @@ class OpenAIClaimExtractor:
         text: str,
         code_context: str = ""
     ) -> ClaimExtractionResult:
-        """
-        Extract a formalizable claim from text.
+        """Extract a formalizable claim from text.
 
         Args:
             text: Text containing a potential claim
@@ -291,7 +288,7 @@ class OpenAIClaimExtractor:
             return {
                 "is_formalizable": False,
                 "category": "unformalizable",
-                "reasoning": f"Error during triage: {str(e)}",
+                "reasoning": f"Error during triage: {e!s}",
                 "suggestion": ""
             }
 
@@ -371,7 +368,7 @@ class OpenAIClaimExtractor:
                 confidence=0.3,
                 variables={},
                 pattern_hints=[],
-                reasoning=f"Fallback extraction due to error: {str(e)}"
+                reasoning=f"Fallback extraction due to error: {e!s}"
             )
 
     def _extract_logic_claim(
@@ -437,7 +434,7 @@ class OpenAIClaimExtractor:
                 confidence=0.3,
                 variables={},
                 pattern_hints=[],
-                reasoning=f"Fallback extraction due to error: {str(e)}"
+                reasoning=f"Fallback extraction due to error: {e!s}"
             )
 
     def _extract_algorithm_claim(
@@ -507,7 +504,7 @@ class OpenAIClaimExtractor:
                 confidence=0.3,
                 variables={},
                 pattern_hints=[],
-                reasoning=f"Fallback extraction due to error: {str(e)}"
+                reasoning=f"Fallback extraction due to error: {e!s}"
             )
 
     def validate_against_translator(
@@ -515,8 +512,7 @@ class OpenAIClaimExtractor:
         claim: FormalizableClaim,
         code: str = ""
     ) -> bool:
-        """
-        Validate that a claim can be translated to Coq.
+        """Validate that a claim can be translated to Coq.
 
         Args:
             claim: The claim to validate

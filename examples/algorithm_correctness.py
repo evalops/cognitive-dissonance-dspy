@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Example: Algorithm correctness verification with cognitive dissonance detection.
+"""Example: Algorithm correctness verification with cognitive dissonance detection.
 
 This example demonstrates formal verification of sorting algorithm claims,
 testing more complex theorem proving scenarios including:

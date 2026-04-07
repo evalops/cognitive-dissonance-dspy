@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Example: Advanced mathematical theorems and data structure properties.
+"""Example: Advanced mathematical theorems and data structure properties.
 
 This demonstrates more sophisticated formal verification capabilities including:
 - Number theory properties

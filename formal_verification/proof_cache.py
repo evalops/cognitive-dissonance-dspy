@@ -14,16 +14,14 @@ CACHE_SCHEMA_VERSION = 1
 
 
 class ProofCache:
-    """
-    Cache system for Coq proofs to avoid re-proving the same claims.
+    """Cache system for Coq proofs to avoid re-proving the same claims.
 
     This significantly improves performance when dealing with repeated
     claims or similar proof patterns.
     """
 
     def __init__(self, cache_dir: str | None = None):
-        """
-        Initialize proof cache.
+        """Initialize proof cache.
 
         Args:
             cache_dir: Directory to store cache files (defaults to .proof_cache)
@@ -56,8 +54,7 @@ class ProofCache:
             logger.warning("Failed to remove stale cache file %s: %s", cache_file, exc)
 
     def get(self, spec: FormalSpec) -> ProofResult | None:
-        """
-        Retrieve cached proof result if available.
+        """Retrieve cached proof result if available.
 
         Args:
             spec: The formal specification to look up
@@ -79,7 +76,7 @@ class ProofCache:
         cache_file = self.cache_dir / f"{cache_key}.json"
         if cache_file.exists():
             try:
-                with open(cache_file, 'r', encoding="utf-8") as f:
+                with open(cache_file, encoding="utf-8") as f:
                     data = json.load(f)
 
                 schema_version = data.get("schema_version")
@@ -116,8 +113,7 @@ class ProofCache:
         return None
 
     def put(self, spec: FormalSpec, result: ProofResult):
-        """
-        Store proof result in cache.
+        """Store proof result in cache.
 
         Args:
             spec: The formal specification

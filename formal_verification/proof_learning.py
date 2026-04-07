@@ -211,8 +211,7 @@ class FeatureExtractor:
 
 
 class ProofStrategyLearner:
-    """
-    Deep learning system for proof strategies.
+    """Deep learning system for proof strategies.
 
     This learns from proof attempts to predict:
     1. Which prover is most likely to succeed
@@ -378,7 +377,6 @@ class ProofStrategyLearner:
 
     def _generate_strategy(self, features: ProofFeatures, prover_analysis: dict[str, dict[str, float]], time_prediction: float) -> dict[str, Any]:
         """Generate optimal strategy recommendation."""
-
         if not prover_analysis:
             # No similar examples - use heuristics
             if features.proof_type == 'constraint' or 'exists' in features.mathematical_domain:
