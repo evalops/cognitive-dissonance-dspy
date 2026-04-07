@@ -128,6 +128,34 @@ class FormalVerificationConflictDetector:
         # Initialize deep program analysis
         self.property_generator = PropertySpecificationGenerator()
         logger.info("Initialized with deep program property analysis")
+
+    def _proof_result_from_solver_dict(
+        self, spec: FormalSpec, solver_result: Dict[str, Any], proof_output: str
+    ) -> ProofResult:
+        """Normalize hybrid solver dictionaries into ProofResult objects."""
+        proven = solver_result.get("proven", False)
+        prover_name = solver_result.get("prover", "hybrid")
+        default_status = (
+            "smt_proved"
+            if prover_name == "z3" and proven
+            else "compiled_unchecked"
+            if prover_name == "coq" and proven
+            else "smt_refuted"
+            if prover_name == "z3"
+            else "refuted"
+        )
+        return ProofResult(
+            spec=spec,
+            proven=proven,
+            proof_time_ms=solver_result.get("time_ms", 0),
+            error_message=solver_result.get("error", ""),
+            proof_output=proof_output,
+            counter_example=solver_result.get("counter_example", {}),
+            prover_name=prover_name,
+            solver_status=solver_result.get("solver_status", default_status),
+            assumptions_present=solver_result.get("assumptions_present", False),
+            checker_name=solver_result.get("checker_name"),
+        )
     
     def analyze_claims(self, claims: List[Claim], code: str = "") -> Dict[str, Any]:
         """Analyze conflicting claims about code using formal verification.
@@ -182,18 +210,8 @@ class FormalVerificationConflictDetector:
                 # Using HybridProver - convert result format
                 claim_text = spec.claim.claim_text
                 hybrid_result = self.prover.prove_claim(claim_text)
-                
-                # Convert hybrid result to ProofResult format
-                from .types import ProofResult
-                result = ProofResult(
-                    spec=spec,
-                    proven=hybrid_result.get('proven', False),
-                    proof_time_ms=hybrid_result.get('time_ms', 0),
-                    error_message=hybrid_result.get('error', ''),
-                    proof_output=f"Prover: {hybrid_result.get('prover', 'unknown')}",
-                    counter_example=hybrid_result.get('counter_example', {}),
-                    prover_name=hybrid_result.get('prover', 'hybrid'),
-                    solver_status="proved" if hybrid_result.get('proven') else "refuted",
+                result = self._proof_result_from_solver_dict(
+                    spec, hybrid_result, f"Prover: {hybrid_result.get('prover', 'unknown')}"
                 )
             else:
                 # Using CoqProver
@@ -214,17 +232,12 @@ class FormalVerificationConflictDetector:
                     elif Z3_AVAILABLE and hasattr(self.prover, 'prove_claim'):
                         # Using HybridProver
                         repaired_hybrid_result = self.prover.prove_claim(repaired_spec.claim.claim_text, code=code)
-                        repaired_result = ProofResult(
-                            spec=repaired_spec,
-                            proven=repaired_hybrid_result.get('proven', False),
-                            proof_time_ms=repaired_hybrid_result.get('time_ms', 0),
-                            error_message=repaired_hybrid_result.get('error', ''),
-                            proof_output=f"Prover: {repaired_hybrid_result.get('prover', 'unknown')} (with auto-repair)",
-                            counter_example=repaired_hybrid_result.get('counter_example', {}),
-                            prover_name=repaired_hybrid_result.get('prover', 'hybrid'),
-                            solver_status="proved" if repaired_hybrid_result.get('proven') else "refuted",
-                            auto_repaired=True,
+                        repaired_result = self._proof_result_from_solver_dict(
+                            repaired_spec,
+                            repaired_hybrid_result,
+                            f"Prover: {repaired_hybrid_result.get('prover', 'unknown')} (with auto-repair)",
                         )
+                        repaired_result.auto_repaired = True
                     else:
                         # Using CoqProver  
                         repaired_result = self.prover.prove_specification(repaired_spec)
@@ -279,19 +292,15 @@ class FormalVerificationConflictDetector:
             if Z3_AVAILABLE and hasattr(self.prover, 'prove_claim'):
                 # Use hybrid prover for complex properties
                 hybrid_result = self.prover.prove_claim(spec.claim.claim_text, code=code)
-                
-                result = ProofResult(
-                    spec=spec,
-                    proven=hybrid_result.get('proven', False),
-                    proof_time_ms=hybrid_result.get('time_ms', 0),
-                    error_message=hybrid_result.get('error', ''),
-                    proof_output=f"Deep Analysis + {hybrid_result.get('prover', 'unknown')}",
-                    counter_example=hybrid_result.get('counter_example', {})
+                result = self._proof_result_from_solver_dict(
+                    spec,
+                    hybrid_result,
+                    f"Deep Analysis + {hybrid_result.get('prover', 'unknown')}",
                 )
             else:
                 # Use Coq prover
                 result = self.prover.prove_specification(spec)
-                result.proof_output = f"Deep Analysis + Coq"
+                result.proof_output = "Deep Analysis + Coq"
             
             # Attempt repair if failed
             if not result.proven and self.auto_repair_enabled:
@@ -302,17 +311,12 @@ class FormalVerificationConflictDetector:
                     if Z3_AVAILABLE and hasattr(self.prover, 'prove_claim'):
                         repaired_result = self.prover.prove_claim(repaired_spec.claim.claim_text, code=code)
                         if repaired_result.get('proven', False):
-                            result = ProofResult(
-                                spec=repaired_spec,
-                                proven=True,
-                                proof_time_ms=repaired_result.get('time_ms', 0),
-                                error_message='',
-                                proof_output=f"Deep Analysis + Auto-Repair + {repaired_result.get('prover', 'unknown')}",
-                                counter_example={},
-                                prover_name=repaired_result.get('prover', 'hybrid'),
-                                solver_status="proved",
-                                auto_repaired=True,
+                            result = self._proof_result_from_solver_dict(
+                                repaired_spec,
+                                repaired_result,
+                                f"Deep Analysis + Auto-Repair + {repaired_result.get('prover', 'unknown')}",
                             )
+                            result.auto_repaired = True
                             logger.info(f"Successfully repaired property: {spec.spec_text[:50]}...")
             
             verification_results.append(result)
@@ -355,11 +359,27 @@ class FormalVerificationConflictDetector:
             Dictionary containing conflict resolution information
         """
         resolution = {
-            'mathematically_proven': [r for r in proof_results if r.proven],
-            'mathematically_disproven': [r for r in proof_results if not r.proven and r.error_message],
-            'unresolved': [r for r in proof_results if not r.proven and not r.error_message],
+            'mathematically_proven': [r for r in proof_results if r.is_machine_checked],
+            'machine_checked_proofs': [r for r in proof_results if r.is_machine_checked],
+            'derived_or_solver_proofs': [
+                r
+                for r in proof_results
+                if r.proven and not r.is_machine_checked
+            ],
+            'mathematically_disproven': [
+                r for r in proof_results if r.is_definitive_disproof
+            ],
+            'unresolved': [
+                r
+                for r in proof_results
+                if not r.proven
+                and not r.is_machine_checked
+                and not r.is_definitive_disproof
+            ],
             'agent_rankings': self._rank_agents_by_correctness(proof_results),
-            'ground_truth_established': any(r.proven for r in proof_results)
+            'ground_truth_established': any(
+                r.establishes_ground_truth for r in proof_results
+            ),
         }
         
         return resolution
@@ -383,7 +403,7 @@ class FormalVerificationConflictDetector:
                 agent_counts[agent_id] = 0
             
             agent_counts[agent_id] += 1
-            if result.proven:
+            if result.establishes_ground_truth:
                 agent_scores[agent_id] += 1
         
         # Calculate accuracy percentages
@@ -406,16 +426,21 @@ class FormalVerificationConflictDetector:
         Returns:
             Dictionary containing summary statistics
         """
-        proven_count = sum(1 for r in proof_results if r.proven)
-        disproven_count = sum(1 for r in proof_results if not r.proven and r.error_message)
+        proven_count = sum(1 for r in proof_results if r.is_machine_checked)
+        derived_count = sum(1 for r in proof_results if r.proven and not r.is_machine_checked)
+        disproven_count = sum(1 for r in proof_results if r.is_definitive_disproof)
         avg_proof_time = sum(r.proof_time_ms for r in proof_results) / len(proof_results) if proof_results else 0
         
         return {
             'total_claims': len(proof_results),
             'mathematically_proven': proven_count,
+            'derived_proofs': derived_count,
             'mathematically_disproven': disproven_count,
             'conflicts_detected': len(conflicts),
-            'verification_complete': all(r.proven or r.error_message for r in proof_results),
+            'verification_complete': all(
+                r.is_machine_checked or r.is_definitive_disproof or r.error_message
+                for r in proof_results
+            ),
             'average_proof_time_ms': avg_proof_time,
-            'has_ground_truth': proven_count > 0
+            'has_ground_truth': any(r.establishes_ground_truth for r in proof_results),
         }

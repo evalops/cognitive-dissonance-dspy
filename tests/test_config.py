@@ -1,6 +1,5 @@
 """Tests for configuration module."""
 
-import os
 import pytest
 from cognitive_dissonance.config import ExperimentConfig, setup_logging
 
@@ -146,6 +145,7 @@ class TestLogging:
         
         # Setup logging with INFO level
         setup_logging(level="INFO")
+        assert logging.getLogger().level == logging.INFO
         
         # Check that loggers are configured
         logger = logging.getLogger("cognitive_dissonance")
@@ -153,5 +153,6 @@ class TestLogging:
         
         # Test with DEBUG level
         setup_logging(level="DEBUG")
+        assert logging.getLogger().level == logging.DEBUG
         logger = logging.getLogger("cognitive_dissonance")
         assert logger.level == logging.DEBUG

@@ -1,17 +1,13 @@
 """Tests for evaluation module."""
 
-import pytest
 import dspy
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 from cognitive_dissonance.evaluation import (
     evaluate,
     agreement_rate,
     cross_validate,
     analyze_errors
 )
-from cognitive_dissonance.verifier import CognitiveDissonanceResolver
-
-
 class TestEvaluate:
     """Test evaluate function."""
     
@@ -142,6 +138,23 @@ class TestAgreementRate:
         
         rate = agreement_rate(agent1, agent2, sample_examples)
         assert 0.0 < rate < 1.0
+
+    def test_normalizes_free_form_verdicts(self, sample_examples):
+        """Free-form labels should normalize before agreement is computed."""
+        agent1 = Mock()
+        agent2 = Mock()
+
+        pred1 = dspy.Prediction()
+        pred1.has_dissonance = "Yes, definitely contradictory"
+
+        pred2 = dspy.Prediction()
+        pred2.has_dissonance = "yes"
+
+        agent1.return_value = pred1
+        agent2.return_value = pred2
+
+        rate = agreement_rate(agent1, agent2, sample_examples)
+        assert rate == 1.0
     
     def test_empty_dataset(self):
         """Test agreement rate with empty dataset."""

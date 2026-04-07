@@ -1,8 +1,7 @@
 """Tests for mathematical proof-backed cognitive dissonance resolution."""
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-import time
+from unittest.mock import Mock, patch
 
 from cognitive_dissonance.mathematical_resolver import (
     MathematicalCognitiveDissonanceResolver,
@@ -13,7 +12,7 @@ from cognitive_dissonance.mathematical_resolver import (
     ResolutionMethod,
     EvidenceStatus,
 )
-from formal_verification import Claim as FormalClaim, PropertyType, ProofResult, FormalSpec
+from formal_verification import PropertyType, ProofResult
 
 
 class TestClaimClassifier:
@@ -174,27 +173,41 @@ class TestMathematicalCognitiveDissonanceResolver:
         mock_dissonance.return_value.return_value = mock_dissonance_result
         
         # Mock formal verification success
-        mock_formal_result1 = Mock(spec=ProofResult)
-        mock_formal_result1.spec = Mock()
-        mock_formal_result1.spec.claim = Mock()
-        mock_formal_result1.spec.claim.claim_text = "2 + 2 = 4"
-        mock_formal_result1.proven = True
-        mock_formal_result1.proof_time_ms = 150.0
-        mock_formal_result1.error_message = None
-        mock_formal_result1.proof_output = "Z3 Solver"
-        mock_formal_result1.prover_name = "z3"
-        mock_formal_result1.counter_example = None
-        
-        mock_formal_result2 = Mock(spec=ProofResult)
-        mock_formal_result2.spec = Mock()
-        mock_formal_result2.spec.claim = Mock()
-        mock_formal_result2.spec.claim.claim_text = "2 + 2 = 5"
-        mock_formal_result2.proven = False
-        mock_formal_result2.proof_time_ms = 75.0
-        mock_formal_result2.error_message = "Arithmetic contradiction"
-        mock_formal_result2.proof_output = "Z3 Solver"
-        mock_formal_result2.prover_name = "z3"
-        mock_formal_result2.counter_example = None
+        spec1 = Mock()
+        spec1.claim = Mock()
+        spec1.claim.claim_text = "2 + 2 = 4"
+        spec1.claim.agent_id = "agent_1"
+        spec1.claim.property_type = PropertyType.CORRECTNESS
+        spec1.claim.confidence = 0.95
+
+        spec2 = Mock()
+        spec2.claim = Mock()
+        spec2.claim.claim_text = "2 + 2 = 5"
+        spec2.claim.agent_id = "agent_2"
+        spec2.claim.property_type = PropertyType.CORRECTNESS
+        spec2.claim.confidence = 0.7
+
+        mock_formal_result1 = ProofResult(
+            spec=spec1,
+            proven=True,
+            proof_time_ms=150.0,
+            error_message=None,
+            counter_example=None,
+            proof_output="Z3 Solver",
+            prover_name="z3",
+            solver_status="smt_proved",
+        )
+
+        mock_formal_result2 = ProofResult(
+            spec=spec2,
+            proven=False,
+            proof_time_ms=75.0,
+            error_message="Arithmetic contradiction",
+            counter_example=None,
+            proof_output="Z3 Solver",
+            prover_name="z3",
+            solver_status="refuted",
+        )
         
         mock_analysis_results = {
             'proof_results': [mock_formal_result1, mock_formal_result2]
@@ -342,16 +355,23 @@ class TestIntegrationScenarios:
         mock_dissonance.return_value.return_value = mock_dissonance_result
         
         # Mock formal verification for mathematical claim only
-        mock_formal_result = Mock(spec=ProofResult)
-        mock_formal_result.spec = Mock()
-        mock_formal_result.spec.claim = Mock()
-        mock_formal_result.spec.claim.claim_text = "factorial(5) = 120"
-        mock_formal_result.proven = True
-        mock_formal_result.proof_time_ms = 200.0
-        mock_formal_result.error_message = None
-        mock_formal_result.proof_output = "Coq Prover"
-        mock_formal_result.prover_name = "coq"
-        mock_formal_result.counter_example = None
+        spec = Mock()
+        spec.claim = Mock()
+        spec.claim.claim_text = "factorial(5) = 120"
+        spec.claim.agent_id = "agent_1"
+        spec.claim.property_type = PropertyType.CORRECTNESS
+        spec.claim.confidence = 0.95
+
+        mock_formal_result = ProofResult(
+            spec=spec,
+            proven=True,
+            proof_time_ms=200.0,
+            error_message=None,
+            counter_example=None,
+            proof_output="Coq Prover",
+            prover_name="coq",
+            solver_status="machine_checked",
+        )
         
         mock_analysis_results = {
             'proof_results': [mock_formal_result]

@@ -6,10 +6,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Stop arguing; prove it.**  
-Cognitive Dissonance DSPy detects belief conflicts between LLM agents, translates formalizable claims to Coq, and attempts a machine‑checked proof. If a claim can't be formalized, we say so and **punt** (fall back to labeled heuristics).
+Cognitive Dissonance DSPy detects belief conflicts between LLM agents, translates formalizable claims to Coq, and attempts an independently checked proof. Claims that remain assumption-based or unchecked are labeled as such instead of being reported as ground truth.
 
 - **Agents & optimization:** built on DSPy's programmatic agent framework.  
-- **Proofs:** compiled (`coqc`) and independently checked (`coqchk`) Coq artifacts.
+- **Proofs:** compiled (`coqc`) and only counted as machine-checked after `coqchk` validation.
 
 > To our knowledge, this is the first framework that combines **DSPy‑based cognitive‑dissonance detection**, **NL→Coq translation**, and **online proving** in one loop.
 
@@ -55,7 +55,7 @@ cd cognitive-dissonance-dspy
 # Set up virtual environment and install dependencies
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 # Install Coq (Ubuntu/Debian)
 sudo apt update && sudo apt install -y coq

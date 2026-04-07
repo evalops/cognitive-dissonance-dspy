@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e .[dev]
+
+      - name: Lint
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          import sys
+
+          event_name = os.environ["GITHUB_EVENT_NAME"]
+          with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as handle:
+              event = json.load(handle)
+
+          if event_name == "pull_request":
+              base = event["pull_request"]["base"]["sha"]
+              head = event["pull_request"]["head"]["sha"]
+          else:
+              base = event.get("before")
+              head = event.get("after", os.environ["GITHUB_SHA"])
+
+          if not base or set(base) == {"0"}:
+              command = ["git", "ls-files", "*.py"]
+          else:
+              command = [
+                  "git",
+                  "diff",
+                  "--diff-filter=ACMRTUXB",
+                  "--name-only",
+                  base,
+                  head,
+                  "--",
+                  "*.py",
+              ]
+
+          files = [
+              path
+              for path in subprocess.check_output(command, text=True).splitlines()
+              if path
+          ]
+          if not files:
+              print("No changed Python files to lint.")
+              raise SystemExit(0)
+
+          print("Linting changed Python files:")
+          for path in files:
+              print(path)
+
+          subprocess.run(
+              [sys.executable, "-m", "ruff", "check", "--select", "F,B", *files],
+              check=True,
+          )
+          PY
+
+      - name: Test
+        run: python -m pytest -q

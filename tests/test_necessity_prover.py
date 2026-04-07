@@ -2,17 +2,16 @@
 
 import pytest
 import time
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from formal_verification.necessity_prover import (
     MathematicalStructureAnalyzer,
     NecessityBasedProver,
     NecessityProofIntegrator,
     NecessityType,
-    NecessityEvidence,
     enhance_prover_with_necessity
 )
-from formal_verification import Claim, PropertyType, ProofResult, FormalSpec
+from formal_verification import Claim, PropertyType
 
 
 class TestMathematicalStructureAnalyzer:
@@ -224,7 +223,7 @@ class TestNecessityProofIntegrator:
     
     def test_necessity_success_no_fallback(self):
         """Test when necessity proof succeeds, no fallback needed."""
-        mock_fallback = Mock()
+        mock_fallback = Mock(spec=[])
         integrator = NecessityProofIntegrator(fallback_prover=mock_fallback)
         
         claim = Claim(
@@ -239,12 +238,85 @@ class TestNecessityProofIntegrator:
         
         assert result.proven is True
         # Fallback should not have been called
-        mock_fallback.prove_claim.assert_not_called() if hasattr(mock_fallback, 'prove_claim') else None
-        mock_fallback.prove_specification.assert_not_called() if hasattr(mock_fallback, 'prove_specification') else None
+        assert result.solver_status == "derived_proved"
+
+    def test_necessity_success_fallback_failure_returns_original_result(self):
+        """Fallback verification errors should not override a necessity proof."""
+        mock_fallback = Mock(spec=["prove_claim"])
+        mock_fallback.prove_claim.side_effect = Exception("Fallback failed")
+        integrator = NecessityProofIntegrator(fallback_prover=mock_fallback)
+
+        claim = Claim(
+            agent_id="test",
+            claim_text="5 + 3 = 8",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.9,
+            timestamp=time.time()
+        )
+
+        result = integrator.prove_with_necessity_priority(claim)
+
+        assert result.proven is True
+        assert result.solver_status == "derived_proved"
+        mock_fallback.prove_claim.assert_called_once_with("5 + 3 = 8")
+
+    def test_necessity_success_inconclusive_fallback_keeps_original_result(self):
+        """Inconclusive fallback results should not override a necessity proof."""
+        mock_fallback = Mock(spec=["prove_claim"])
+        mock_fallback.prove_claim.return_value = {
+            "proven": False,
+            "time_ms": 200,
+            "prover": "z3",
+            "error": "solver could not prove claim",
+            "counter_example": None,
+        }
+        integrator = NecessityProofIntegrator(fallback_prover=mock_fallback)
+
+        claim = Claim(
+            agent_id="test",
+            claim_text="5 + 3 = 8",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.9,
+            timestamp=time.time(),
+        )
+
+        result = integrator.prove_with_necessity_priority(claim)
+
+        assert result.proven is True
+        assert result.solver_status == "derived_proved"
+        mock_fallback.prove_claim.assert_called_once_with("5 + 3 = 8")
+
+    def test_necessity_success_definitive_fallback_refutation_overrides(self):
+        """A concrete fallback refutation should override a derived success."""
+        mock_fallback = Mock(spec=["prove_claim"])
+        mock_fallback.prove_claim.return_value = {
+            "proven": False,
+            "time_ms": 200,
+            "prover": "z3",
+            "error": "counterexample found",
+            "counter_example": {"x": 1},
+            "solver_status": "smt_refuted",
+        }
+        integrator = NecessityProofIntegrator(fallback_prover=mock_fallback)
+
+        claim = Claim(
+            agent_id="test",
+            claim_text="5 + 3 = 8",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.9,
+            timestamp=time.time(),
+        )
+
+        result = integrator.prove_with_necessity_priority(claim)
+
+        assert result.proven is False
+        assert result.solver_status == "smt_refuted"
+        assert result.counter_example == {"x": 1}
+        mock_fallback.prove_claim.assert_called_once_with("5 + 3 = 8")
     
     def test_necessity_definitive_failure_no_fallback(self):
         """Test when necessity proof definitively fails, no fallback needed."""
-        mock_fallback = Mock()
+        mock_fallback = Mock(spec=[])
         integrator = NecessityProofIntegrator(fallback_prover=mock_fallback)
         
         claim = Claim(
@@ -260,11 +332,11 @@ class TestNecessityProofIntegrator:
         assert result.proven is False
         assert result.counter_example is not None
         # Fallback should not have been called since we have a definitive answer
-        mock_fallback.prove_claim.assert_not_called() if hasattr(mock_fallback, 'prove_claim') else None
+        assert result.solver_status == "derived_refuted"
     
     def test_necessity_inconclusive_with_hybrid_fallback(self):
         """Test fallback to hybrid prover when necessity is inconclusive."""
-        mock_hybrid_prover = Mock()
+        mock_hybrid_prover = Mock(spec=["prove_claim"])
         mock_hybrid_prover.prove_claim.return_value = {
             'proven': True,
             'time_ms': 200,
@@ -289,14 +361,43 @@ class TestNecessityProofIntegrator:
         assert "Z3" in result.proof_output
         assert "Necessity + Fallback" in result.proof_output
         mock_hybrid_prover.prove_claim.assert_called_once_with("This algorithm terminates")
+
+    def test_necessity_fallback_coq_defaults_to_compiled_unchecked(self):
+        """Fallback Coq results should remain unchecked unless explicitly verified."""
+        mock_hybrid_prover = Mock(spec=["prove_claim"])
+        mock_hybrid_prover.prove_claim.return_value = {
+            'proven': True,
+            'time_ms': 200,
+            'prover': 'coq',
+            'error': None,
+            'counter_example': {}
+        }
+
+        integrator = NecessityProofIntegrator(fallback_prover=mock_hybrid_prover)
+
+        claim = Claim(
+            agent_id="test",
+            claim_text="This algorithm terminates",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.7,
+            timestamp=time.time()
+        )
+
+        result = integrator.prove_with_necessity_priority(claim)
+
+        assert result.proven is True
+        assert result.solver_status == "compiled_unchecked"
+        assert result.is_machine_checked is False
     
     def test_necessity_inconclusive_with_coq_fallback(self):
-        """Test fallback to Coq prover when necessity is inconclusive."""
-        mock_coq_prover = Mock()
+        """Translatable non-necessity claims should fall back to Coq."""
+        mock_coq_prover = Mock(spec=["prove_specification"])
         mock_coq_result = Mock()
         mock_coq_result.proven = True
         mock_coq_result.proof_time_ms = 300
         mock_coq_result.proof_output = "Coq Prover"
+        mock_coq_result.prover_name = "coq"
+        mock_coq_result.solver_status = "machine_checked"
         mock_coq_prover.prove_specification.return_value = mock_coq_result
         
         integrator = NecessityProofIntegrator(fallback_prover=mock_coq_prover)
@@ -311,15 +412,13 @@ class TestNecessityProofIntegrator:
         
         result = integrator.prove_with_necessity_priority(claim)
         
-        # The necessity prover will return inconclusive for this claim
-        # Since we're using a mock, we'll get the necessity result back
-        assert result.proven is False  # Necessity is inconclusive
-        assert "no mathematical necessity pattern detected" in result.error_message.lower()
-        # Mock should have been called but integration failed due to mock arithmetic issue
+        assert result.proven is True
+        assert result.solver_status == "machine_checked"
+        mock_coq_prover.prove_specification.assert_called_once()
     
     def test_necessity_inconclusive_fallback_fails(self):
         """Test when both necessity and fallback fail."""
-        mock_fallback = Mock()
+        mock_fallback = Mock(spec=["prove_claim"])
         mock_fallback.prove_claim.side_effect = Exception("Fallback failed")
         
         integrator = NecessityProofIntegrator(fallback_prover=mock_fallback)
@@ -344,7 +443,7 @@ class TestEnhanceProverWithNecessity:
     
     def test_enhance_hybrid_prover(self):
         """Test enhancing a hybrid prover with necessity."""
-        mock_hybrid_prover = Mock()
+        mock_hybrid_prover = Mock(spec=["prove_claim"])
         mock_hybrid_prover.prove_claim.return_value = {'proven': True, 'time_ms': 100, 'prover': 'Z3'}
         
         enhanced_prover = enhance_prover_with_necessity(mock_hybrid_prover)
@@ -355,7 +454,7 @@ class TestEnhanceProverWithNecessity:
     
     def test_enhance_coq_prover(self):
         """Test enhancing a Coq prover with necessity."""
-        mock_coq_prover = Mock()
+        mock_coq_prover = Mock(spec=["prove_specification"])
         
         enhanced_prover = enhance_prover_with_necessity(mock_coq_prover)
         
@@ -364,7 +463,7 @@ class TestEnhanceProverWithNecessity:
     
     def test_enhanced_prover_necessity_first(self):
         """Test that enhanced prover tries necessity first."""
-        mock_fallback = Mock()
+        mock_fallback = Mock(spec=[])
         enhanced_prover = enhance_prover_with_necessity(mock_fallback)
         
         claim = Claim(
@@ -382,7 +481,7 @@ class TestEnhanceProverWithNecessity:
         assert result.proven is True  # This should work with proper arithmetic
         assert "necessity" in result.spec.spec_text.lower()
         # Fallback should not have been called
-        mock_fallback.prove_claim.assert_not_called() if hasattr(mock_fallback, 'prove_claim') else None
+        assert result.solver_status == "derived_proved"
 
 
 if __name__ == "__main__":

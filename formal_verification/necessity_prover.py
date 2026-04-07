@@ -7,8 +7,7 @@ tactics, it analyzes the logical structure to determine what MUST be true.
 
 import logging
 import re
-import ast
-from typing import Dict, List, Optional, Tuple, Any, Set
+from typing import List, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
 import time
@@ -141,7 +140,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
                 [f"Arithmetic error: {a} {op_symbol} {b} ≠ {result} (should be {expected})"],
-                [f"The claim contradicts basic arithmetic"],
+                ["The claim contradicts basic arithmetic"],
                 0.0,
                 {"natural_number_arithmetic"},
                 f"Counter-example: {a} {op_symbol} {b} = {expected} ≠ {result}."
@@ -172,7 +171,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
                 [f"Inequality evaluation: {a} is {op_name} {b}"],
-                [f"By the ordering of natural numbers"],
+                ["By the ordering of natural numbers"],
                 1.0,
                 {"natural_number_ordering"},
                 f"Theorem: {a} {op} {b}. Proof: By comparison of natural numbers."
@@ -181,7 +180,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
                 [f"Inequality error: {a} is not {op_name} {b}"],
-                [f"The claim contradicts natural number ordering"],
+                ["The claim contradicts natural number ordering"],
                 0.0,
                 {"natural_number_ordering"},
                 f"Counter-example: {a} {op} {b} is false."
@@ -202,9 +201,9 @@ class MathematicalStructureAnalyzer:
         if actual_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.INDUCTIVE,
-                [f"Factorial definition: n! = n × (n-1)!", f"Base case: 0! = 1! = 1"],
+                ["Factorial definition: n! = n × (n-1)!", "Base case: 0! = 1! = 1"],
                 [
-                    f"By induction on the factorial definition",
+                    "By induction on the factorial definition",
                     f"factorial({n}) = {n} × factorial({n-1}) = ... = {actual_result}"
                 ],
                 1.0,
@@ -215,7 +214,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.INDUCTIVE,
                 [f"Factorial computation error: factorial({n}) = {actual_result} ≠ {claimed_result}"],
-                [f"The claim contradicts the inductive definition of factorial"],
+                ["The claim contradicts the inductive definition of factorial"],
                 0.0,
                 {"factorial_definition"},
                 f"Counter-example: factorial({n}) = {actual_result} ≠ {claimed_result}."
@@ -236,9 +235,9 @@ class MathematicalStructureAnalyzer:
         if actual_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.INDUCTIVE,
-                [f"Fibonacci definition: F(n) = F(n-1) + F(n-2)", f"Base cases: F(0)=0, F(1)=1"],
+                ["Fibonacci definition: F(n) = F(n-1) + F(n-2)", "Base cases: F(0)=0, F(1)=1"],
                 [
-                    f"By induction on the Fibonacci recurrence relation",
+                    "By induction on the Fibonacci recurrence relation",
                     f"fibonacci({n}) follows necessarily from the recurrence"
                 ],
                 0.95,  # Slightly less certain due to computational complexity
@@ -249,7 +248,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.INDUCTIVE,
                 [f"Fibonacci error: fibonacci({n}) = {actual_result} ≠ {claimed_result}"],
-                [f"The claim contradicts the Fibonacci recurrence relation"],
+                ["The claim contradicts the Fibonacci recurrence relation"],
                 0.0,
                 {"fibonacci_definition"},
                 f"Counter-example: fibonacci({n}) = {actual_result} ≠ {claimed_result}."
@@ -270,9 +269,9 @@ class MathematicalStructureAnalyzer:
         if actual_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
-                [f"GCD definition: gcd(a,b) is the largest positive integer that divides both a and b"],
+                ["GCD definition: gcd(a,b) is the largest positive integer that divides both a and b"],
                 [
-                    f"By the Euclidean algorithm",
+                    "By the Euclidean algorithm",
                     f"gcd({a}, {b}) = {actual_result}"
                 ],
                 1.0,  
@@ -283,7 +282,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
                 [f"GCD error: gcd({a}, {b}) = {actual_result} ≠ {claimed_result}"],
-                [f"The claim contradicts the Euclidean algorithm for GCD"],
+                ["The claim contradicts the Euclidean algorithm for GCD"],
                 0.0,
                 {"euclidean_algorithm"},
                 f"Counter-example: gcd({a}, {b}) = {actual_result} ≠ {claimed_result}."
@@ -299,9 +298,9 @@ class MathematicalStructureAnalyzer:
         if expected_result == claimed_result:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
-                [f"Summation formula: ∑(i=1 to n) i = n(n+1)/2"],
+                ["Summation formula: ∑(i=1 to n) i = n(n+1)/2"],
                 [
-                    f"By the closed-form summation formula",
+                    "By the closed-form summation formula",
                     f"sum(1 to {n}) = {n}×({n}+1)/2 = {expected_result}"
                 ],
                 1.0,
@@ -312,7 +311,7 @@ class MathematicalStructureAnalyzer:
             return NecessityEvidence(
                 NecessityType.DEDUCTIVE,
                 [f"Summation error: sum(1 to {n}) = {expected_result} ≠ {claimed_result}"],
-                [f"The claim contradicts the summation formula"],
+                ["The claim contradicts the summation formula"],
                 0.0,
                 {"summation_formula"},
                 f"Counter-example: ∑(i=1 to {n}) i = {expected_result} ≠ {claimed_result}."
@@ -432,7 +431,7 @@ class NecessityBasedProver:
         else:
             proof_output = f"Necessity-Based Prover: DISPROVEN by {evidence.necessity_type.value}\n"
             proof_output += f"Logic: {' → '.join(evidence.logical_chain)}\n"
-            error_message = f"Mathematical necessity analysis shows claim is false"
+            error_message = "Mathematical necessity analysis shows claim is false"
             counter_example = evidence.proof_sketch if "Counter-example" in evidence.proof_sketch else None
         
         return ProofResult(
@@ -443,7 +442,7 @@ class NecessityBasedProver:
             counter_example=counter_example,
             proof_output=proof_output,
             prover_name="necessity",
-            solver_status="proved" if proven else "refuted",
+            solver_status="derived_proved" if proven else "derived_refuted",
         )
     
     def _generate_coq_from_necessity(self, evidence: NecessityEvidence) -> str:
@@ -496,51 +495,107 @@ class NecessityProofIntegrator:
         """
         # Try necessity-based proof first
         necessity_result = self.necessity_prover.prove_by_necessity(claim)
-        
+
+        if necessity_result.proven and self.fallback_prover:
+            try:
+                verified_result = self._verify_with_fallback(claim, necessity_result)
+                if verified_result is not None:
+                    if (
+                        verified_result.proven
+                        or verified_result.is_definitive_disproof
+                    ):
+                        return verified_result
+                    logger.warning(
+                        "Fallback prover did not confirm necessity proof; "
+                        "keeping derived result"
+                    )
+            except Exception as e:
+                logger.warning(f"Fallback prover failed: {e}")
+
         # If necessity-based proof succeeded or definitively failed, return it
         if necessity_result.proven or necessity_result.counter_example:
             logger.info("Necessity-based proof provided definitive result")
             return necessity_result
         
         # If we have a fallback prover and necessity was inconclusive, try fallback
-        if self.fallback_prover and "No mathematical necessity pattern detected" in necessity_result.error_message:
+        if (
+            self.fallback_prover
+            and necessity_result.error_message
+            and "No mathematical necessity pattern detected" in necessity_result.error_message
+        ):
             logger.info("Falling back to secondary prover for non-necessity claims")
             try:
-                if hasattr(self.fallback_prover, 'prove_claim'):
-                    # HybridProver interface
-                    fallback_dict = self.fallback_prover.prove_claim(claim.claim_text)
-                    
-                    # Convert to ProofResult format
-                    from .types import ProofResult
-                    fallback_result = ProofResult(
-                        spec=FormalSpec(claim, "Fallback proof", "", {}),
-                        proven=fallback_dict.get('proven', False),
-                        proof_time_ms=fallback_dict.get('time_ms', 0) + necessity_result.proof_time_ms,
-                        error_message=fallback_dict.get('error', None),
-                        counter_example=fallback_dict.get('counter_example', {}),
-                        proof_output=f"Necessity + Fallback: {fallback_dict.get('prover', 'unknown')}",
-                        prover_name=fallback_dict.get('prover', 'hybrid'),
-                        solver_status="proved" if fallback_dict.get('proven') else "refuted",
-                    )
+                fallback_result = self._verify_with_fallback(claim, necessity_result)
+                if fallback_result is not None:
                     return fallback_result
-                    
-                elif hasattr(self.fallback_prover, 'prove_specification'):
-                    # CoqProver interface
-                    spec = FormalSpec(claim, "Fallback proof", "Theorem fallback: True. Proof. exact I. Qed.", {})
-                    fallback_result = self.fallback_prover.prove_specification(spec)
-                    fallback_result.proof_time_ms = fallback_result.proof_time_ms + necessity_result.proof_time_ms
-                    fallback_result.proof_output = f"Necessity + {fallback_result.proof_output}"
-                    if fallback_result.prover_name is None:
-                        fallback_result.prover_name = "coq"
-                    if fallback_result.solver_status is None:
-                        fallback_result.solver_status = "proved" if fallback_result.proven else "refuted"
-                    return fallback_result
-                    
             except Exception as e:
                 logger.warning(f"Fallback prover failed: {e}")
         
         # Return the necessity result (whether successful or not)
         return necessity_result
+
+    def _verify_with_fallback(
+        self, claim: Claim, necessity_result: ProofResult
+    ) -> Optional[ProofResult]:
+        """Try to turn a derived proof result into a concrete solver result."""
+        if not self.fallback_prover:
+            return None
+
+        if hasattr(self.fallback_prover, "prove_claim"):
+            fallback_dict = self.fallback_prover.prove_claim(claim.claim_text)
+            prover_name = fallback_dict.get("prover", "hybrid")
+            normalized_prover_name = prover_name.lower()
+            counter_example = fallback_dict.get("counter_example")
+            fallback_result = ProofResult(
+                spec=FormalSpec(claim, "Fallback proof", "", {}),
+                proven=fallback_dict.get("proven", False),
+                proof_time_ms=fallback_dict.get("time_ms", 0)
+                + necessity_result.proof_time_ms,
+                error_message=fallback_dict.get("error", None),
+                counter_example=counter_example,
+                proof_output=(
+                    f"Necessity + Fallback: {fallback_dict.get('prover', 'unknown')}"
+                ),
+                prover_name=prover_name,
+                solver_status=fallback_dict.get(
+                    "solver_status",
+                    "smt_proved"
+                    if normalized_prover_name == "z3"
+                    and fallback_dict.get("proven")
+                    else "compiled_unchecked"
+                    if normalized_prover_name == "coq"
+                    and fallback_dict.get("proven")
+                    else "smt_refuted"
+                    if normalized_prover_name == "z3" and counter_example
+                    else "refuted"
+                    if counter_example
+                    else "inconclusive",
+                ),
+                checker_name=fallback_dict.get("checker_name"),
+                assumptions_present=fallback_dict.get("assumptions_present", False),
+            )
+            return fallback_result
+
+        if hasattr(self.fallback_prover, "prove_specification"):
+            from .translator import ClaimTranslator
+
+            translator = ClaimTranslator()
+            spec = translator.translate(claim, "")
+            if not spec:
+                return None
+
+            fallback_result = self.fallback_prover.prove_specification(spec)
+            fallback_result.proof_time_ms = (
+                fallback_result.proof_time_ms + necessity_result.proof_time_ms
+            )
+            fallback_result.proof_output = "Necessity + " + (
+                fallback_result.proof_output or ""
+            )
+            if fallback_result.prover_name is None:
+                fallback_result.prover_name = "coq"
+            return fallback_result
+
+        return None
 
 
 def enhance_prover_with_necessity(existing_prover) -> NecessityProofIntegrator:
