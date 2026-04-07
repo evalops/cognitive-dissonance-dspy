@@ -1,8 +1,8 @@
 """Configuration management for Cognitive Dissonance experiments."""
 
+import logging
 import os
 from dataclasses import dataclass
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class ExperimentConfig:
     temperature: float = 0.5
     max_tokens: int = 512
 
-    # Experiment parameters  
+    # Experiment parameters
     alpha: float = 0.0  # Truth anchoring weight for belief reconciliation
     rounds: int = 6  # Number of training rounds
     use_cot: bool = False  # Use Chain of Thought
@@ -41,10 +41,18 @@ class ExperimentConfig:
             alpha=float(os.getenv("ALPHA", str(cls.alpha))),
             rounds=int(os.getenv("ROUNDS", str(cls.rounds))),
             use_cot=os.getenv("USE_COT", "false").lower() == "true",
-            dissonance_threshold=float(os.getenv("DISSONANCE_THRESHOLD", str(cls.dissonance_threshold))),
+            dissonance_threshold=float(
+                os.getenv(
+                    "DISSONANCE_THRESHOLD", str(cls.dissonance_threshold)
+                )
+            ),
             auto_mode=os.getenv("AUTO_MODE", cls.auto_mode),
-            enable_disk_cache=os.getenv("ENABLE_DISK_CACHE", "false").lower() == "true",
-            enable_memory_cache=os.getenv("ENABLE_MEMORY_CACHE", "false").lower() == "true",
+            enable_disk_cache=(
+                os.getenv("ENABLE_DISK_CACHE", "false").lower() == "true"
+            ),
+            enable_memory_cache=(
+                os.getenv("ENABLE_MEMORY_CACHE", "false").lower() == "true"
+            ),
         )
 
     def validate(self) -> None:
@@ -53,7 +61,10 @@ class ExperimentConfig:
             raise ValueError(f"Alpha must be between 0.0 and 1.0, got {self.alpha}")
 
         if not (0.0 <= self.dissonance_threshold <= 1.0):
-            raise ValueError(f"Dissonance threshold must be between 0.0 and 1.0, got {self.dissonance_threshold}")
+            raise ValueError(
+                "Dissonance threshold must be between 0.0 and 1.0, "
+                f"got {self.dissonance_threshold}"
+            )
 
         if self.rounds < 1:
             raise ValueError(f"Rounds must be >= 1, got {self.rounds}")

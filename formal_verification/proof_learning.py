@@ -1,25 +1,26 @@
-"""
-Foundational proof strategy learning system.
+"""Foundational proof strategy learning system.
 
 This module implements deep learning for proof strategies, moving beyond
 simple heuristics to understand proof complexity, success patterns, and
 optimal prover selection based on mathematical structure.
 """
 
+import hashlib
 import json
-import numpy as np
+import logging
 import re
 import time
-import hashlib
-from typing import Dict, List, Tuple, Optional, Any
-from dataclasses import dataclass, asdict
-from pathlib import Path
 from collections import defaultdict
-import logging
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from .types import Claim, FormalSpec, ProofResult, PropertyType
+import numpy as np
+
+from .types import Claim, ProofResult
 
 logger = logging.getLogger(__name__)
+DEFAULT_PROOF_LEARNING_DATA_FILE = Path(".proof_cache") / "proof_learning_data.json"
 
 
 @dataclass
@@ -219,8 +220,9 @@ class ProofStrategyLearner:
     4. Optimal proof tactics
     """
     
-    def __init__(self, data_file: str = "proof_learning_data.json"):
+    def __init__(self, data_file: str | Path = DEFAULT_PROOF_LEARNING_DATA_FILE):
         self.data_file = Path(data_file)
+        self.data_file.parent.mkdir(parents=True, exist_ok=True)
         self.feature_extractor = FeatureExtractor()
         self.proof_history: List[ProofAttempt] = []
         self.success_patterns: Dict[str, List[ProofAttempt]] = defaultdict(list)
@@ -232,9 +234,14 @@ class ProofStrategyLearner:
         # Pattern matching thresholds
         self.similarity_threshold = 0.7
         
-        logger.info(f"Initialized proof strategy learner with {len(self.proof_history)} historical attempts")
+        logger.info(
+            "Initialized proof strategy learner with %d historical attempts",
+            len(self.proof_history),
+        )
     
-    def record_proof_attempt(self, claim: Claim, prover: str, result: ProofResult, code: str = ""):
+    def record_proof_attempt(
+        self, claim: Claim, prover: str, result: ProofResult, code: str = ""
+    ):
         """Record a proof attempt for learning."""
         features = self.feature_extractor.extract_features(claim, code)
         
@@ -263,7 +270,12 @@ class ProofStrategyLearner:
         # Save updated data
         self._save_history()
         
-        logger.debug(f"Recorded proof attempt: {claim.claim_text[:50]}... -> {prover} -> {'SUCCESS' if result.proven else 'FAIL'}")
+        logger.debug(
+            "Recorded proof attempt: %s... -> %s -> %s",
+            claim.claim_text[:50],
+            prover,
+            "SUCCESS" if result.proven else "FAIL",
+        )
     
     def predict_optimal_strategy(self, claim: Claim, code: str = "") -> Dict[str, Any]:
         """Predict the optimal proving strategy for a claim."""
@@ -476,7 +488,7 @@ class ProofStrategyLearner:
             return
         
         try:
-            with open(self.data_file, 'r') as f:
+            with self.data_file.open(encoding="utf-8") as f:
                 data = json.load(f)
             
             for attempt_data in data.get('attempts', []):
@@ -524,7 +536,7 @@ class ProofStrategyLearner:
                 ]
             }
             
-            with open(self.data_file, 'w') as f:
+            with self.data_file.open("w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
         
         except Exception as e:
