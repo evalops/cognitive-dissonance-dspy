@@ -433,7 +433,7 @@ class Z3Prover:
         try:
             if hasattr(self.solver, 'proof'):
                 return str(self.solver.proof())
-        except:
+        except Exception:
             pass
         return None
 

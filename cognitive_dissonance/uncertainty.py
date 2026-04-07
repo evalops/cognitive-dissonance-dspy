@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 class UncertaintyQuantifier:
     """Advanced uncertainty quantification for belief and dissonance detection.
+
     Separates epistemic (model) uncertainty from aleatoric (data) uncertainty.
     """
 
@@ -66,9 +67,10 @@ class UncertaintyQuantifier:
         return uncertainty
 
     def _compute_epistemic_uncertainty(self,
-                                     prediction: dspy.Prediction,
-                                     context: dict | None = None) -> float:
+                                       prediction: dspy.Prediction,
+                                       context: dict | None = None) -> float:
         """Compute epistemic (model) uncertainty.
+
         This represents uncertainty about the model's knowledge.
         """
         # Factors that increase epistemic uncertainty
@@ -104,9 +106,10 @@ class UncertaintyQuantifier:
         return epistemic
 
     def _compute_aleatoric_uncertainty(self,
-                                     prediction: dspy.Prediction,
-                                     context: dict | None = None) -> float:
+                                       prediction: dspy.Prediction,
+                                       context: dict | None = None) -> float:
         """Compute aleatoric (data) uncertainty.
+
         This represents inherent uncertainty in the data/task.
         """
         factors = []
@@ -295,8 +298,7 @@ class UncertaintyQuantifier:
 
 
 class EnhancedConfidenceScorer:
-    """Enhanced confidence scoring system that integrates uncertainty quantification.
-    """
+    """Enhanced confidence scoring system that integrates uncertainty quantification."""
 
     def __init__(self, uncertainty_quantifier: UncertaintyQuantifier | None = None):
         """Initialize enhanced confidence scorer.

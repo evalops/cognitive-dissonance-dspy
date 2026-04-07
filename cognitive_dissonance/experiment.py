@@ -98,9 +98,9 @@ class ExperimentResults:
 
 def cognitive_dissonance_experiment(
     config: ExperimentConfig = None,
-    rounds: int = None,
-    use_cot: bool = None,
-    alpha_anchor: float = None,
+    rounds: int | None = None,
+    use_cot: bool | None = None,
+    alpha_anchor: float | None = None,
 ) -> ExperimentResults:
     """Run the Cognitive Dissonance experiment.
 
@@ -240,9 +240,9 @@ def cognitive_dissonance_experiment(
 def advanced_cognitive_dissonance_experiment(
     config: ExperimentConfig = None,
     optimization_strategy: str = "gepa+ensemble",
-    rounds: int = None,
-    use_cot: bool = None,
-    alpha_anchor: float = None,
+    rounds: int | None = None,
+    use_cot: bool | None = None,
+    alpha_anchor: float | None = None,
 ) -> ExperimentResults:
     """Run advanced cognitive dissonance experiment with enhanced optimization.
 

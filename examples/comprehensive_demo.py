@@ -96,7 +96,7 @@ def print_comprehensive_results(results: dict):
             try:
                 fact_num = int(claim.split("factorial")[1].split("=")[0].strip())
                 max_factorial = max(max_factorial, fact_num)
-            except:
+            except Exception:
                 pass
 
         print(f"{i:2d}. {status} | {agent:8s} | Confidence: {confidence:.0%} | Time: {proof_time:6.1f}ms")

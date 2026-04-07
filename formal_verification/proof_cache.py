@@ -76,7 +76,7 @@ class ProofCache:
         cache_file = self.cache_dir / f"{cache_key}.json"
         if cache_file.exists():
             try:
-                with open(cache_file, encoding="utf-8") as f:
+                with cache_file.open(encoding="utf-8") as f:
                     data = json.load(f)
 
                 schema_version = data.get("schema_version")
@@ -143,7 +143,7 @@ class ProofCache:
                 "cached_at": time.time()
             }
 
-            with open(cache_file, 'w', encoding="utf-8") as f:
+            with cache_file.open('w', encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
 
             logger.debug(f"Cached proof for {spec.claim.claim_text[:30]}...")

@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 class GEPAOptimizer:
     """GEPA (Generative Evolution of Prompts and Answers) optimizer.
+
     Uses LLM reflection on program trajectories to identify gaps and propose improvements.
     """
 
@@ -191,8 +192,7 @@ class GEPAOptimizer:
 
 
 class EnsembleOptimizer:
-    """Creates ensemble of optimized modules for improved performance.
-    """
+    """Creates ensemble of optimized modules for improved performance."""
 
     def __init__(self,
                  base_optimizers: list[Any],
@@ -250,8 +250,7 @@ class EnsembleOptimizer:
 
 
 class EnsembleModule(dspy.Module):
-    """Ensemble module that combines predictions from multiple optimized modules.
-    """
+    """Ensemble module that combines predictions from multiple optimized modules."""
 
     def __init__(self, modules: list[dspy.Module], scores: list[float], voting_strategy: str = "majority"):
         super().__init__()

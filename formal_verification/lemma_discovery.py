@@ -492,8 +492,7 @@ Qed.
 
 
 class AutomatedProofRepairer:
-    """Automated system that attempts to repair failed proofs by adding discovered lemmas.
-    """
+    """Automated system that attempts to repair failed proofs by adding discovered lemmas."""
 
     def __init__(self):
         self.lemma_engine = LemmaDiscoveryEngine()

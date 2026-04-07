@@ -1,9 +1,11 @@
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
-with open("README.md", encoding="utf-8") as fh:
+with Path("README.md").open(encoding="utf-8") as fh:
     long_description = fh.read()
 
-with open("requirements.txt", encoding="utf-8") as fh:
+with Path("requirements.txt").open(encoding="utf-8") as fh:
     requirements = [
         line.strip() for line in fh if line.strip() and not line.startswith("#")
     ]

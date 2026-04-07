@@ -42,6 +42,7 @@ class ConflictAnalysis:
 
 class HybridCognitiveDissonanceResolver:
     """Hybrid resolver that uses:
+
     - OpenAI SDK for structured claim extraction
     - Guardrails for validation
     - Coq prover for formal verification

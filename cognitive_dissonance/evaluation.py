@@ -176,7 +176,7 @@ def cross_validate(
         for example in train_data[:5]:  # Use first 5 for warmup
             try:
                 _ = module(text1=example.text1, text2=example.text2)
-            except:
+            except Exception:
                 pass
 
         # Evaluate on validation set

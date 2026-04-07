@@ -27,7 +27,7 @@ jobs:
         run: python -m pip install --upgrade pip && python -m pip install -e .[dev]
 
       - name: Lint
-        run: python -m ruff check --select F,B,W291,W292,W293,I001,UP006,UP045,UP035,D212,D202,RUF010,UP015 .
+        run: python -m ruff check --select F,B,W291,W292,W293,I001,UP006,UP045,UP035,D212,D202,RUF010,UP015,D205,D200,RUF013,PTH123,E722 .
 
       - name: Test
         run: python -m pytest -q

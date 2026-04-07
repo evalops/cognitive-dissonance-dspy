@@ -72,6 +72,7 @@ class SecurityProperty:
 
 class DeepProgramAnalyzer:
     """Advanced program analyzer that extracts complex software properties
+
     for formal verification.
     """
 
