@@ -133,9 +133,9 @@ This paper makes four contributions:
   \item It defines an exact-match auditing protocol and shows that it is
   operationally necessary because proof success is not a safe proxy for
   extraction fidelity.
-  \item It presents a hard paraphrase stress benchmark that exposes provider
-  lift, false negatives, instability, and silent-correction errors in the same
-  evaluation slice.
+  \item It releases a reusable hard paraphrase stress-test slice that exposes
+  provider lift, false negatives, instability, and silent-correction errors in
+  the same evaluation setting.
   \item It reports a typed evidence model that keeps machine-checked,
   solver-backed, refutational, and weaker derived outcomes distinct.
 \end{enumerate}
@@ -226,6 +226,10 @@ In our setting, however, the system is not simply trying to recover an
 equivalent formal statement. It is attempting to resolve a specific disputed
 proposition. If the extraction layer silently changes the proposition, the
 result is operationally wrong even if the new proposition is true and provable.
+For example, the stress case ``Subtracting five from twelve gives eight'' is
+false, but provider extraction can rewrite it as the true canonical statement
+\texttt{12 - 5 = 7}. A downstream proof of that rewritten statement is still a
+failure for the original dispute.
 
 \subsection{Evidence Typing}
 
@@ -291,6 +295,12 @@ phrases such as ``subtracting five from twelve,'' number words, and quantified
 forms such as ``there is an x greater than zero'' and ``any n is equal to
 itself.''
 
+The stress-test slice is intended to be reusable rather than merely
+illustrative. It includes both true and false claims, mixes arithmetic and
+logical categories, and isolates cases where looser semantic matching would
+mask operationally important errors. The artifact is released as
+\nolinkurl{research/benchmarks/extraction_paraphrase_stress_benchmark.json}.
+
 \subsection{Metrics and Repeated-Trial Probes}
 
 We report:
@@ -316,6 +326,24 @@ Two repeated-trial probes complement the benchmark runs:
   \item a 5-case hard-failure probe over 10 trials per case on selected stress
   failures
 \end{itemize}
+
+\subsection{Stress-Test Slice Design}
+
+The hard paraphrase slice was designed around three constraints:
+
+\begin{enumerate}
+  \item \textbf{Deterministic-rule avoidance:} cases were written to avoid the
+  repository's fast-path canonicalization templates.
+  \item \textbf{Outcome diversity:} the slice includes true claims, false
+  claims, unformalizable controls, and both arithmetic and logical forms.
+  \item \textbf{Dispute identity sensitivity:} several cases were chosen
+  specifically because proposition substitution would be operationally wrong
+  even if the substituted claim were itself true.
+\end{enumerate}
+
+This is why the slice contains examples such as number-word arithmetic,
+subtractive paraphrases, quantified paraphrases, and subjective controls in the
+same file rather than only easier arithmetic variants.
 
 \section{Results}
 
@@ -559,6 +587,30 @@ The manuscript is backed by repository-local artifacts:
 \begin{verbatim}
 tectonic --outdir reports reports/cognitive_dissonance_research_report.tex
 \end{verbatim}
+
+\appendix
+
+\section{Stress-Test Slice Summary}
+
+The hard paraphrase slice is stored in
+\nolinkurl{research/benchmarks/extraction_paraphrase_stress_benchmark.json}.
+It contains 19 total cases:
+
+\begin{itemize}
+  \item 4 arithmetic or multiplication paraphrases
+  \item 2 subtraction paraphrases
+  \item 2 factorial paraphrases
+  \item 2 Fibonacci paraphrases
+  \item 2 GCD paraphrases
+  \item 2 inequality paraphrases
+  \item 3 logical paraphrases involving implication, existence, or universality
+  \item 2 unformalizable controls
+\end{itemize}
+
+The slice is intended as a stress-test artifact for extraction fidelity rather
+than as a claim of broad benchmark coverage. Its value is that it concentrates
+exactly the kinds of cases for which proof success can conceal the wrong
+extracted proposition.
 
 \bibliographystyle{plainnat}
 \begin{thebibliography}{10}

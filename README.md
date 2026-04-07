@@ -96,6 +96,8 @@ This is the benchmark that carries the paper’s main empirical result:
 - that lift is incomplete
 - the same provider path can silently rewrite a false claim into a different
   true canonical claim
+- the benchmark file is meant to be reusable as a stress-test artifact, not
+  just an illustrative slice inside the paper
 
 ### Negative result: silent correction
 
@@ -109,6 +111,9 @@ Under provider-assisted extraction on the hard paraphrase benchmark:
 
 The 10-trial hard-failure probe shows that some failures are unstable and some
 are stably wrong. This is why exact-match auditing is central to the paper.
+One concrete example is the false claim ``Subtracting five from twelve gives
+eight,'' which can be rewritten into the true canonical statement `12 - 5 = 7`.
+That is a proof success on the wrong dispute.
 
 ## Positioning Against Prior Work
 
