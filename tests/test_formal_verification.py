@@ -306,6 +306,7 @@ class TestFormalVerificationConflictDetectorAuditGate:
 
     @patch.object(ClaimTranslator, "translate")
     def test_skips_translation_when_preservation_audit_fails(self, mock_translate):
+        """Translation should not run when the preservation audit already failed."""
         claim = Claim(
             agent_id="test",
             claim_text="12 - 5 = 7",

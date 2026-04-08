@@ -7,8 +7,8 @@ from typing import Any
 from .deep_analysis import PropertySpecificationGenerator
 from .lemma_discovery import AutomatedProofRepairer
 from .necessity_prover import enhance_prover_with_necessity
-from .prover import CoqProver
 from .proof_protocol import build_claim_ir
+from .prover import CoqProver
 from .translator import ClaimTranslator
 from .types import Claim, FormalSpec, ProofResult, ProofStatus
 
@@ -62,11 +62,15 @@ class ConflictDetector:
 
         ir1 = spec1.claim.claim_ir or build_claim_ir(spec1.claim.claim_text)
         ir2 = spec2.claim.claim_ir or build_claim_ir(spec2.claim.claim_text)
-        if ir1 and ir2 and ir1.kind == ir2.kind:
-            if ir1.kind.value in {"arithmetic", "multiplication", "subtraction"}:
-                same_left_side = ir1.operands[:2] == ir2.operands[:2]
-                if same_left_side and ir1.operands[2] != ir2.operands[2]:
-                    return True
+        if (
+            ir1
+            and ir2
+            and ir1.kind == ir2.kind
+            and ir1.kind.value in {"arithmetic", "multiplication", "subtraction"}
+        ):
+            same_left_side = ir1.operands[:2] == ir2.operands[:2]
+            if same_left_side and ir1.operands[2] != ir2.operands[2]:
+                return True
 
         # Memory safety conflicts
         if ("memory safe" in claim1 and "buffer overflow" in claim2) or (

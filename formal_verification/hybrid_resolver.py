@@ -8,10 +8,10 @@ import logging
 import time
 from dataclasses import dataclass
 
-from .proof_protocol import PreservationAuditor, build_claim_ir
 from .detector import FormalVerificationConflictDetector
 from .guardrails import ClaimGuardrails, GuardrailWithRetry
 from .openai_agents import OpenAIClaimExtractor
+from .proof_protocol import PreservationAuditor, build_claim_ir
 from .structured_models import ClaimCategory, FormalizableClaim, PreservationAudit
 from .types import Claim, ProofResult, PropertyType
 

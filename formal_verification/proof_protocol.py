@@ -544,6 +544,7 @@ class PreservationAuditor:
         canonical_text: str,
         category: ClaimCategory | str | None = None,
     ) -> PreservationAudit:
+        """Audit whether the proof target preserves the original surface claim."""
         surface_canonical_text, _ = canonicalize_surface_claim(surface_text)
         canonical_ir = build_claim_ir(canonical_text, category, parser="canonical")
 
