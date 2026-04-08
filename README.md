@@ -68,8 +68,13 @@ This protocol is implemented across:
 
 ## Headline Results
 
-Artifacts reported here were generated on 2026-04-07 from local runs of
-`research/run_study.py`.
+Artifacts reported here were regenerated from local runs of
+`research/run_study.py` on 2026-04-08 UTC (2026-04-07
+America/Los_Angeles).
+
+These repository artifacts reflect the current implementation, which now
+includes preservation-gated proving and broader deterministic canonicalization.
+They therefore differ in places from the earlier manuscript snapshot.
 
 ### Symbolic proof baseline
 
@@ -96,14 +101,17 @@ The 35-case main natural-language benchmark contains 27 formalizable cases and
 | --- | ---: |
 | Direct translator success on formalizable claims | 22.2% |
 | Exact canonical match | 100.0% |
-| End-to-end decisive coverage | 100.0% |
-| End-to-end decisive accuracy | 100.0% |
+| Preservation pass rate | 59.3% |
+| End-to-end decisive coverage | 59.3% |
+| End-to-end decisive accuracy | 59.3% |
 | Formalizable cases handled by deterministic canonicalization | 27 |
 | Formalizable cases requiring provider extraction | 0 |
 
-This benchmark remains useful as a calibration baseline. It does not carry the
-main extraction claim, because every formalizable case is solved before any
-provider call.
+This benchmark is now mostly a calibration baseline for the preservation gate.
+Every formalizable case is canonicalized correctly before any provider call,
+but only 59.3% of those cases currently pass preservation and land in a
+decisive proof status. On this suite the dominant remaining bottleneck is no
+longer extraction accuracy.
 
 ### Hard paraphrase benchmark
 
@@ -112,38 +120,41 @@ designed to evade deterministic rules and 2 unformalizable controls.
 
 | Metric | Deterministic Only | Provider Enabled |
 | --- | ---: | ---: |
-| Exact canonical match | 0.0% | 70.6% |
-| Translation success after extraction | 0.0% | 76.5% |
-| End-to-end decisive coverage | 0.0% | 76.5% |
-| End-to-end decisive accuracy | 0.0% | 70.6% |
-| Machine-checked formalizable cases | 0 | 3 |
+| Exact canonical match | 94.1% | 100.0% |
+| Preservation pass rate | 100.0% | 94.1% |
+| Translation success after extraction | 94.1% | 100.0% |
+| End-to-end decisive coverage | 94.1% | 94.1% |
+| End-to-end decisive accuracy | 94.1% | 94.1% |
+| Machine-checked formalizable cases | 5 | 5 |
 
 This is the benchmark that carries the paper’s main empirical result:
 
-- provider-assisted extraction adds real lift on hard paraphrases
-- that lift is incomplete
-- the same provider path can silently rewrite a false claim into a different
-  true canonical claim
+- the current deterministic canonicalizer now covers almost the entire stress
+  suite on its own
+- provider assistance removes the remaining extraction false negative and lifts
+  exact canonical match to 100.0%
+- the remaining missed decisive case is a conservative preservation block on an
+  exact-match factorial paraphrase, not a semantic-drift proof success
 - preservation auditing is therefore part of the resolution contract, not just
   a reporting detail
 - the benchmark file is meant to be reusable as a stress-test artifact, not
   just an illustrative slice inside the paper
 
-### Negative result: silent correction
+### Residual failure: conservative preservation block
 
 Under provider-assisted extraction on the hard paraphrase benchmark:
 
 | Failure Mode | Count |
 | --- | ---: |
-| Formalizable false negatives | 4 |
-| Semantic-drift cases | 1 |
-| Decisive errors caused by semantic drift | 1 |
+| Formalizable false negatives | 0 |
+| Semantic-drift cases | 0 |
+| Preservation-blocked exact-match cases | 1 |
+| Decisive errors caused by semantic drift | 0 |
 
-The 10-trial hard-failure probe shows that some failures are unstable and some
-are stably wrong. This is why exact-match auditing is central to the paper.
-One concrete example is the false claim ``Subtracting five from twelve gives
-eight,'' which can be rewritten into the true canonical statement `12 - 5 = 7`.
-That is a proof success on the wrong dispute.
+The 10-trial hard-failure probe is now stable under the current implementation.
+On the present benchmark slice, preservation gating eliminates observed silent
+correction and replaces it with one conservative abstention on a factorial
+paraphrase whose surface form is not yet audited as safely preserved.
 
 ## Positioning Against Prior Work
 
