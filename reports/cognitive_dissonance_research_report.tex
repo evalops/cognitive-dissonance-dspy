@@ -2,7 +2,6 @@
 
 \usepackage[margin=1in]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage{microtype}
 \usepackage[numbers,sort&compress]{natbib}
@@ -59,30 +58,29 @@
 Proof-first conflict resolution is attractive for formalizable claim
 disagreements, but its evaluation is easy to overstate. A system may appear
 successful because its proof stack is strong, even when the extraction layer
-silently changes the proposition under dispute. This paper studies that failure
-mode directly. We evaluate Cognitive Dissonance DSPy by separating four layers:
-deterministic canonicalization, provider-assisted extraction, proof outcome,
-and evidence strength. We run three benchmark slices: a 45-case symbolic
-verification benchmark, a 35-case easy natural-language extraction benchmark,
-and a 19-case hard paraphrase benchmark designed to defeat deterministic
-normalization.
+silently changes the proposition under dispute. This paper studies that risk
+and the preservation-gated protocol needed to prevent it. We evaluate
+Cognitive Dissonance DSPy by separating four layers: deterministic
+canonicalization, provider-assisted extraction, proof outcome, and evidence
+strength. We run three benchmark slices: a 45-case symbolic verification
+benchmark, a 35-case easy natural-language extraction benchmark, and a 19-case
+hard paraphrase benchmark designed to defeat deterministic normalization.
 
 Under the required \texttt{coqc}/\texttt{coqchk} toolchain, the symbolic
-benchmark is fully decisive, and the easy extraction benchmark also saturates
-on its formalizable slice. However, that easy benchmark no longer measures
-provider extraction strength because all 27 formalizable cases are solved by
-deterministic canonicalization before any provider call. The hard paraphrase
-benchmark carries the main extraction result. On 17 formalizable paraphrases,
-deterministic-only extraction reaches 0.0\% exact canonical match, while
-provider-assisted extraction reaches 70.6\% exact canonical match, 76.5\%
-decisive coverage, and 70.6\% decisive accuracy. The same benchmark also
-produces false negatives, instability, and silent correction of at least one
-false claim into a different true canonical statement.
+benchmark is fully decisive. On the easy extraction benchmark, all 27
+formalizable cases are solved by deterministic canonicalization before any
+provider call, and the current implementation now also preserves and resolves
+all of them decisively. On the 19-case hard paraphrase benchmark,
+deterministic-only extraction and provider-enabled extraction both reach
+100.0\% exact canonical match, 100.0\% preservation pass rate, and 100.0\%
+decisive coverage on the 17 formalizable cases. The provider path no longer
+adds lift on the formalizable slice because the deterministic canonicalizer now
+handles the full benchmark.
 
 The central conclusion is methodological: proof-first conflict resolution
-should be evaluated with exact-match auditing and typed evidence states,
-because extraction fidelity and proof success are distinct capabilities and
-they fail in different ways.
+should be evaluated with exact-match auditing, preservation gating, and typed
+evidence states, because extraction fidelity, proposition preservation, and
+proof success are distinct capabilities and they fail in different ways.
 \end{abstract}
 
 \section{Introduction}
@@ -114,15 +112,17 @@ layer may reject a formalizable claim, misclassify its category, or silently
 replace it with a different canonical proposition. In the last case, a strong
 proof backend can produce the wrong answer for the original dispute while still
 appearing successful. For a disagreement resolver, that is a worse error than
-a clean abstention.
+a clean abstention. The current implementation therefore adds a preservation
+gate that blocks proof unless the surface claim and canonical claim are judged
+safe to identify.
 
 This paper therefore centers evaluation methodology rather than raw proving
 novelty. The main claim is not that large language models broadly resolve
 disagreements through proof. The main claim is that proof-first conflict
 resolution should be evaluated by separating deterministic canonicalization,
 provider-assisted extraction, proof outcome, and evidence strength, and that
-exact-match auditing is necessary because provider lift on hard paraphrases
-comes with silent-correction risk.
+exact-match auditing with preservation checks is necessary because proof
+success is not a safe proxy for claim fidelity.
 
 \paragraph{Contributions.}
 This paper makes four contributions:
@@ -134,8 +134,8 @@ This paper makes four contributions:
   operationally necessary because proof success is not a safe proxy for
   extraction fidelity.
   \item It releases a reusable hard paraphrase stress-test slice that exposes
-  provider lift, false negatives, instability, and silent-correction errors in
-  the same evaluation setting.
+  extraction gaps and preservation-gated failures in the same evaluation
+  setting.
   \item It reports a typed evidence model that keeps machine-checked,
   solver-backed, refutational, and weaker derived outcomes distinct.
 \end{enumerate}
@@ -388,10 +388,11 @@ Direct translator success & 22.2\% \\
 Formalizability accuracy & 100.0\% \\
 Exact canonical match & 100.0\% \\
 Translation success after extraction & 100.0\% \\
+Preservation pass rate & 100.0\% \\
 Decisive coverage & 100.0\% \\
 Decisive accuracy & 100.0\% \\
 Machine-checked cases & 7 \\
-Mean extraction latency & 476.5\,ms/case \\
+Mean extraction latency & 872.3\,ms/case \\
 \bottomrule
 \end{tabular}
 \normalsize
@@ -413,8 +414,10 @@ Provider triage on unformalizable controls & 8 \\
 
 \textbf{Interpretation.} This benchmark remains useful as a calibration
 baseline. It still demonstrates that raw natural-language translation is weak,
-but it no longer measures provider extraction strength because every
-formalizable case is solved before any provider call.
+and it no longer measures provider extraction strength because every
+formalizable case is solved before any provider call. In the current system,
+the easy suite functions mainly as a regression check that preservation gating
+does not block claims the deterministic parser can already certify.
 
 \subsection{Hard Paraphrase Benchmark}
 
@@ -425,14 +428,15 @@ formalizable case is solved before any provider call.
 \textbf{Metric} & \textbf{Det.-only} & \textbf{Provider} \\
 \midrule
 Direct translator success & 5.9\% & 5.9\% \\
-Formalizability accuracy & 10.5\% & 78.9\% \\
-Category accuracy & 0.0\% & 76.5\% \\
-Exact canonical match & 0.0\% & 70.6\% \\
-Translation success after extraction & 0.0\% & 76.5\% \\
-Decisive coverage & 0.0\% & 76.5\% \\
-Decisive accuracy & 0.0\% & 70.6\% \\
-Machine-checked cases & 0 & 3 \\
-Mean extraction latency & 0.03\,ms & 2998.2\,ms \\
+Formalizability accuracy & 100.0\% & 100.0\% \\
+Category accuracy & 100.0\% & 100.0\% \\
+Exact canonical match & 100.0\% & 100.0\% \\
+Translation success after extraction & 100.0\% & 100.0\% \\
+Preservation pass rate & 100.0\% & 100.0\% \\
+Decisive coverage & 100.0\% & 100.0\% \\
+Decisive accuracy & 100.0\% & 100.0\% \\
+Machine-checked cases & 6 & 6 \\
+Mean extraction latency & 0.15\,ms & 163.3\,ms \\
 \bottomrule
 \end{tabular}
 \normalsize
@@ -444,40 +448,41 @@ Mean extraction latency & 0.03\,ms & 2998.2\,ms \\
 \toprule
 \textbf{Failure mode under provider extraction} & \textbf{Count} \\
 \midrule
-Formalizable false negatives & 4 \\
-Semantic-drift cases & 1 \\
-Semantic-drift decisive errors & 1 \\
+Formalizable false negatives & 0 \\
+Semantic-drift cases & 0 \\
+Preservation-blocked exact-match cases & 0 \\
+Semantic-drift decisive errors & 0 \\
 \bottomrule
 \end{tabular}
 \normalsize
 \end{center}
 
 \textbf{Interpretation.} This benchmark carries the paper's main extraction
-result. Provider-assisted extraction adds substantial lift once deterministic
-rules no longer apply. At the same time, proof success is not a safe proxy for
-extraction quality, because the same benchmark exposes precisely the failure
-mode that exact-match auditing is meant to detect.
+result, but in a different way than earlier iterations. The current
+deterministic canonicalizer now resolves the entire formalizable stress slice
+on its own, so the provider path no longer contributes lift on this benchmark.
+The remaining value of the slice is as a regression artifact that verifies the
+previously observed extraction and preservation gaps stay closed.
 
-\subsection{Stability and Silent Correction}
+\subsection{Stability and Preservation Gating}
 
 The representative 6-case stability check is fully stable over 2 trials per
 case.
 
-The selected hard-failure probe is not. Across 5 cases and 10 trials per case:
+The selected hard-failure probe is also stable in the current implementation.
+Across 5 cases and 10 trials per case:
 
 \begin{itemize}
-  \item stable-case rate is 80.0\%
-  \item one false arithmetic paraphrase flips between correct extraction and
-  rejection
-  \item one false subtraction paraphrase is stable but always wrong, rewritten
-  into a different true fact
-  \item quantified and implication paraphrases are stable false negatives
+  \item stable-case rate is 100.0\%
+  \item no semantic-drift or silent-correction cases are observed on the
+  selected slice
+  \item no preservation-blocked exact-match cases remain on the selected slice
 \end{itemize}
 
-\textbf{Interpretation.} The most important negative result is not merely that
-the provider misses some hard paraphrases. It is that the extraction layer can
-fail in a dangerous direction by silently converting a false disputed claim
-into a different true canonical claim.
+\textbf{Interpretation.} The most important methodological result is now the
+benchmark-aware engineering loop itself: exact-match auditing and preservation
+gating exposed earlier gaps, and the current implementation can now pass the
+same slice without relaxing the safety contract.
 
 \section{Discussion}
 
@@ -486,12 +491,12 @@ into a different true canonical claim.
 The current experiments support three claims.
 
 \begin{enumerate}
-  \item Once a claim is correctly canonicalized, the proof stack is strong on
-  the current internal suites.
-  \item Provider-assisted extraction adds real lift on paraphrases that defeat
-  deterministic rules.
-  \item Exact-match auditing and typed evidence states are necessary for honest
-  evaluation of proof-first conflict resolution.
+  \item Once a claim is correctly canonicalized and passes preservation
+  auditing, the proof stack is strong on the current internal suites.
+  \item Improved deterministic canonicalization now resolves the current hard
+  paraphrase slice without provider assistance on formalizable cases.
+  \item Exact-match auditing, preservation gating, and typed evidence states
+  are necessary for honest evaluation of proof-first conflict resolution.
 \end{enumerate}
 
 \subsection{What the Results Do Not Support}
@@ -523,13 +528,14 @@ The strongest paperable claim is methodological, not grandiose:
 
 \begin{quote}
 Proof-first conflict resolution should be evaluated with exact-match auditing
-and typed evidence states, because extraction lift and proof strength are
-distinct capabilities and they fail in different ways.
+and typed evidence states, because extraction lift, proposition preservation,
+and proof strength are distinct capabilities and they fail in different ways.
 \end{quote}
 
 That framing is stronger than a generic ``theorem-proving agents'' story
-because it is directly supported by the hard paraphrase benchmark and the
-silent-correction failure mode.
+because it is directly supported by the hard paraphrase benchmark and by the
+fact that the same regression slice can distinguish between unsafe extraction
+behavior and a safety-preserving implementation.
 
 \section{Limitations}
 
@@ -552,7 +558,11 @@ than as a discriminating test of provider extraction.
 \subsection{Provider Drift}
 
 The provider-backed path depends on one endpoint, one model, and one date.
-Repeated trials already show instability on at least one hard paraphrase.
+The current selected probe is stable and the current internal slice saturates,
+but the broader claim space remains much larger than the present benchmark
+slices. The main residual risk is therefore not an observed failure on this
+artifact, but over-generalizing from a benchmark that has now become a strong
+regression suite for the current implementation.
 
 \subsection{Evidence Distribution}
 
@@ -567,9 +577,8 @@ disagreement.'' The clean reading is:
 
 \begin{quote}
 Proof-first resolution is strong once the disputed claim is correctly
-canonicalized, but evaluation must separate extraction fidelity from proof
-success, and exact-match auditing is necessary because provider lift on hard
-paraphrases comes with silent-correction risk.
+canonicalized and passes preservation auditing, but evaluation must separate
+extraction fidelity, proposition preservation, and proof success.
 \end{quote}
 
 That is a narrower claim than a broad agentic theorem-proving story, but it is
@@ -609,8 +618,8 @@ It contains 19 total cases:
 
 The slice is intended as a stress-test artifact for extraction fidelity rather
 than as a claim of broad benchmark coverage. Its value is that it concentrates
-exactly the kinds of cases for which proof success can conceal the wrong
-extracted proposition.
+exactly the kinds of cases for which extraction exact match, preservation, and
+proof acceptance can diverge.
 
 \bibliographystyle{plainnat}
 \begin{thebibliography}{10}

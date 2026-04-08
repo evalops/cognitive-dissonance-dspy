@@ -101,17 +101,15 @@ The 35-case main natural-language benchmark contains 27 formalizable cases and
 | --- | ---: |
 | Direct translator success on formalizable claims | 22.2% |
 | Exact canonical match | 100.0% |
-| Preservation pass rate | 59.3% |
-| End-to-end decisive coverage | 59.3% |
-| End-to-end decisive accuracy | 59.3% |
+| Preservation pass rate | 100.0% |
+| End-to-end decisive coverage | 100.0% |
+| End-to-end decisive accuracy | 100.0% |
 | Formalizable cases handled by deterministic canonicalization | 27 |
 | Formalizable cases requiring provider extraction | 0 |
 
-This benchmark is now mostly a calibration baseline for the preservation gate.
-Every formalizable case is canonicalized correctly before any provider call,
-but only 59.3% of those cases currently pass preservation and land in a
-decisive proof status. On this suite the dominant remaining bottleneck is no
-longer extraction accuracy.
+This benchmark is now a calibration and regression baseline. Every
+formalizable case is canonicalized, preserved, translated, and resolved
+without any provider extraction on the formalizable slice.
 
 ### Hard paraphrase benchmark
 
@@ -120,27 +118,28 @@ designed to evade deterministic rules and 2 unformalizable controls.
 
 | Metric | Deterministic Only | Provider Enabled |
 | --- | ---: | ---: |
-| Exact canonical match | 94.1% | 100.0% |
-| Preservation pass rate | 100.0% | 94.1% |
-| Translation success after extraction | 94.1% | 100.0% |
-| End-to-end decisive coverage | 94.1% | 94.1% |
-| End-to-end decisive accuracy | 94.1% | 94.1% |
-| Machine-checked formalizable cases | 5 | 5 |
+| Exact canonical match | 100.0% | 100.0% |
+| Preservation pass rate | 100.0% | 100.0% |
+| Translation success after extraction | 100.0% | 100.0% |
+| End-to-end decisive coverage | 100.0% | 100.0% |
+| End-to-end decisive accuracy | 100.0% | 100.0% |
+| Machine-checked formalizable cases | 6 | 6 |
 
 This is the benchmark that carries the paper’s main empirical result:
 
-- the current deterministic canonicalizer now covers almost the entire stress
-  suite on its own
-- provider assistance removes the remaining extraction false negative and lifts
-  exact canonical match to 100.0%
-- the remaining missed decisive case is a conservative preservation block on an
-  exact-match factorial paraphrase, not a semantic-drift proof success
+- the current deterministic canonicalizer now covers the entire formalizable
+  stress suite
+- the provider path no longer adds formalizable-slice lift on this benchmark
+  because all 17 formalizable cases are resolved before any provider call
+- the benchmark remains useful as a regression artifact because it previously
+  exposed preservation-sensitive failures and now verifies that those gaps stay
+  closed
 - preservation auditing is therefore part of the resolution contract, not just
   a reporting detail
 - the benchmark file is meant to be reusable as a stress-test artifact, not
   just an illustrative slice inside the paper
 
-### Residual failure: conservative preservation block
+### Current Internal Failure Count
 
 Under provider-assisted extraction on the hard paraphrase benchmark:
 
@@ -148,13 +147,14 @@ Under provider-assisted extraction on the hard paraphrase benchmark:
 | --- | ---: |
 | Formalizable false negatives | 0 |
 | Semantic-drift cases | 0 |
-| Preservation-blocked exact-match cases | 1 |
+| Preservation-blocked exact-match cases | 0 |
 | Decisive errors caused by semantic drift | 0 |
 
 The 10-trial hard-failure probe is now stable under the current implementation.
-On the present benchmark slice, preservation gating eliminates observed silent
-correction and replaces it with one conservative abstention on a factorial
-paraphrase whose surface form is not yet audited as safely preserved.
+On the present internal slice, no semantic-drift or preservation-blocked cases
+remain. The stronger claim is therefore not that the current repository state
+still exhibits those failures, but that the auditing protocol and stress slice
+were necessary to find and close them during iteration.
 
 ## Positioning Against Prior Work
 

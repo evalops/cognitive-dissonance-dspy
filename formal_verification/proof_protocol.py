@@ -80,12 +80,30 @@ def _normalize_number_token(token: str) -> str | None:
         return None
     if len(parts) == 1 and parts[0] in ORDINAL_WORDS:
         return str(ORDINAL_WORDS[parts[0]])
-    if parts[0] in TENS_WORDS:
-        value = TENS_WORDS[parts[0]]
-        if len(parts) == 1:
-            return str(value)
-        if len(parts) == 2 and parts[1] in NUMBER_WORDS and NUMBER_WORDS[parts[1]] < 10:
-            return str(value + NUMBER_WORDS[parts[1]])
+
+    total = 0
+    current = 0
+    saw_number_word = False
+    for part in parts:
+        if part in NUMBER_WORDS:
+            current += NUMBER_WORDS[part]
+            saw_number_word = True
+            continue
+        if part in TENS_WORDS:
+            current += TENS_WORDS[part]
+            saw_number_word = True
+            continue
+        if part == "hundred":
+            if current == 0:
+                current = 1
+            current *= 100
+            saw_number_word = True
+            continue
+        return None
+
+    if saw_number_word:
+        total += current
+        return str(total)
     return None
 
 
@@ -96,6 +114,44 @@ def _normalize_symbol_token(token: str) -> str | None:
         return number
     if re.fullmatch(r"[a-zA-Z_]\w*", normalized):
         return normalized
+    return None
+
+
+def _canonicalize_term(text: str) -> str | None:
+    normalized = _normalize_text(text)
+
+    direct = _normalize_symbol_token(normalized)
+    if direct is not None:
+        return direct
+
+    symbolic_binary = re.fullmatch(
+        r"([a-zA-Z_]\w*|\d+)\s*([+\-*])\s*([a-zA-Z_]\w*|\d+)",
+        normalized,
+    )
+    if symbolic_binary:
+        left = _normalize_symbol_token(symbolic_binary.group(1))
+        operator = symbolic_binary.group(2)
+        right = _normalize_symbol_token(symbolic_binary.group(3))
+        if left and right:
+            return f"{left} {operator} {right}"
+
+    binary_patterns = [
+        (rf"({TOKEN_PATTERN})\s+plus\s+({TOKEN_PATTERN})", "+"),
+        (rf"({TOKEN_PATTERN})\s+minus\s+({TOKEN_PATTERN})", "-"),
+        (rf"({TOKEN_PATTERN})\s+(?:times|multiplied by)\s+({TOKEN_PATTERN})", "*"),
+        (rf"the\s+sum\s+of\s+({TOKEN_PATTERN})\s+and\s+({TOKEN_PATTERN})", "+"),
+        (rf"the\s+product\s+of\s+({TOKEN_PATTERN})\s+and\s+({TOKEN_PATTERN})", "*"),
+    ]
+
+    for pattern, operator in binary_patterns:
+        match = re.fullmatch(pattern, normalized)
+        if not match:
+            continue
+        left = _normalize_symbol_token(match.group(1))
+        right = _normalize_symbol_token(match.group(2))
+        if left and right:
+            return f"{left} {operator} {right}"
+
     return None
 
 
@@ -112,9 +168,15 @@ def _canonicalize_predicate(text: str) -> str | None:
         normalized,
     )
     if direct:
-        return (
-            f"{direct.group(1)} {direct.group(2)} {direct.group(3)}"
-        )
+        return f"{direct.group(1)} {direct.group(2)} {direct.group(3)}"
+
+    symbolic_term_comparison = re.fullmatch(r"(.+?)\s*(<=|>=|<|>|=)\s*(.+)", normalized)
+    if symbolic_term_comparison:
+        left = _canonicalize_term(symbolic_term_comparison.group(1))
+        operator = symbolic_term_comparison.group(2)
+        right = _canonicalize_term(symbolic_term_comparison.group(3))
+        if left and right:
+            return f"{left} {operator} {right}"
 
     patterns = [
         (
@@ -146,8 +208,8 @@ def _canonicalize_predicate(text: str) -> str | None:
         match = re.fullmatch(pattern, normalized)
         if not match:
             continue
-        left = _normalize_symbol_token(match.group(1))
-        right = _normalize_symbol_token(match.group(2))
+        left = _canonicalize_term(match.group(1))
+        right = _canonicalize_term(match.group(2))
         if left and right:
             return f"{left} {operator} {right}"
 
@@ -244,6 +306,16 @@ def canonicalize_surface_claim(text: str) -> tuple[str | None, ClaimCategory | N
         if left and right:
             return f"factorial {left} = {right}", ClaimCategory.FACTORIAL
 
+    factorial_of_match = re.fullmatch(
+        rf"(?:the\s+)?factorial\s+of\s+({TOKEN_PATTERN})\s+(?:equals|is)\s+({TOKEN_PATTERN})",
+        normalized,
+    )
+    if factorial_of_match:
+        left = _normalize_symbol_token(factorial_of_match.group(1))
+        right = _normalize_symbol_token(factorial_of_match.group(2))
+        if left and right:
+            return f"factorial {left} = {right}", ClaimCategory.FACTORIAL
+
     fibonacci_match = re.fullmatch(
         rf"the\s+({TOKEN_PATTERN})\s+fibonacci\s+number\s+is\s+({TOKEN_PATTERN})",
         normalized,
@@ -254,8 +326,18 @@ def canonicalize_surface_claim(text: str) -> tuple[str | None, ClaimCategory | N
         if n and result:
             return f"fibonacci {n} = {result}", ClaimCategory.FIBONACCI
 
+    fibonacci_of_match = re.fullmatch(
+        rf"(?:the\s+)?fibonacci\s+of\s+({TOKEN_PATTERN})\s+(?:equals|is)\s+({TOKEN_PATTERN})",
+        normalized,
+    )
+    if fibonacci_of_match:
+        n = _normalize_symbol_token(fibonacci_of_match.group(1))
+        result = _normalize_symbol_token(fibonacci_of_match.group(2))
+        if n and result:
+            return f"fibonacci {n} = {result}", ClaimCategory.FIBONACCI
+
     gcd_match = re.fullmatch(
-        rf"the\s+greatest\s+common\s+divisor\s+of\s+({TOKEN_PATTERN})\s+and\s+({TOKEN_PATTERN})\s+is\s+({TOKEN_PATTERN})",
+        rf"(?:the\s+)?(?:greatest\s+common\s+divisor|gcd)\s+of\s+({TOKEN_PATTERN})\s+and\s+({TOKEN_PATTERN})\s+(?:equals|is)\s+({TOKEN_PATTERN})",
         normalized,
     )
     if gcd_match:
@@ -279,7 +361,10 @@ def canonicalize_surface_claim(text: str) -> tuple[str | None, ClaimCategory | N
                 ClaimCategory.LOGIC_IMPLICATION,
             )
 
-    forall_direct = re.fullmatch(r"forall\s+([a-zA-Z_]\w*),\s+(.+)", normalized)
+    forall_direct = re.fullmatch(
+        r"(?:forall|for all)\s+([a-zA-Z_]\w*),?\s+(.+)",
+        normalized,
+    )
     if forall_direct:
         variable = forall_direct.group(1)
         property_text = _canonicalize_predicate(forall_direct.group(2))
@@ -287,7 +372,7 @@ def canonicalize_surface_claim(text: str) -> tuple[str | None, ClaimCategory | N
             return f"forall {variable}, {property_text}", ClaimCategory.LOGIC_FORALL
 
     exists_direct = re.fullmatch(
-        r"exists\s+([a-zA-Z_]\w*)\s+such\s+that\s+(.+)",
+        r"(?:exists|there exists)\s+([a-zA-Z_]\w*)\s+such\s+that\s+(.+)",
         normalized,
     )
     if exists_direct:
