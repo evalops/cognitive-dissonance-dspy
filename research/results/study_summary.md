@@ -1,7 +1,7 @@
 # Research Study Summary
 
-- Source revision: `08d7d4e`
-- Generated: `2026-04-08T04:57:07Z`
+- Source revision: `35749fa`
+- Generated: `2026-04-08T05:21:00Z`
 
 ## Questions
 
@@ -24,21 +24,21 @@
 - Extractor formalizability accuracy: `100.0%`
 - Extractor exact canonical match on formalizable claims: `100.0%`
 - Translation success after extraction on formalizable claims: `100.0%`
-- End-to-end decisive proof coverage after extraction: `59.3%`
-- End-to-end decisive accuracy after extraction: `59.3%`
-- Machine-checked formalizable cases after extraction: `1`
+- End-to-end decisive proof coverage after extraction: `100.0%`
+- End-to-end decisive accuracy after extraction: `100.0%`
+- Machine-checked formalizable cases after extraction: `7`
 - Formalizable cases handled by deterministic fast-path normalization: `27`
 - Formalizable cases requiring provider extraction: `0`
 - Formalizable cases corrected back to the literal claim after provider output: `0`
-- Mean extraction latency across all cases: `334.9 ms`
+- Mean extraction latency across all cases: `387.2 ms`
 
 ## Paraphrase Stress Benchmark
 
 - Cases: `19`
-- Deterministic-only exact canonical match on formalizable claims: `94.1%`
+- Deterministic-only exact canonical match on formalizable claims: `100.0%`
 - Provider exact canonical match on formalizable claims: `100.0%`
-- Provider end-to-end decisive accuracy on formalizable claims: `94.1%`
-- Provider end-to-end decisive coverage on formalizable claims: `94.1%`
+- Provider end-to-end decisive accuracy on formalizable claims: `100.0%`
+- Provider end-to-end decisive coverage on formalizable claims: `100.0%`
 - Provider formalizable false negatives: `0`
 - Provider semantic-drift cases: `0`
 - Provider semantic-drift decisive errors: `0`
@@ -55,5 +55,5 @@
 
 - The symbolic benchmark quantifies what the current formal verification stack can already resolve decisively.
 - The extraction benchmark isolates whether structured extraction and canonicalization actually expand proof-ready coverage.
-- Any gap between extraction success and decisive proof coverage indicates that translation/proof support, not extraction alone, is the dominant remaining bottleneck.
-- Provider-backed extraction adds real lift on the harder paraphrase slice, but it does not saturate that benchmark.
+- On the current internal benchmark, extraction and decisive verification both saturate; the main remaining limitation is benchmark breadth rather than measured pipeline accuracy.
+- Most formalizable benchmark cases now resolve through deterministic canonicalization before any provider call, so the main provider contribution on this suite is unformalizable triage rather than core normalization.
