@@ -39,9 +39,37 @@ extraction layer silently rewrites the original claim.
 This should be read as a methods paper with a narrow empirical stress test, not
 as a broad systems paper.
 
+## Implemented Protocol
+
+The library now treats proof among agents as a preservation problem before it
+is a proving problem.
+
+Each formalizable claim can carry four linked artifacts:
+
+1. `surface_text`: the original statement made by an agent
+2. `claim_text`: the canonical text selected for proving
+3. `claim_ir`: a persistent structured representation of that canonical claim
+4. `preservation_audit`: an audit record describing whether the canonical claim
+   exactly preserves, is equivalent to, or drifts from the original statement
+
+The proof stack only advances when preservation passes. If deterministic
+auditing recovers a different meaning from the surface form, the system blocks
+proof instead of claiming a successful resolution on the wrong dispute.
+
+This protocol is implemented across:
+
+- `formal_verification/proof_protocol.py`
+- `formal_verification/openai_agents.py`
+- `formal_verification/guardrails.py`
+- `formal_verification/detector.py`
+- `formal_verification/hybrid_resolver.py`
+- `cognitive_dissonance/verifier.py`
+- `research/run_study.py`
+
 ## Headline Results
 
-Artifacts reported here were generated on 2026-04-07 from `56d718c-dirty`.
+Artifacts reported here were generated on 2026-04-07 from local runs of
+`research/run_study.py`.
 
 ### Symbolic proof baseline
 
@@ -96,6 +124,8 @@ This is the benchmark that carries the paper’s main empirical result:
 - that lift is incomplete
 - the same provider path can silently rewrite a false claim into a different
   true canonical claim
+- preservation auditing is therefore part of the resolution contract, not just
+  a reporting detail
 - the benchmark file is meant to be reusable as a stress-test artifact, not
   just an illustrative slice inside the paper
 
@@ -135,6 +165,8 @@ focuses on evaluation discipline under extraction uncertainty.
 
 - proof-first routing is viable on correctly canonicalized formalizable claims
 - extraction fidelity and proof success are different capabilities
+- proof among agents should require preservation of the disputed claim before
+  proof is accepted as evidence
 - evidence strength should remain typed rather than flattened into a generic
   “proved” label
 - exact-match auditing is necessary for honest evaluation on hard paraphrases
@@ -171,6 +203,8 @@ Primary study artifacts:
 ```
 
 `research/run_study.py` now fails fast if `coqc` or `coqchk` is missing.
+Study artifacts now also record preservation labels and
+`preservation_pass_rate_formalizable` for extraction benchmarks.
 
 ### Live provider-backed extraction run
 
@@ -208,9 +242,12 @@ cognitive_dissonance/
 
 formal_verification/
   detector.py                conflict analysis and proof orchestration
+  guardrails.py              extraction validation and preservation checks
   openai_agents.py           structured extraction and canonicalization
   necessity_prover.py        necessity-first proof construction
   prover.py                  Coq interface and coqchk validation
+  proof_protocol.py          canonicalization, claim IR, preservation audit
+  structured_models.py       typed extraction and audit payloads
   translator.py              claim-to-spec translation
   types.py                   normalized proof status model
   z3_prover.py               SMT-backed proving and hybrid routing

@@ -63,13 +63,22 @@ def _repo_is_dirty() -> bool:
     )
 
 
-def _make_claim(text: str) -> Claim:
+def _make_claim(
+    text: str,
+    *,
+    surface_text: str | None = None,
+    claim_ir: Any | None = None,
+    preservation_audit: Any | None = None,
+) -> Claim:
     return Claim(
         agent_id="research-study",
         claim_text=text,
         property_type=PropertyType.CORRECTNESS,
         confidence=1.0,
         timestamp=time.time(),
+        surface_text=surface_text,
+        claim_ir=claim_ir,
+        preservation_audit=preservation_audit,
     )
 
 
@@ -295,7 +304,14 @@ def _run_extraction_benchmark(
             category_correct = extracted_category in {None, "unformalizable"}
 
         if extracted_formalizable and extracted_claim_text:
-            translated_claim = _make_claim(extracted_claim_text)
+            translated_claim = _make_claim(
+                extracted_claim_text,
+                surface_text=entry["text"],
+                claim_ir=extracted.claim_ir if extracted is not None else None,
+                preservation_audit=(
+                    extracted.preservation_audit if extracted is not None else None
+                ),
+            )
             translated_spec = translator.translate(translated_claim, "")
             translation_success_after_extraction = translated_spec is not None
             analysis = detector.analyze_claims([translated_claim])
@@ -317,6 +333,16 @@ def _run_extraction_benchmark(
                 "extracted_formalizable": extracted_formalizable,
                 "extracted_category": extracted_category,
                 "extracted_claim_text": extracted_claim_text,
+                "preservation_label": (
+                    extracted.preservation_audit.label.value
+                    if extracted is not None and extracted.preservation_audit is not None
+                    else None
+                ),
+                "preservation_passed": (
+                    extracted.preservation_audit.passed
+                    if extracted is not None and extracted.preservation_audit is not None
+                    else None
+                ),
                 "formalizable_correct": (
                     extracted_formalizable == entry["expected_formalizable"]
                 ),
@@ -381,6 +407,16 @@ def _run_extraction_benchmark(
                     and not case["exact_match"]
                     and not case["end_to_end_decisive_correct"]
                 )
+            ),
+            "preservation_pass_rate_formalizable": _aggregate_boolean_rate(
+                [
+                    bool(case["preservation_passed"])
+                    for case in cases
+                    if (
+                        case["expected_formalizable"]
+                        and case["preservation_passed"] is not None
+                    )
+                ]
             ),
             "translation_success_rate_after_extraction_formalizable": (
                 _aggregate_boolean_rate(

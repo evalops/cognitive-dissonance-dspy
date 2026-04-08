@@ -8,6 +8,7 @@ import logging
 import re
 from dataclasses import dataclass
 
+from .proof_protocol import PreservationAuditor
 from .structured_models import ClaimCategory, FormalizableClaim
 from .translator import ClaimTranslator
 from .types import Claim, PropertyType
@@ -47,12 +48,14 @@ class ClaimGuardrails:
         """
         self.strict = strict
         self.translator = ClaimTranslator()
+        self.preservation_auditor = PreservationAuditor()
         logger.info(f"Initialized ClaimGuardrails (strict={strict})")
 
     def validate(
         self,
         claim: FormalizableClaim,
-        code_context: str = ""
+        code_context: str = "",
+        source_text: str | None = None,
     ) -> GuardrailResult:
         """Validate a claim against all guardrails.
 
@@ -71,6 +74,7 @@ class ClaimGuardrails:
         violations.extend(self._check_variable_consistency(claim))
         violations.extend(self._check_confidence_alignment(claim))
         violations.extend(self._check_pattern_hints(claim))
+        violations.extend(self._check_surface_preservation(claim, source_text))
 
         # Determine if passed
         has_errors = any(v.severity == 'error' for v in violations)
@@ -97,6 +101,36 @@ class ClaimGuardrails:
             logger.debug(f"Claim passed guardrails: {claim.claim_text}")
 
         return result
+
+    def _check_surface_preservation(
+        self,
+        claim: FormalizableClaim,
+        source_text: str | None,
+    ) -> list[GuardrailViolation]:
+        """Reject claims whose canonical form drifts from the source text."""
+        if not source_text:
+            return []
+
+        audit = self.preservation_auditor.audit(
+            surface_text=source_text,
+            canonical_text=claim.claim_text,
+            category=claim.category,
+        )
+        if audit.passed:
+            return []
+
+        severity = "error" if audit.label.value == "drift" else "warning"
+        return [
+            GuardrailViolation(
+                rule_name="surface_preservation",
+                severity=severity,
+                message=audit.rationale,
+                suggestion=(
+                    "Prefer an exact canonicalization that preserves the disputed "
+                    "surface claim, or abstain."
+                ),
+            )
+        ]
 
     def _check_format_validity(self, claim: FormalizableClaim) -> list[GuardrailViolation]:
         """Check that the claim format matches expected patterns for its category."""
@@ -408,7 +442,11 @@ class GuardrailWithRetry:
                 )
 
             # Validate with guardrails
-            validation = self.guardrails.validate(result.claim, code_context)
+            validation = self.guardrails.validate(
+                result.claim,
+                code_context,
+                source_text=text,
+            )
 
             if validation.passed:
                 logger.info(

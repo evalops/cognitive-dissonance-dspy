@@ -8,7 +8,11 @@ import pytest
 from formal_verification.guardrails import ClaimGuardrails
 from formal_verification.hybrid_resolver import HybridCognitiveDissonanceResolver
 from formal_verification.openai_agents import OpenAIClaimExtractor
-from formal_verification.structured_models import ClaimCategory, FormalizableClaim
+from formal_verification.structured_models import (
+    ClaimCategory,
+    FormalizableClaim,
+    PreservationLabel,
+)
 
 
 class TestStructuredModels:
@@ -183,6 +187,20 @@ class TestGuardrails:
 class TestOpenAIClaimExtractor:
     """Test OpenAI claim extraction (mocked)."""
 
+    def test_rule_based_extraction_includes_proof_artifacts(self):
+        """Deterministic extraction should emit IR and a passing preservation audit."""
+        extractor = OpenAIClaimExtractor()
+        result = extractor.extract_claim("Adding four and five yields nine.")
+
+        assert result.is_formalizable is True
+        assert result.claim is not None
+        assert result.claim.claim_text == "4 + 5 = 9"
+        assert result.claim_ir is not None
+        assert result.claim_ir.kind.value == "arithmetic"
+        assert result.preservation_audit is not None
+        assert result.preservation_audit.passed is True
+        assert result.preservation_audit.label == PreservationLabel.EQUIVALENT
+
     @patch("formal_verification.openai_agents.OpenAI")
     def test_initializes_openai_compatible_client(self, mock_openai_class):
         """Test that compatible provider configuration is forwarded."""
@@ -250,6 +268,55 @@ class TestOpenAIClaimExtractor:
         assert result.claim is not None
         assert result.claim.claim_text == "2 + 2 = 4"
         assert result.claim.category == ClaimCategory.ARITHMETIC
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_provider_drift_is_corrected_when_rule_based_preservation_exists(
+        self, mock_openai_class
+    ):
+        """When deterministic canonicalization knows the claim, keep the stated fact."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        triage_response = MagicMock()
+        triage_response.choices = [MagicMock()]
+        triage_response.choices[0].message.content = json.dumps(
+            {
+                "is_formalizable": True,
+                "category": "subtraction",
+                "reasoning": "Arithmetic subtraction claim",
+                "suggestion": "",
+            }
+        )
+
+        math_response = MagicMock()
+        math_response.choices = [MagicMock()]
+        math_response.choices[0].message.content = json.dumps(
+            {
+                "claim_text": "12 - 5 = 7",
+                "confidence": 0.95,
+                "variables": {"left": "12", "right": "5", "result": "7"},
+                "pattern_hints": ["subtraction"],
+                "reasoning": "Extracted subtraction claim",
+            }
+        )
+
+        mock_client.chat.completions.create.side_effect = [
+            triage_response,
+            math_response,
+        ]
+
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that subtracting five from twelve gives eight."
+        )
+
+        assert result.is_formalizable is True
+        assert result.claim is not None
+        assert result.claim.claim_text == "12 - 5 = 8"
+        assert result.preservation_audit is not None
+        assert result.preservation_audit.passed is True
+        assert result.preservation_audit.label == PreservationLabel.EQUIVALENT
+        assert result.extraction_mode == "provider_with_rule_correction"
 
     @patch("formal_verification.openai_agents.OpenAI")
     def test_normalizes_provider_category_labels(self, mock_openai_class):

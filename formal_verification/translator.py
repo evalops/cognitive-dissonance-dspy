@@ -3,6 +3,7 @@
 import logging
 import re
 
+from .structured_models import ClaimIRKind
 from .types import Claim, FormalSpec
 
 logger = logging.getLogger(__name__)
@@ -26,10 +27,10 @@ class ClaimTranslator:
 
         # Inequality patterns (NEW)
         self.inequality_patterns = [
-            (r"(\d+)\s*<\s*(\d+)", self._inequality_spec),
-            (r"(\d+)\s*>\s*(\d+)", self._inequality_spec),
-            (r"(\d+)\s*<=\s*(\d+)", self._inequality_spec),
-            (r"(\d+)\s*>=\s*(\d+)", self._inequality_spec),
+            (r"(\d+)\s*(<)\s*(\d+)", self._inequality_spec),
+            (r"(\d+)\s*(>)\s*(\d+)", self._inequality_spec),
+            (r"(\d+)\s*(<=)\s*(\d+)", self._inequality_spec),
+            (r"(\d+)\s*(>=)\s*(\d+)", self._inequality_spec),
         ]
 
         self.memory_patterns = [
@@ -93,6 +94,83 @@ class ClaimTranslator:
             (r"list\s+size\s+increases.*?after\s+append", self._list_append_spec),
         ]
 
+    def _translate_from_ir(self, claim: Claim, code: str) -> FormalSpec | None:
+        """Translate from persistent claim IR when available."""
+        ir = claim.claim_ir
+        if ir is None:
+            return None
+
+        kind = ir.kind
+        bindings = ir.bindings
+
+        if kind == ClaimIRKind.ARITHMETIC:
+            return self._arithmetic_spec_from_values(
+                claim,
+                int(bindings["left"]),
+                int(bindings["right"]),
+                int(bindings["result"]),
+            )
+        if kind == ClaimIRKind.MULTIPLICATION:
+            return self._multiplication_spec_from_values(
+                claim,
+                int(bindings["left"]),
+                int(bindings["right"]),
+                int(bindings["result"]),
+            )
+        if kind == ClaimIRKind.SUBTRACTION:
+            return self._subtraction_spec_from_values(
+                claim,
+                int(bindings["left"]),
+                int(bindings["right"]),
+                int(bindings["result"]),
+            )
+        if kind == ClaimIRKind.FACTORIAL:
+            return self._factorial_spec_from_values(
+                claim,
+                int(bindings["input"]),
+                int(bindings["output"]),
+            )
+        if kind == ClaimIRKind.FIBONACCI:
+            return self._fibonacci_spec_from_values(
+                claim,
+                int(bindings["n"]),
+                int(bindings["result"]),
+            )
+        if kind == ClaimIRKind.GCD:
+            return self._gcd_spec_from_values(
+                claim,
+                int(bindings["a"]),
+                int(bindings["b"]),
+                int(bindings["result"]),
+            )
+        if kind == ClaimIRKind.INEQUALITY:
+            return self._inequality_spec_from_values(
+                claim,
+                bindings["left"],
+                bindings["op"],
+                bindings["right"],
+            )
+        if kind == ClaimIRKind.LOGIC_IMPLICATION:
+            return self._implication_spec_from_parts(
+                claim,
+                bindings["hypothesis"],
+                bindings["conclusion"],
+            )
+        if kind == ClaimIRKind.LOGIC_FORALL:
+            return self._forall_spec_from_parts(
+                claim,
+                bindings["variable"],
+                bindings["property"],
+            )
+        if kind == ClaimIRKind.LOGIC_EXISTS:
+            return self._exists_spec_from_parts(
+                claim,
+                bindings["variable"],
+                bindings["property"],
+            )
+
+        return None
+
     def translate(self, claim: Claim, code: str) -> FormalSpec | None:
         """Convert a claim to formal specification.
 
@@ -103,6 +181,10 @@ class ClaimTranslator:
         Returns:
             FormalSpec if translation successful, None otherwise
         """
+        structured_spec = self._translate_from_ir(claim, code)
+        if structured_spec is not None:
+            return structured_spec
+
         claim_lower = claim.claim_text.lower()
 
         # Try logic patterns first (NEW)
@@ -147,6 +229,311 @@ class ClaimTranslator:
 
         logger.warning(f"Could not translate claim: {claim.claim_text}")
         return None
+
+    def _arithmetic_spec_from_values(
+        self,
+        claim: Claim,
+        left: int,
+        middle: int,
+        right: int,
+    ) -> FormalSpec:
+        spec_text = f"Arithmetic claim: {left} + {middle} = {right}"
+        coq_code = f"""
+Require Import Arith.
+
+Theorem arithmetic_claim : {left} + {middle} = {right}.
+Proof.
+  reflexivity.
+Qed.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"left": str(left), "middle": str(middle), "right": str(right)},
+            claim_ir=claim.claim_ir,
+        )
+
+    def _factorial_spec_from_values(
+        self,
+        claim: Claim,
+        input_val: int,
+        output_val: int,
+    ) -> FormalSpec:
+        spec_text = f"Factorial claim: factorial {input_val} = {output_val}"
+        coq_code = f"""
+Require Import Arith.
+
+Fixpoint factorial (n : nat) : nat :=
+  match n with
+  | 0 => 1
+  | S n' => n * factorial n'
+  end.
+
+Theorem factorial_claim : factorial {input_val} = {output_val}.
+Proof.
+  simpl.
+  reflexivity.
+Qed.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"input": str(input_val), "output": str(output_val)},
+            claim_ir=claim.claim_ir,
+        )
+
+    def _implication_spec_from_parts(
+        self,
+        claim: Claim,
+        hypothesis: str,
+        conclusion: str,
+    ) -> FormalSpec:
+        hyp_coq = self._parse_expression(hypothesis)
+        conc_coq = self._parse_expression(conclusion)
+        variables = set(re.findall(r"\b[a-z]\b", hypothesis + " " + conclusion))
+
+        if variables:
+            var_decls = ", ".join(f"{v} : nat" for v in sorted(variables))
+            quantified_vars = ", ".join(sorted(variables))
+            spec_text = (
+                f"Implication: forall {quantified_vars}, "
+                f"if {hypothesis} then {conclusion}"
+            )
+            coq_code = f"""
+Require Import Arith.
+Require Import Lia.
+
+Theorem implication_claim : forall {var_decls}, {hyp_coq} -> {conc_coq}.
+Proof.
+  intros.
+  lia.
+Qed.
+"""
+        else:
+            spec_text = f"Implication: if {hypothesis} then {conclusion}"
+            coq_code = f"""
+Require Import Arith.
+Require Import Lia.
+
+Theorem implication_claim : {hyp_coq} -> {conc_coq}.
+Proof.
+  intros H.
+  lia.
+Qed.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"hypothesis": hypothesis, "conclusion": conclusion},
+            claim_ir=claim.claim_ir,
+        )
+
+    def _forall_spec_from_parts(
+        self,
+        claim: Claim,
+        variable: str,
+        property_text: str,
+    ) -> FormalSpec:
+        if "+" in property_text and "0" in property_text:
+            spec_text = f"Universal: forall {variable}, {property_text}"
+            coq_code = f"""
+Require Import Arith.
+
+Theorem forall_claim : forall {variable} : nat, {variable} + 0 = {variable}.
+Proof.
+  intro {variable}.
+  rewrite Nat.add_0_r.
+  reflexivity.
+Qed.
+"""
+        else:
+            property_coq = self._parse_expression(property_text)
+            spec_text = f"Universal: forall {variable}, {property_text}"
+            coq_code = f"""
+Require Import Arith.
+
+Theorem forall_claim : forall {variable} : nat, {property_coq}.
+Proof.
+  intro {variable}.
+  auto.
+Qed.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"variable": variable, "property": property_text},
+            claim_ir=claim.claim_ir,
+        )
+
+    def _exists_spec_from_parts(
+        self,
+        claim: Claim,
+        variable: str,
+        property_text: str,
+    ) -> FormalSpec:
+        property_coq = self._parse_expression(property_text)
+        spec_text = f"Existential: exists {variable} such that {property_text}"
+        coq_code = f"""
+Require Import Arith.
+
+Theorem exists_claim : exists {variable} : nat, {property_coq}.
+Proof.
+  exists 1.
+  auto.
+Qed.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"variable": variable, "property": property_text},
+            claim_ir=claim.claim_ir,
+        )
+
+    def _inequality_spec_from_values(
+        self,
+        claim: Claim,
+        left: str,
+        op: str,
+        right: str,
+    ) -> FormalSpec:
+        spec_text = f"Inequality: {left} {op} {right}"
+        coq_code = f"""
+Require Import Arith.
+Require Import Lia.
+
+Theorem inequality_claim : {left} {op} {right}.
+Proof.
+  lia.
+Qed.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"left": str(left), "right": str(right), "op": op},
+            claim_ir=claim.claim_ir,
+        )
+
+    def _multiplication_spec_from_values(
+        self,
+        claim: Claim,
+        left: int,
+        right: int,
+        result: int,
+    ) -> FormalSpec:
+        spec_text = f"Multiplication: {left} * {right} = {result}"
+        coq_code = f"""
+Require Import Arith.
+
+Theorem multiplication_claim : {left} * {right} = {result}.
+Proof.
+  reflexivity.
+Qed.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"left": str(left), "right": str(right), "result": str(result)},
+            claim_ir=claim.claim_ir,
+        )
+
+    def _subtraction_spec_from_values(
+        self,
+        claim: Claim,
+        left: int,
+        right: int,
+        result: int,
+    ) -> FormalSpec:
+        spec_text = f"Subtraction: {left} - {right} = {result}"
+        coq_code = f"""
+Require Import Arith.
+
+Theorem subtraction_claim : {left} - {right} = {result}.
+Proof.
+  reflexivity.
+Qed.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"left": str(left), "right": str(right), "result": str(result)},
+            claim_ir=claim.claim_ir,
+        )
+
+    def _fibonacci_spec_from_values(
+        self,
+        claim: Claim,
+        n: int,
+        result: int,
+    ) -> FormalSpec:
+        spec_text = f"Fibonacci: fibonacci {n} = {result}"
+        coq_code = f"""
+Require Import Arith.
+
+Fixpoint fibonacci (n : nat) : nat :=
+  match n with
+  | 0 => 0
+  | 1 => 1
+  | S (S n'' as n') => fibonacci n' + fibonacci n''
+  end.
+
+Theorem fibonacci_claim : fibonacci {n} = {result}.
+Proof.
+  simpl.
+  reflexivity.
+Qed.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"n": str(n), "result": str(result)},
+            claim_ir=claim.claim_ir,
+        )
+
+    def _gcd_spec_from_values(
+        self,
+        claim: Claim,
+        a: int,
+        b: int,
+        result: int,
+    ) -> FormalSpec:
+        spec_text = f"GCD: gcd({a}, {b}) = {result}"
+        coq_code = f"""
+Require Import Arith.
+Require Import Nat.
+
+(* Using Coq's built-in gcd function *)
+Theorem gcd_claim : Nat.gcd {a} {b} = {result}.
+Proof.
+  compute.
+  reflexivity.
+Qed.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"a": str(a), "b": str(b), "result": str(result)},
+            claim_ir=claim.claim_ir,
+        )
 
     def _extract_function_name(self, code: str) -> str:
         """Extract function name from code."""
@@ -256,305 +643,65 @@ Admitted.
         left = int(match.group(1))
         middle = int(match.group(2))
         right = int(match.group(3))
-
-        spec_text = f"Arithmetic claim: {left} + {middle} = {right}"
-        coq_code = f"""
-Require Import Arith.
-
-Theorem arithmetic_claim : {left} + {middle} = {right}.
-Proof.
-  reflexivity.
-Qed.
-"""
-
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"left": str(left), "middle": str(middle), "right": str(right)},
-        )
+        return self._arithmetic_spec_from_values(claim, left, middle, right)
 
     def _factorial_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate factorial correctness specification."""
         input_val = int(match.group(1))
         output_val = int(match.group(2))
-
-        spec_text = f"Factorial claim: factorial {input_val} = {output_val}"
-        coq_code = f"""
-Require Import Arith.
-
-Fixpoint factorial (n : nat) : nat :=
-  match n with
-  | 0 => 1
-  | S n' => n * factorial n'
-  end.
-
-Theorem factorial_claim : factorial {input_val} = {output_val}.
-Proof.
-  simpl.
-  reflexivity.
-Qed.
-"""
-
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"input": str(input_val), "output": str(output_val)},
-        )
+        return self._factorial_spec_from_values(claim, input_val, output_val)
 
     def _implication_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate implication specification (if-then)."""
         hypothesis = match.group(1).strip()
         conclusion = match.group(2).strip()
-
-        # Parse and handle variable bindings
-        hyp_coq = self._parse_expression(hypothesis)
-        conc_coq = self._parse_expression(conclusion)
-
-        # Extract variables from expressions
-        import re
-
-        variables = set(re.findall(r"\b[a-z]\b", hypothesis + " " + conclusion))
-
-        if variables:
-            # Handle implications with variables
-            var_decls = ", ".join([f"{v} : nat" for v in sorted(variables)])
-            quantified_vars = ", ".join(sorted(variables))
-            spec_text = (
-                f"Implication: forall {quantified_vars}, "
-                f"if {hypothesis} then {conclusion}"
-            )
-            coq_code = f"""
-Require Import Arith.
-Require Import Lia.
-
-Theorem implication_claim : forall {var_decls}, {hyp_coq} -> {conc_coq}.
-Proof.
-  intros.
-  lia.
-Qed.
-"""
-        else:
-            # Simple numeric implication
-            spec_text = f"Implication: if {hypothesis} then {conclusion}"
-            coq_code = f"""
-Require Import Arith.
-Require Import Lia.
-
-Theorem implication_claim : {hyp_coq} -> {conc_coq}.
-Proof.
-  intros H.
-  lia.
-Qed.
-"""
-
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"hypothesis": hypothesis, "conclusion": conclusion},
-        )
+        return self._implication_spec_from_parts(claim, hypothesis, conclusion)
 
     def _forall_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate universal quantification specification."""
         variable = match.group(1).strip()
         property_text = match.group(2).strip()
-
-        # Handle common patterns like "n + 0 = n"
-        if "+" in property_text and "0" in property_text:
-            spec_text = f"Universal: forall {variable}, {property_text}"
-            coq_code = f"""
-Require Import Arith.
-
-Theorem forall_claim : forall {variable} : nat, {variable} + 0 = {variable}.
-Proof.
-  intro {variable}.
-  rewrite Nat.add_0_r.
-  reflexivity.
-Qed.
-"""
-        else:
-            property_coq = self._parse_expression(property_text)
-            spec_text = f"Universal: forall {variable}, {property_text}"
-            coq_code = f"""
-Require Import Arith.
-
-Theorem forall_claim : forall {variable} : nat, {property_coq}.
-Proof.
-  intro {variable}.
-  auto.
-Qed.
-"""
-
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"variable": variable, "property": property_text},
-        )
+        return self._forall_spec_from_parts(claim, variable, property_text)
 
     def _exists_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate existential quantification specification."""
         variable = match.group(1).strip()
         property_text = match.group(2).strip()
-
-        property_coq = self._parse_expression(property_text)
-
-        spec_text = f"Existential: exists {variable} such that {property_text}"
-        coq_code = f"""
-Require Import Arith.
-
-Theorem exists_claim : exists {variable} : nat, {property_coq}.
-Proof.
-  exists 1.
-  auto.
-Qed.
-"""
-
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"variable": variable, "property": property_text},
-        )
+        return self._exists_spec_from_parts(claim, variable, property_text)
 
     def _inequality_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate inequality specification."""
-        left = int(match.group(1))
-        right = int(match.group(2))
-
-        # Determine operator from original claim
-        if "<" in claim.claim_text and "=" not in claim.claim_text:
-            op = "<"
-        elif ">" in claim.claim_text and "=" not in claim.claim_text:
-            op = ">"
-        elif "<=" in claim.claim_text:
-            op = "<="
-        elif ">=" in claim.claim_text:
-            op = ">="
-        else:
-            op = "<"  # Default
-
-        spec_text = f"Inequality: {left} {op} {right}"
-        coq_code = f"""
-Require Import Arith.
-Require Import Lia.
-
-Theorem inequality_claim : {left} {op} {right}.
-Proof.
-  lia.
-Qed.
-"""
-
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"left": str(left), "right": str(right), "op": op},
-        )
+        left = match.group(1)
+        op = match.group(2)
+        right = match.group(3)
+        return self._inequality_spec_from_values(claim, left, op, right)
 
     def _multiplication_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate multiplication specification."""
         left = int(match.group(1))
         right = int(match.group(2))
         result = int(match.group(3))
-
-        spec_text = f"Multiplication: {left} * {right} = {result}"
-        coq_code = f"""
-Require Import Arith.
-
-Theorem multiplication_claim : {left} * {right} = {result}.
-Proof.
-  reflexivity.
-Qed.
-"""
-
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"left": str(left), "right": str(right), "result": str(result)},
-        )
+        return self._multiplication_spec_from_values(claim, left, right, result)
 
     def _subtraction_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate subtraction specification."""
         left = int(match.group(1))
         right = int(match.group(2))
         result = int(match.group(3))
-
-        spec_text = f"Subtraction: {left} - {right} = {result}"
-        coq_code = f"""
-Require Import Arith.
-
-Theorem subtraction_claim : {left} - {right} = {result}.
-Proof.
-  reflexivity.
-Qed.
-"""
-
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"left": str(left), "right": str(right), "result": str(result)},
-        )
+        return self._subtraction_spec_from_values(claim, left, right, result)
 
     def _fibonacci_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate Fibonacci specification."""
         n = int(match.group(1))
         result = int(match.group(2))
-
-        spec_text = f"Fibonacci: fibonacci {n} = {result}"
-        coq_code = f"""
-Require Import Arith.
-
-Fixpoint fibonacci (n : nat) : nat :=
-  match n with
-  | 0 => 0
-  | 1 => 1
-  | S (S n'' as n') => fibonacci n' + fibonacci n''
-  end.
-
-Theorem fibonacci_claim : fibonacci {n} = {result}.
-Proof.
-  simpl.
-  reflexivity.
-Qed.
-"""
-
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"n": str(n), "result": str(result)},
-        )
+        return self._fibonacci_spec_from_values(claim, n, result)
 
     def _gcd_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate GCD specification."""
         a = int(match.group(1))
         b = int(match.group(2))
         result = int(match.group(3))
-
-        spec_text = f"GCD: gcd({a}, {b}) = {result}"
-        coq_code = f"""
-Require Import Arith.
-Require Import Nat.
-
-(* Using Coq's built-in gcd function *)
-Theorem gcd_claim : Nat.gcd {a} {b} = {result}.
-Proof.
-  compute.
-  reflexivity.
-Qed.
-"""
-
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"a": str(a), "b": str(b), "result": str(result)},
-        )
+        return self._gcd_spec_from_values(claim, a, b, result)
 
     def _parse_expression(self, expr: str) -> str:
         """Parse a natural language expression to Coq syntax."""

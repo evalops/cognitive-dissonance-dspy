@@ -12,7 +12,9 @@ from formal_verification import (
     ProofResult,
     ProofStatus,
     PropertyType,
+    build_claim_ir,
 )
+from formal_verification.structured_models import PreservationAudit, PreservationLabel
 
 
 class TestClaimTranslator:
@@ -157,6 +159,26 @@ class TestClaimTranslator:
         assert exists_spec is not None
         assert "exists" in exists_spec.spec_text.lower()
 
+    def test_translation_prefers_structured_claim_ir(self):
+        """Structured IR should remain authoritative over raw surface text."""
+        translator = ClaimTranslator()
+
+        claim = Claim(
+            agent_id="test",
+            claim_text="Adding four and five yields nine.",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.9,
+            timestamp=time.time(),
+            surface_text="Adding four and five yields nine.",
+            claim_ir=build_claim_ir("4 + 5 = 9", "arithmetic"),
+        )
+
+        spec = translator.translate(claim, "")
+
+        assert spec is not None
+        assert "4 + 5 = 9" in spec.spec_text
+        assert spec.claim_ir is not None
+
 
 class TestCoqProver:
     """Test Coq theorem prover interface."""
@@ -277,6 +299,42 @@ class TestCoqProver:
         assert result.proven is False
         assert result.solver_status == "formalized_unproved"
         assert result.assumptions_present is True
+
+
+class TestFormalVerificationConflictDetectorAuditGate:
+    """Proof attempts should be blocked when preservation audit fails."""
+
+    @patch.object(ClaimTranslator, "translate")
+    def test_skips_translation_when_preservation_audit_fails(self, mock_translate):
+        claim = Claim(
+            agent_id="test",
+            claim_text="12 - 5 = 7",
+            property_type=PropertyType.CORRECTNESS,
+            confidence=0.9,
+            timestamp=time.time(),
+            surface_text="Subtracting five from twelve gives eight.",
+            claim_ir=build_claim_ir("12 - 5 = 7", "subtraction"),
+            preservation_audit=PreservationAudit(
+                label=PreservationLabel.DRIFT,
+                passed=False,
+                surface_text="Subtracting five from twelve gives eight.",
+                canonical_text="12 - 5 = 7",
+                surface_canonical_text="12 - 5 = 8",
+                rationale="Deterministic audit found semantic drift.",
+            ),
+        )
+
+        detector = FormalVerificationConflictDetector(
+            use_hybrid=False,
+            enable_auto_repair=False,
+            enable_necessity=False,
+        )
+        analysis = detector.analyze_claims([claim])
+
+        mock_translate.assert_not_called()
+        assert analysis["proof_results"] == []
+        assert analysis["audit_failures"]
+        assert analysis["audit_failures"][0]["label"] == "drift"
 
     def test_assumption_based_spec_is_rejected_without_coq(self):
         """Unsound specs should be rejected before Coq availability checks matter."""

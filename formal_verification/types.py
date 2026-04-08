@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional
 
+from .structured_models import CanonicalClaimIR, PreservationAudit
+
 
 class PropertyType(Enum):
     """Types of properties that can be formally verified."""
@@ -148,6 +150,9 @@ class Claim:
     property_type: PropertyType
     confidence: float
     timestamp: float
+    surface_text: str | None = None
+    claim_ir: CanonicalClaimIR | None = None
+    preservation_audit: PreservationAudit | None = None
 
 
 @dataclass
@@ -157,6 +162,7 @@ class FormalSpec:
     spec_text: str
     coq_code: str
     variables: dict[str, str]
+    claim_ir: CanonicalClaimIR | None = None
 
 
 @dataclass

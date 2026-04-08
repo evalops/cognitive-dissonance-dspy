@@ -1,12 +1,14 @@
 """Main formal verification cognitive dissonance detector."""
 
 import logging
+import re
 from typing import Any
 
 from .deep_analysis import PropertySpecificationGenerator
 from .lemma_discovery import AutomatedProofRepairer
 from .necessity_prover import enhance_prover_with_necessity
 from .prover import CoqProver
+from .proof_protocol import build_claim_ir
 from .translator import ClaimTranslator
 from .types import Claim, FormalSpec, ProofResult, ProofStatus
 
@@ -55,10 +57,16 @@ class ConflictDetector:
         Returns:
             True if specifications contradict, False otherwise
         """
-        import re
-
         claim1 = spec1.claim.claim_text.lower()
         claim2 = spec2.claim.claim_text.lower()
+
+        ir1 = spec1.claim.claim_ir or build_claim_ir(spec1.claim.claim_text)
+        ir2 = spec2.claim.claim_ir or build_claim_ir(spec2.claim.claim_text)
+        if ir1 and ir2 and ir1.kind == ir2.kind:
+            if ir1.kind.value in {"arithmetic", "multiplication", "subtraction"}:
+                same_left_side = ir1.operands[:2] == ir2.operands[:2]
+                if same_left_side and ir1.operands[2] != ir2.operands[2]:
+                    return True
 
         # Memory safety conflicts
         if ("memory safe" in claim1 and "buffer overflow" in claim2) or (
@@ -181,8 +189,21 @@ class FormalVerificationConflictDetector:
         # Step 1: Translate claims to formal specifications
         specifications = []
         translation_failures = []
+        audit_failures = []
 
         for claim in claims:
+            if claim.preservation_audit is not None and not claim.preservation_audit.passed:
+                audit_failures.append(
+                    {
+                        "agent_id": claim.agent_id,
+                        "claim_text": claim.claim_text,
+                        "label": claim.preservation_audit.label.value,
+                        "rationale": claim.preservation_audit.rationale,
+                    }
+                )
+                translation_failures.append(claim)
+                continue
+
             if Z3_AVAILABLE and hasattr(self.prover, "prove_claim"):
                 # Using HybridProver: create a minimal spec and let the prover
                 # handle translation.
@@ -191,6 +212,7 @@ class FormalVerificationConflictDetector:
                     spec_text=f"Hybrid proving: {claim.claim_text}",
                     coq_code="",  # Will be handled by hybrid prover
                     variables={},
+                    claim_ir=claim.claim_ir,
                 )
                 specifications.append(spec)
             else:
@@ -294,6 +316,7 @@ class FormalVerificationConflictDetector:
             "original_claims": claims,
             "specifications": specifications,
             "translation_failures": translation_failures,
+            "audit_failures": audit_failures,
             "conflicts": conflicts,
             "proof_results": proof_results,
             "resolution": resolution,

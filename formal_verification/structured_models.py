@@ -41,6 +41,68 @@ class ConfidenceLevel(str, Enum):
     LOW = "low"
 
 
+class ClaimIRKind(str, Enum):
+    """Structured canonical-claim kinds used across extraction and proving."""
+
+    ARITHMETIC = "arithmetic"
+    MULTIPLICATION = "multiplication"
+    SUBTRACTION = "subtraction"
+    FACTORIAL = "factorial"
+    FIBONACCI = "fibonacci"
+    GCD = "gcd"
+    INEQUALITY = "inequality"
+    LOGIC_IMPLICATION = "logic_implication"
+    LOGIC_FORALL = "logic_forall"
+    LOGIC_EXISTS = "logic_exists"
+    UNKNOWN = "unknown"
+
+
+class PreservationLabel(str, Enum):
+    """How well a canonical claim preserves the original disputed surface text."""
+
+    EXACT = "exact"
+    EQUIVALENT = "equivalent"
+    DRIFT = "drift"
+    UNKNOWN = "unknown"
+
+
+class CanonicalClaimIR(BaseModel):
+    """Persistent structured representation of a canonical claim."""
+
+    kind: ClaimIRKind = Field(description="Structured kind of the canonical claim")
+    canonical_text: str = Field(description="Canonical textual form of the claim")
+    operator: str | None = Field(
+        default=None,
+        description="Main operator when applicable, e.g. +, -, *, <, >",
+    )
+    operands: list[str] = Field(
+        default_factory=list,
+        description="Ordered operands captured from the canonical claim",
+    )
+    bindings: dict[str, str] = Field(
+        default_factory=dict,
+        description="Named bindings such as hypothesis/conclusion or variable/property",
+    )
+    parser: str = Field(
+        default="deterministic",
+        description="Parser that constructed this IR",
+    )
+
+
+class PreservationAudit(BaseModel):
+    """Audit record for whether canonicalization preserved the original claim."""
+
+    label: PreservationLabel = Field(description="Preservation classification")
+    passed: bool = Field(description="Whether the claim is safe to prove")
+    surface_text: str = Field(description="Original surface form supplied by the agent")
+    canonical_text: str = Field(description="Canonical form selected for proving")
+    surface_canonical_text: str | None = Field(
+        default=None,
+        description="Deterministically recovered canonical form from the surface text",
+    )
+    rationale: str = Field(description="Human-readable explanation of the audit result")
+
+
 class FormalizableClaim(BaseModel):
     """Structured claim extraction with formalizability metadata.
 
@@ -213,6 +275,14 @@ class ClaimExtractionResult(BaseModel):
     )
 
     original_text: str = Field(description="The original input text for reference")
+    claim_ir: CanonicalClaimIR | None = Field(
+        default=None,
+        description="Persistent IR for the extracted canonical claim when available",
+    )
+    preservation_audit: PreservationAudit | None = Field(
+        default=None,
+        description="Audit result that checks whether canonicalization preserved the claim",
+    )
 
 
 class ClaimConflict(BaseModel):

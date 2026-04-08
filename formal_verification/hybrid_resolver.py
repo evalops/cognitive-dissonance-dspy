@@ -8,10 +8,11 @@ import logging
 import time
 from dataclasses import dataclass
 
+from .proof_protocol import PreservationAuditor, build_claim_ir
 from .detector import FormalVerificationConflictDetector
 from .guardrails import ClaimGuardrails, GuardrailWithRetry
 from .openai_agents import OpenAIClaimExtractor
-from .structured_models import ClaimCategory, FormalizableClaim
+from .structured_models import ClaimCategory, FormalizableClaim, PreservationAudit
 from .types import Claim, ProofResult, PropertyType
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,8 @@ class ClaimAnalysis:
     extraction_time_ms: float
     proof_time_ms: float
     reasoning: str
+    preservation_audit: PreservationAudit | None = None
+    resolution_label: str | None = None
 
 
 @dataclass
@@ -106,6 +109,7 @@ class HybridCognitiveDissonanceResolver:
             )
         else:
             self.guarded_extractor = None
+        self.preservation_auditor = PreservationAuditor()
 
         logger.info(
             f"Initialized HybridCognitiveDissonanceResolver "
@@ -130,11 +134,21 @@ class HybridCognitiveDissonanceResolver:
         start_time = time.time()
 
         # Extract claim with guardrails
+        extraction_result = None
         if self.guarded_extractor:
             formalized_claim, validation = (
                 self.guarded_extractor.extract_with_validation(
                     text, code_context
                 )
+            )
+            preservation_audit = (
+                self.preservation_auditor.audit(
+                    surface_text=text,
+                    canonical_text=formalized_claim.claim_text,
+                    category=formalized_claim.category,
+                )
+                if formalized_claim is not None
+                else None
             )
 
             if not validation.passed:
@@ -150,12 +164,15 @@ class HybridCognitiveDissonanceResolver:
                         "Guardrail validation failed: "
                         f"{validation.violations[0].message}"
                     ),
+                    preservation_audit=preservation_audit,
+                    resolution_label="preservation_blocked",
                 )
         else:
-            result = self.extractor.extract_claim(text, code_context)
-            formalized_claim = result.claim
+            extraction_result = self.extractor.extract_claim(text, code_context)
+            formalized_claim = extraction_result.claim
+            preservation_audit = extraction_result.preservation_audit
 
-            if not result.is_formalizable or formalized_claim is None:
+            if not extraction_result.is_formalizable or formalized_claim is None:
                 extraction_time = (time.time() - start_time) * 1000
                 return ClaimAnalysis(
                     original_text=text,
@@ -164,10 +181,25 @@ class HybridCognitiveDissonanceResolver:
                     proof_result=None,
                     extraction_time_ms=extraction_time,
                     proof_time_ms=0.0,
-                    reasoning=result.reasoning
+                    reasoning=extraction_result.reasoning,
+                    preservation_audit=preservation_audit,
+                    resolution_label="unformalizable",
                 )
 
         extraction_time = (time.time() - start_time) * 1000
+
+        if preservation_audit is not None and not preservation_audit.passed:
+            return ClaimAnalysis(
+                original_text=text,
+                formalized_claim=formalized_claim,
+                is_formalizable=True,
+                proof_result=None,
+                extraction_time_ms=extraction_time,
+                proof_time_ms=0.0,
+                reasoning=f"Preservation audit failed: {preservation_audit.rationale}",
+                preservation_audit=preservation_audit,
+                resolution_label="preservation_blocked",
+            )
 
         claim_obj = Claim(
             agent_id="hybrid_resolver",
@@ -176,7 +208,14 @@ class HybridCognitiveDissonanceResolver:
                 formalized_claim.category
             ),
             confidence=formalized_claim.confidence,
-            timestamp=time.time()
+            timestamp=time.time(),
+            surface_text=text,
+            claim_ir=(
+                extraction_result.claim_ir
+                if extraction_result is not None
+                else build_claim_ir(formalized_claim.claim_text, formalized_claim.category)
+            ),
+            preservation_audit=preservation_audit,
         )
 
         # Prove with the hybrid verification stack
@@ -192,7 +231,9 @@ class HybridCognitiveDissonanceResolver:
                 proof_result=None,
                 extraction_time_ms=extraction_time,
                 proof_time_ms=proof_time,
-                reasoning="Translation to a proof target failed"
+                reasoning="Translation to a proof target failed",
+                preservation_audit=preservation_audit,
+                resolution_label="translation_failed",
             )
 
         reasoning = (
@@ -211,7 +252,9 @@ class HybridCognitiveDissonanceResolver:
             proof_result=proof_result,
             extraction_time_ms=extraction_time,
             proof_time_ms=proof_time,
-            reasoning=reasoning
+            reasoning=reasoning,
+            preservation_audit=preservation_audit,
+            resolution_label=proof_result.solver_status,
         )
 
     def _verify_claim(

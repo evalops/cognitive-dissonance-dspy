@@ -12,6 +12,11 @@ from typing import Any
 
 from openai import OpenAI
 
+from .proof_protocol import (
+    PreservationAuditor,
+    build_claim_ir,
+    canonicalize_surface_claim,
+)
 from .structured_models import ClaimCategory, ClaimExtractionResult, FormalizableClaim
 from .translator import ClaimTranslator
 from .types import Claim, PropertyType
@@ -269,6 +274,7 @@ class OpenAIClaimExtractor:
         self.model = model
         self.temperature = temperature
         self.translator = ClaimTranslator()
+        self.preservation_auditor = PreservationAuditor()
         self._uses_compatible_base_url = bool(
             resolved_base_url and "api.openai.com" not in resolved_base_url
         )
@@ -594,8 +600,59 @@ class OpenAIClaimExtractor:
             reasoning=reasoning,
         )
 
+    def _claim_artifacts(
+        self,
+        *,
+        original_text: str,
+        claim: FormalizableClaim | None,
+    ):
+        """Build persistent claim artifacts for downstream proof consumers."""
+        if claim is None:
+            return None, None
+
+        claim_ir = build_claim_ir(
+            claim.claim_text,
+            claim.category,
+            parser="extractor",
+        )
+        preservation_audit = self.preservation_auditor.audit(
+            surface_text=original_text,
+            canonical_text=claim.claim_text,
+            category=claim.category,
+        )
+        return claim_ir, preservation_audit
+
+    @staticmethod
+    def _should_use_rule_based_fast_path(text: str) -> bool:
+        """Skip deterministic short-circuiting for meta-instructions to the extractor."""
+        normalized = OpenAIClaimExtractor._normalize_rule_text(text)
+        return not normalized.startswith("please formalize")
+
     def _rule_based_claim(self, text: str) -> FormalizableClaim | None:
         """Use lightweight deterministic normalization for obvious claim forms."""
+        shared_canonical, shared_category = canonicalize_surface_claim(text)
+        if shared_canonical is not None and shared_category is not None:
+            claim_ir = build_claim_ir(
+                shared_canonical,
+                shared_category,
+                parser="deterministic",
+            )
+            variables = {}
+            if claim_ir is not None:
+                variables = {
+                    key: value
+                    for key, value in claim_ir.bindings.items()
+                    if key not in {"op", "category"}
+                }
+            return self._build_claim(
+                category=shared_category,
+                claim_text=shared_canonical,
+                confidence=0.9,
+                variables=variables,
+                pattern_hints=[shared_category.value],
+                reasoning="Rule-based normalization of supported claim language.",
+            )
+
         normalized = self._normalize_rule_text(text)
         token_pattern = TOKEN_PATTERN
 
@@ -779,16 +836,26 @@ class OpenAIClaimExtractor:
         logger.debug(f"Extracting claim from: {text[:100]}...")
 
         rule_based_claim = self._rule_based_claim(text)
-        if rule_based_claim is not None and self.validate_against_translator(
+        if (
+            rule_based_claim is not None
+            and self._should_use_rule_based_fast_path(text)
+            and self.validate_against_translator(
             rule_based_claim,
             code_context,
+            )
         ):
+            claim_ir, preservation_audit = self._claim_artifacts(
+                original_text=text,
+                claim=rule_based_claim,
+            )
             return ClaimExtractionResult(
                 claim=rule_based_claim,
                 is_formalizable=True,
                 reasoning=rule_based_claim.reasoning,
                 extraction_mode="rule_based",
                 original_text=text,
+                claim_ir=claim_ir,
+                preservation_audit=preservation_audit,
             )
 
         if self.client is None:
@@ -927,6 +994,16 @@ class OpenAIClaimExtractor:
             reasoning=claim.reasoning,
             extraction_mode=extraction_mode,
             original_text=text,
+            claim_ir=build_claim_ir(
+                claim.claim_text,
+                claim.category,
+                parser="extractor",
+            ),
+            preservation_audit=self.preservation_auditor.audit(
+                surface_text=text,
+                canonical_text=claim.claim_text,
+                category=claim.category,
+            ),
         )
 
     def _triage_claim(self, text: str) -> dict[str, Any]:

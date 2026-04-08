@@ -4,6 +4,12 @@ import logging
 
 import dspy
 
+from formal_verification.proof_protocol import (
+    PreservationAuditor,
+    build_claim_ir,
+    canonicalize_surface_claim,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -11,7 +17,17 @@ class ExtractClaim(dspy.Signature):
     """Extract a single, concise factual claim from text."""
 
     text: str = dspy.InputField(desc="text to analyze")
-    claim: str = dspy.OutputField(desc="concise factual claim")
+    surface_claim: str = dspy.OutputField(desc="concise claim as stated by the source")
+    canonical_claim: str = dspy.OutputField(
+        desc="exact canonical claim if formalizable, else empty string"
+    )
+    category: str = dspy.OutputField(
+        desc="claim category such as mathematical, algorithmic, subjective, or unverifiable"
+    )
+    abstain_reason: str = dspy.OutputField(
+        desc="why canonicalization was not possible, else empty string"
+    )
+    claim: str = dspy.OutputField(desc="legacy best claim field")
     confidence: str = dspy.OutputField(desc="confidence level: high, medium, or low")
 
 
@@ -45,6 +61,7 @@ class BeliefAgent(dspy.Module):
         super().__init__()
         self.use_cot = use_cot
         self.extract = (dspy.ChainOfThought if use_cot else dspy.Predict)(ExtractClaim)
+        self.preservation_auditor = PreservationAuditor()
         logger.debug(f"Initialized BeliefAgent with use_cot={use_cot}")
 
     def forward(self, text: str) -> dspy.Prediction:
@@ -59,6 +76,23 @@ class BeliefAgent(dspy.Module):
         logger.debug(f"Extracting claim from: {text[:100]}...")
 
         try:
+            canonical_claim, category = canonicalize_surface_claim(text)
+            if canonical_claim is not None:
+                prediction = dspy.Prediction()
+                prediction.surface_claim = text.strip()
+                prediction.canonical_claim = canonical_claim
+                prediction.category = category.value if category is not None else "unknown"
+                prediction.abstain_reason = ""
+                prediction.claim = canonical_claim
+                prediction.confidence = "high"
+                prediction.claim_ir = build_claim_ir(canonical_claim, category)
+                prediction.preservation_audit = self.preservation_auditor.audit(
+                    surface_text=text,
+                    canonical_text=canonical_claim,
+                    category=category,
+                )
+                return prediction
+
             out = self.extract(text=text)
 
             # Normalize confidence
@@ -66,7 +100,40 @@ class BeliefAgent(dspy.Module):
             if confidence not in ["high", "medium", "low"]:
                 confidence = "medium"
 
+            surface_claim = (
+                getattr(out, "surface_claim", None)
+                or getattr(out, "claim", None)
+                or text.strip()
+            )
+            canonical_claim = getattr(out, "canonical_claim", None)
+            category_value = getattr(out, "category", None) or "unknown"
+            abstain_reason = getattr(out, "abstain_reason", None) or ""
+
+            if not canonical_claim:
+                canonical_claim, inferred_category = canonicalize_surface_claim(
+                    surface_claim
+                )
+                if inferred_category is not None:
+                    category_value = inferred_category.value
+
+            out.surface_claim = surface_claim
+            out.canonical_claim = canonical_claim or ""
+            out.category = category_value
+            out.abstain_reason = abstain_reason
             out.confidence = confidence
+            out.claim = canonical_claim or surface_claim
+            out.claim_ir = (
+                build_claim_ir(out.claim, category_value) if canonical_claim else None
+            )
+            out.preservation_audit = (
+                self.preservation_auditor.audit(
+                    surface_text=text,
+                    canonical_text=out.claim,
+                    category=category_value,
+                )
+                if canonical_claim
+                else None
+            )
             logger.debug(f"Extracted claim: {out.claim} (confidence: {confidence})")
 
             return out
@@ -75,8 +142,14 @@ class BeliefAgent(dspy.Module):
             logger.warning(f"Failed to extract claim: {e}")
             # Return a safe default
             prediction = dspy.Prediction()
+            prediction.surface_claim = text
+            prediction.canonical_claim = ""
+            prediction.category = "unknown"
+            prediction.abstain_reason = "Extraction failed"
             prediction.claim = text[:100] if len(text) > 100 else text
             prediction.confidence = "low"
+            prediction.claim_ir = None
+            prediction.preservation_audit = None
             return prediction
 
 

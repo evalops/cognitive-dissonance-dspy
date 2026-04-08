@@ -298,6 +298,35 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
                 return self._belief_confidence_map["medium"]
         return self._belief_confidence_map["medium"]
 
+    @staticmethod
+    def _prediction_text(prediction: Any, field: str) -> str | None:
+        value = getattr(prediction, field, None)
+        return value.strip() if isinstance(value, str) and value.strip() else None
+
+    @staticmethod
+    def _prediction_preservation_audit(prediction: Any):
+        audit = getattr(prediction, "preservation_audit", None)
+        if audit is None:
+            return None
+        if (
+            isinstance(getattr(audit, "passed", None), bool)
+            and getattr(audit, "label", None) is not None
+            and callable(getattr(audit, "model_dump", None))
+        ):
+            return audit
+        return None
+
+    @staticmethod
+    def _prediction_claim_ir(prediction: Any):
+        claim_ir = getattr(prediction, "claim_ir", None)
+        if claim_ir is None:
+            return None
+        if getattr(claim_ir, "kind", None) is not None and getattr(
+            claim_ir, "canonical_text", None
+        ) is not None:
+            return claim_ir
+        return None
+
     def _base_prior(self, belief_confidence: float, category: ClaimCategory) -> float:
         category_weight = self._category_prior.get(category, 0.5)
         return max(0.0, min(1.0, (belief_confidence + category_weight) / 2))
@@ -500,8 +529,14 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
         belief1 = self.belief_agent(text=text1)
         belief2 = self.belief_agent(text=text2)
 
-        claim1_text = belief1.claim
-        claim2_text = belief2.claim
+        belief1_audit = self._prediction_preservation_audit(belief1)
+        belief2_audit = self._prediction_preservation_audit(belief2)
+        belief1_ir = self._prediction_claim_ir(belief1)
+        belief2_ir = self._prediction_claim_ir(belief2)
+        claim1_surface = self._prediction_text(belief1, "surface_claim") or text1
+        claim2_surface = self._prediction_text(belief2, "surface_claim") or text2
+        claim1_text = self._prediction_text(belief1, "canonical_claim") or belief1.claim
+        claim2_text = self._prediction_text(belief2, "canonical_claim") or belief2.claim
 
         belief_conf1 = self._normalize_belief_confidence(
             getattr(belief1, "confidence", None)
@@ -588,6 +623,10 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
             "solver_time_budget_ms": self._proof_timeout_seconds * 1000,
             "semantic_bridge_targets": [],
             "num_formal_targets": 0,
+            "claim_audits": [
+                belief1_audit.model_dump() if belief1_audit is not None else None,
+                belief2_audit.model_dump() if belief2_audit is not None else None,
+            ],
         }
 
         mathematical_evidence: list[MathematicalEvidence] = []
@@ -600,9 +639,28 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
             formal_claims: list[FormalClaim] = []
 
             # Process each claim through classification and semantic bridging
-            for i, (claim_text, category) in enumerate(
-                [(claim1_text, category1), (claim2_text, category2)]
-            ):
+            extracted_claims = [
+                {
+                    "claim_text": claim1_text,
+                    "surface_text": claim1_surface,
+                    "category": category1,
+                    "confidence": belief_conf1,
+                    "claim_ir": belief1_ir,
+                    "preservation_audit": belief1_audit,
+                },
+                {
+                    "claim_text": claim2_text,
+                    "surface_text": claim2_surface,
+                    "category": category2,
+                    "confidence": belief_conf2,
+                    "claim_ir": belief2_ir,
+                    "preservation_audit": belief2_audit,
+                },
+            ]
+
+            for i, extracted in enumerate(extracted_claims):
+                claim_text = extracted["claim_text"]
+                category = extracted["category"]
                 source_confidence = belief_conf1 if i == 0 else belief_conf2
 
                 if category in [
@@ -620,6 +678,9 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
                         property_type=property_type,
                         confidence=source_confidence,
                         timestamp=time.time(),
+                        surface_text=extracted["surface_text"],
+                        claim_ir=extracted["claim_ir"],
+                        preservation_audit=extracted["preservation_audit"],
                     )
                     formal_claims.append(formal_claim)
 
@@ -746,6 +807,9 @@ class MathematicalCognitiveDissonanceResolver(dspy.Module):
             )
             audit_metadata["translation_failures"] = len(
                 analysis_results.get("translation_failures", []) or []
+            )
+            audit_metadata["audit_failures"] = analysis_results.get(
+                "audit_failures", []
             )
 
         proof_results = (
