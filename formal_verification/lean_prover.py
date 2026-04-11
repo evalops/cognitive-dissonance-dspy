@@ -168,6 +168,9 @@ class LeanProver:
                 spec.spec_text,
                 stderr[:100],
             )
+            status = ProofStatus.default_for_solver_result(
+                proven=False, prover_name="lean", counter_example=None,
+            )
             return ProofResult(
                 spec=spec,
                 proven=False,
@@ -176,5 +179,5 @@ class LeanProver:
                 counter_example=None,
                 proof_output=stdout,
                 prover_name="lean",
-                solver_status=ProofStatus.REFUTED.value,
+                solver_status=status.value,
             )

@@ -244,9 +244,10 @@ theorem fib_claim : fib {n} = {result} := by native_decide"""
         self, claim: Claim, variable: str, prop: str
     ) -> FormalSpec:
         prop_lean = self._to_lean_expr(prop)
+        witness = self._infer_witness(variable, prop_lean)
         lean = (
             f"theorem exists_claim : ∃ {variable} : Nat, "
-            f"{prop_lean} := ⟨1, by omega⟩"
+            f"{prop_lean} := ⟨{witness}, by omega⟩"
         )
         return FormalSpec(
             claim=claim,
@@ -255,6 +256,35 @@ theorem fib_claim : fib {n} = {result} := by native_decide"""
             variables={"variable": variable, "property": prop},
             claim_ir=claim.claim_ir,
         )
+
+    @staticmethod
+    def _infer_witness(variable: str, prop: str) -> str:
+        """Extract a plausible witness from a Lean property expression.
+
+        Handles patterns like ``x > 5`` (witness 6), ``x = 3`` (witness 3),
+        ``x >= 10`` (witness 10).  Falls back to ``0`` when no bound is found.
+        """
+        # "x > N" → N + 1
+        m = re.search(rf"\b{re.escape(variable)}\s*>\s*(\d+)", prop)
+        if m:
+            return str(int(m[1]) + 1)
+        # "x >= N" or "x ≥ N" → N
+        m = re.search(rf"\b{re.escape(variable)}\s*(?:>=|≥)\s*(\d+)", prop)
+        if m:
+            return m[1]
+        # "x = N" → N
+        m = re.search(rf"\b{re.escape(variable)}\s*=\s*(\d+)", prop)
+        if m:
+            return m[1]
+        # "N < x" → N + 1
+        m = re.search(rf"(\d+)\s*<\s*{re.escape(variable)}\b", prop)
+        if m:
+            return str(int(m[1]) + 1)
+        # "N <= x" or "N ≤ x" → N
+        m = re.search(rf"(\d+)\s*(?:<=|≤)\s*{re.escape(variable)}\b", prop)
+        if m:
+            return m[1]
+        return "0"
 
     @staticmethod
     def _to_lean_expr(text: str) -> str:

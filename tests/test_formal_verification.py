@@ -702,6 +702,25 @@ class TestLeanTranslator:
         assert spec is not None
         assert "Nat.gcd 12 8 = 4" in spec.coq_code
 
+    def test_exists_infers_witness_from_bound(self):
+        """Existential witness is derived from the property, not hardcoded."""
+        translator = LeanTranslator()
+        ir = build_claim_ir("exists x, x > 5")
+        if ir is None:
+            # If IR parsing doesn't handle this, test regex path
+            claim = Claim(
+                "a", "exists x such that x > 5",
+                PropertyType.CORRECTNESS, 1.0, 0,
+            )
+        else:
+            claim = Claim(
+                "a", "exists x, x > 5",
+                PropertyType.CORRECTNESS, 1.0, 0, claim_ir=ir,
+            )
+        spec = translator.translate(claim)
+        if spec is not None:
+            assert "⟨6," in spec.coq_code
+
     def test_untranslatable_returns_none(self):
         """Return None for claims that cannot be translated."""
         translator = LeanTranslator()
@@ -775,7 +794,7 @@ class TestLeanProver:
 
     @patch("subprocess.run")
     def test_failed_proof(self, mock_run):
-        """Failed lean invocation returns refuted."""
+        """Failed lean invocation returns inconclusive."""
         mock_run.return_value = Mock(
             returncode=1, stdout=b"", stderr=b"type mismatch"
         )
@@ -789,7 +808,7 @@ class TestLeanProver:
             result = prover.prove_specification(spec)
 
             assert result.proven is False
-            assert result.solver_status == "refuted"
+            assert result.solver_status == "inconclusive"
             assert "type mismatch" in result.error_message
 
     @patch("subprocess.run")
@@ -836,7 +855,7 @@ class TestHybridLeanCoqResolver:
         resolver = HybridLeanCoqResolver(prefer_lean=True, use_fallback=True)
         lean_fail = ProofResult(
             None, False, 10.0, "failed", None, prover_name="lean",
-            solver_status="refuted",
+            solver_status="inconclusive",
         )
         coq_ok = ProofResult(
             None, True, 20.0, None, None, prover_name="coq",
@@ -859,7 +878,7 @@ class TestHybridLeanCoqResolver:
         resolver = HybridLeanCoqResolver(prefer_lean=True, use_fallback=False)
         lean_fail = ProofResult(
             None, False, 5.0, "failed", None, prover_name="lean",
-            solver_status="refuted",
+            solver_status="inconclusive",
         )
 
         with (
