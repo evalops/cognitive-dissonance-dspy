@@ -6,12 +6,12 @@ successfully translated to Coq specifications before being passed to the prover.
 
 import logging
 import re
-from typing import Optional, List, Dict, Tuple
 from dataclasses import dataclass
 
-from .structured_models import FormalizableClaim, ClaimCategory
-from .types import Claim, PropertyType
+from .proof_protocol import PreservationAuditor
+from .structured_models import ClaimCategory, FormalizableClaim
 from .translator import ClaimTranslator
+from .types import Claim, PropertyType
 
 logger = logging.getLogger(__name__)
 
@@ -22,43 +22,42 @@ class GuardrailViolation:
     rule_name: str
     severity: str  # 'error', 'warning'
     message: str
-    suggestion: Optional[str] = None
+    suggestion: str | None = None
 
 
 @dataclass
 class GuardrailResult:
     """Result of guardrail validation."""
     passed: bool
-    violations: List[GuardrailViolation]
+    violations: list[GuardrailViolation]
     confidence_adjustment: float = 0.0  # Adjust confidence up/down based on checks
 
 
 class ClaimGuardrails:
-    """
-    Guardrails for validating extracted claims.
+    """Guardrails for validating extracted claims.
 
     These guardrails perform multiple checks to ensure claims are
     high-quality and can be successfully formalized.
     """
 
     def __init__(self, strict: bool = True):
-        """
-        Initialize guardrails.
+        """Initialize guardrails.
 
         Args:
             strict: If True, fail on warnings. If False, only fail on errors.
         """
         self.strict = strict
         self.translator = ClaimTranslator()
+        self.preservation_auditor = PreservationAuditor()
         logger.info(f"Initialized ClaimGuardrails (strict={strict})")
 
     def validate(
         self,
         claim: FormalizableClaim,
-        code_context: str = ""
+        code_context: str = "",
+        source_text: str | None = None,
     ) -> GuardrailResult:
-        """
-        Validate a claim against all guardrails.
+        """Validate a claim against all guardrails.
 
         Args:
             claim: The claim to validate
@@ -67,7 +66,7 @@ class ClaimGuardrails:
         Returns:
             GuardrailResult with validation status and violations
         """
-        violations: List[GuardrailViolation] = []
+        violations: list[GuardrailViolation] = []
 
         # Run all guardrail checks
         violations.extend(self._check_format_validity(claim))
@@ -75,6 +74,7 @@ class ClaimGuardrails:
         violations.extend(self._check_variable_consistency(claim))
         violations.extend(self._check_confidence_alignment(claim))
         violations.extend(self._check_pattern_hints(claim))
+        violations.extend(self._check_surface_preservation(claim, source_text))
 
         # Determine if passed
         has_errors = any(v.severity == 'error' for v in violations)
@@ -102,7 +102,37 @@ class ClaimGuardrails:
 
         return result
 
-    def _check_format_validity(self, claim: FormalizableClaim) -> List[GuardrailViolation]:
+    def _check_surface_preservation(
+        self,
+        claim: FormalizableClaim,
+        source_text: str | None,
+    ) -> list[GuardrailViolation]:
+        """Reject claims whose canonical form drifts from the source text."""
+        if not source_text:
+            return []
+
+        audit = self.preservation_auditor.audit(
+            surface_text=source_text,
+            canonical_text=claim.claim_text,
+            category=claim.category,
+        )
+        if audit.passed:
+            return []
+
+        severity = "error" if audit.label.value == "drift" else "warning"
+        return [
+            GuardrailViolation(
+                rule_name="surface_preservation",
+                severity=severity,
+                message=audit.rationale,
+                suggestion=(
+                    "Prefer an exact canonicalization that preserves the disputed "
+                    "surface claim, or abstain."
+                ),
+            )
+        ]
+
+    def _check_format_validity(self, claim: FormalizableClaim) -> list[GuardrailViolation]:
         """Check that the claim format matches expected patterns for its category."""
         violations = []
 
@@ -112,8 +142,8 @@ class ClaimGuardrails:
                 violations.append(GuardrailViolation(
                     rule_name="arithmetic_format",
                     severity="error",
-                    message=f"Arithmetic claim must match 'N + M = R' pattern",
-                    suggestion=f"Reformat as 'N + M = R' with actual numbers"
+                    message="Arithmetic claim must match 'N + M = R' pattern",
+                    suggestion="Reformat as 'N + M = R' with actual numbers"
                 ))
 
         elif claim.category == ClaimCategory.FACTORIAL:
@@ -121,7 +151,7 @@ class ClaimGuardrails:
                 violations.append(GuardrailViolation(
                     rule_name="factorial_format",
                     severity="error",
-                    message=f"Factorial claim must match 'factorial N = M' pattern",
+                    message="Factorial claim must match 'factorial N = M' pattern",
                     suggestion="Use format: 'factorial 5 = 120'"
                 ))
 
@@ -130,7 +160,7 @@ class ClaimGuardrails:
                 violations.append(GuardrailViolation(
                     rule_name="inequality_format",
                     severity="error",
-                    message=f"Inequality must use symbols: <, >, <=, >=",
+                    message="Inequality must use symbols: <, >, <=, >=",
                     suggestion="Use format: '3 < 5' or '10 >= 7'"
                 ))
 
@@ -143,14 +173,17 @@ class ClaimGuardrails:
                     suggestion="Use format: 'if x > 5 then x > 3'"
                 ))
 
-        elif claim.category == ClaimCategory.LOGIC_FORALL:
-            if not re.search(r'forall|for\s+all', claim.claim_text, re.IGNORECASE):
-                violations.append(GuardrailViolation(
-                    rule_name="forall_format",
-                    severity="error",
-                    message="Universal quantification must use 'forall'",
-                    suggestion="Use format: 'forall n, n + 0 = n'"
-                ))
+        elif claim.category == ClaimCategory.LOGIC_FORALL and not re.search(
+            r'forall|for\s+all',
+            claim.claim_text,
+            re.IGNORECASE,
+        ):
+            violations.append(GuardrailViolation(
+                rule_name="forall_format",
+                severity="error",
+                message="Universal quantification must use 'forall'",
+                suggestion="Use format: 'forall n, n + 0 = n'"
+            ))
 
         # Check for natural language artifacts that should be removed
         natural_language_artifacts = [
@@ -164,7 +197,7 @@ class ClaimGuardrails:
                 violations.append(GuardrailViolation(
                     rule_name="natural_language_artifact",
                     severity="warning",
-                    message=f"Claim contains natural language artifacts",
+                    message="Claim contains natural language artifacts",
                     suggestion=suggestion
                 ))
 
@@ -174,7 +207,7 @@ class ClaimGuardrails:
         self,
         claim: FormalizableClaim,
         code_context: str
-    ) -> List[GuardrailViolation]:
+    ) -> list[GuardrailViolation]:
         """Check that the claim can be translated by the ClaimTranslator."""
         violations = []
 
@@ -195,7 +228,7 @@ class ClaimGuardrails:
                 violations.append(GuardrailViolation(
                     rule_name="translator_compatibility",
                     severity="error",
-                    message=f"Claim cannot be translated to Coq specification",
+                    message="Claim cannot be translated to Coq specification",
                     suggestion=(
                         f"Claim category is {claim.category.value}. "
                         "Ensure claim text matches expected pattern for this category."
@@ -210,7 +243,7 @@ class ClaimGuardrails:
             violations.append(GuardrailViolation(
                 rule_name="translator_error",
                 severity="error",
-                message=f"Translation failed with error: {str(e)}",
+                message=f"Translation failed with error: {e!s}",
                 suggestion="Check claim format and category alignment"
             ))
 
@@ -219,7 +252,7 @@ class ClaimGuardrails:
     def _check_variable_consistency(
         self,
         claim: FormalizableClaim
-    ) -> List[GuardrailViolation]:
+    ) -> list[GuardrailViolation]:
         """Check that extracted variables match the claim text."""
         violations = []
 
@@ -279,49 +312,53 @@ class ClaimGuardrails:
     def _check_confidence_alignment(
         self,
         claim: FormalizableClaim
-    ) -> List[GuardrailViolation]:
+    ) -> list[GuardrailViolation]:
         """Check that confidence level is reasonable."""
         violations = []
 
         # Low confidence for claims that should be certain
-        if claim.category in [
-            ClaimCategory.ARITHMETIC,
-            ClaimCategory.FACTORIAL,
-            ClaimCategory.INEQUALITY
-        ]:
-            if claim.confidence < 0.8:
-                violations.append(GuardrailViolation(
-                    rule_name="low_confidence_math",
-                    severity="warning",
-                    message=(
-                        f"Mathematical claim has low confidence ({claim.confidence:.2f}). "
-                        "These claims are typically verifiable with high confidence."
-                    ),
-                    suggestion="Review claim extraction quality"
-                ))
+        if (
+            claim.category in [
+                ClaimCategory.ARITHMETIC,
+                ClaimCategory.FACTORIAL,
+                ClaimCategory.INEQUALITY,
+            ]
+            and claim.confidence < 0.8
+        ):
+            violations.append(GuardrailViolation(
+                rule_name="low_confidence_math",
+                severity="warning",
+                message=(
+                    f"Mathematical claim has low confidence ({claim.confidence:.2f}). "
+                    "These claims are typically verifiable with high confidence."
+                ),
+                suggestion="Review claim extraction quality"
+            ))
 
         # Confidence too high for complex claims
-        if claim.category in [
-            ClaimCategory.MEMORY_SAFETY,
-            ClaimCategory.TIME_COMPLEXITY
-        ]:
-            if claim.confidence > 0.9:
-                violations.append(GuardrailViolation(
-                    rule_name="overconfident_complex",
-                    severity="warning",
-                    message=(
-                        f"Complex claim has very high confidence ({claim.confidence:.2f}). "
-                        "Memory safety and complexity claims are typically harder to verify."
-                    ),
-                    suggestion="Consider reducing confidence for complex claims"
-                ))
+        if (
+            claim.category in [
+                ClaimCategory.MEMORY_SAFETY,
+                ClaimCategory.TIME_COMPLEXITY,
+            ]
+            and claim.confidence > 0.9
+        ):
+            violations.append(GuardrailViolation(
+                rule_name="overconfident_complex",
+                severity="warning",
+                message=(
+                    f"Complex claim has very high confidence ({claim.confidence:.2f}). "
+                    "Memory safety and complexity claims are typically harder to verify."
+                ),
+                suggestion="Consider reducing confidence for complex claims"
+            ))
 
         return violations
 
     def _check_pattern_hints(
         self,
         claim: FormalizableClaim
-    ) -> List[GuardrailViolation]:
+    ) -> list[GuardrailViolation]:
         """Check that pattern hints are useful and accurate."""
         violations = []
 
@@ -348,8 +385,7 @@ class ClaimGuardrails:
 
 
 class GuardrailWithRetry:
-    """
-    Wrapper that allows agents to retry claim extraction if guardrails fail.
+    """Wrapper that allows agents to retry claim extraction if guardrails fail.
 
     This implements a feedback loop where guardrail violations are fed back
     to the extraction agent for correction.
@@ -361,8 +397,7 @@ class GuardrailWithRetry:
         guardrails: ClaimGuardrails,
         max_retries: int = 2
     ):
-        """
-        Initialize guardrail with retry mechanism.
+        """Initialize guardrail with retry mechanism.
 
         Args:
             extractor: OpenAIClaimExtractor instance
@@ -378,9 +413,8 @@ class GuardrailWithRetry:
         self,
         text: str,
         code_context: str = ""
-    ) -> Tuple[Optional[FormalizableClaim], GuardrailResult]:
-        """
-        Extract a claim with guardrail validation and retry on failure.
+    ) -> tuple[FormalizableClaim | None, GuardrailResult]:
+        """Extract a claim with guardrail validation and retry on failure.
 
         Args:
             text: Text to extract claim from
@@ -408,7 +442,11 @@ class GuardrailWithRetry:
                 )
 
             # Validate with guardrails
-            validation = self.guardrails.validate(result.claim, code_context)
+            validation = self.guardrails.validate(
+                result.claim,
+                code_context,
+                source_text=text,
+            )
 
             if validation.passed:
                 logger.info(

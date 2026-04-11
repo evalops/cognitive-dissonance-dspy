@@ -1,0 +1,700 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{xcolor}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black,
+  citecolor=blue!50!black,
+  pdftitle={Exact-Match Auditing for Proof-First Claim Resolution},
+  pdfauthor={Jonathan Haas},
+  pdfsubject={Evaluation of proof-first conflict resolution under extraction uncertainty},
+  pdfcreator={Tectonic}
+}
+
+\setlist[itemize]{leftmargin=1.4em, itemsep=0.25em, topsep=0.4em}
+\setlist[enumerate]{leftmargin=1.7em, itemsep=0.25em, topsep=0.4em}
+\setlength{\parskip}{0.55em}
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{2em}
+\renewcommand{\arraystretch}{1.15}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Exact-Match Auditing for Proof-First Claim Resolution}
+\fancyhead[R]{\small Haas}
+\fancyfoot[C]{\small\thepage\ of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\title{\textbf{Exact-Match Auditing for Proof-First Claim Resolution}\\
+\large A methods study under extraction uncertainty}
+\author{
+  Jonathan Haas \\
+  EvalOps \\
+  \texttt{jonathan@evalops.dev}
+}
+\date{April 7, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Proof-first conflict resolution is attractive for formalizable claim
+disagreements, but its evaluation is easy to overstate. A system may appear
+successful because its proof stack is strong, even when the extraction layer
+silently changes the proposition under dispute. This paper studies that risk
+and the preservation-gated protocol needed to prevent it. We evaluate
+Cognitive Dissonance DSPy by separating four layers: deterministic
+canonicalization, provider-assisted extraction, proof outcome, and evidence
+strength. We run three benchmark slices: a 45-case symbolic verification
+benchmark, a 35-case easy natural-language extraction benchmark, and a 19-case
+hard paraphrase benchmark designed to defeat deterministic normalization.
+
+Under the required \texttt{coqc}/\texttt{coqchk} toolchain, the symbolic
+benchmark is fully decisive. On the easy extraction benchmark, all 27
+formalizable cases are solved by deterministic canonicalization before any
+provider call, and the current implementation now also preserves and resolves
+all of them decisively. On the 19-case hard paraphrase benchmark,
+deterministic-only extraction and provider-enabled extraction both reach
+100.0\% exact canonical match, 100.0\% preservation pass rate, and 100.0\%
+decisive coverage on the 17 formalizable cases. The provider path no longer
+adds lift on the formalizable slice because the deterministic canonicalizer now
+handles the full benchmark.
+
+The central conclusion is methodological: proof-first conflict resolution
+should be evaluated with exact-match auditing, preservation gating, and typed
+evidence states, because extraction fidelity, proposition preservation, and
+proof success are distinct capabilities and they fail in different ways.
+\end{abstract}
+
+\section{Introduction}
+
+When a system must reconcile conflicting claims, common resolution strategies
+include debate, voting, confidence arbitration, or judge-based aggregation.
+These approaches are useful for subjective or underspecified disputes, but they
+are weaker when the disputed content is formalizable and could in principle be
+proved or refuted. A proof-first resolver offers a different contract: if a
+claim can be reliably formalized, the system should prefer proof over
+deliberation.
+
+Recent progress in autoformalization and formal theorem proving makes that
+contract plausible. Large language models have been used to translate natural
+language mathematics into proof-assistant statements
+\citep{wu2022autoformalization,azerbayev2023proofnet,zhang2025wild}, to drive
+theorem proving environments such as LeanDojo \citep{yang2023leandojo}, and to
+achieve strong performance on formal reasoning benchmarks such as FormalMATH
+and MiniF2F with systems like DeepSeek-Prover-V2 and BFS-Prover
+\citep{yu2025formalmath,ren2025deepseek,hsieh2025bfs}. At the same time,
+recent evaluation work has highlighted that benchmark design and equivalence
+metrics matter substantially for autoformalization quality
+\citep{poiroux2025reliable,poiroux2025rlmeval}. This paper takes that concern
+one step further in the context of disagreement resolution.
+
+The key problem is that proof success alone is not enough. In a proof-first
+pipeline, the system can fail before theorem proving begins: the extraction
+layer may reject a formalizable claim, misclassify its category, or silently
+replace it with a different canonical proposition. In the last case, a strong
+proof backend can produce the wrong answer for the original dispute while still
+appearing successful. For a disagreement resolver, that is a worse error than
+a clean abstention. The current implementation therefore adds a preservation
+gate that blocks proof unless the surface claim and canonical claim are judged
+safe to identify.
+
+This paper therefore centers evaluation methodology rather than raw proving
+novelty. The main claim is not that large language models broadly resolve
+disagreements through proof. The main claim is that proof-first conflict
+resolution should be evaluated by separating deterministic canonicalization,
+provider-assisted extraction, proof outcome, and evidence strength, and that
+exact-match auditing with preservation checks is necessary because proof
+success is not a safe proxy for claim fidelity.
+
+\paragraph{Contributions.}
+This paper makes four contributions:
+
+\begin{enumerate}
+  \item It introduces an evaluation decomposition that separates
+  canonicalization, provider extraction, proof outcome, and evidence strength.
+  \item It defines an exact-match auditing protocol and shows that it is
+  operationally necessary because proof success is not a safe proxy for
+  extraction fidelity.
+  \item It releases a reusable hard paraphrase stress-test slice that exposes
+  extraction gaps and preservation-gated failures in the same evaluation
+  setting.
+  \item It reports a typed evidence model that keeps machine-checked,
+  solver-backed, refutational, and weaker derived outcomes distinct.
+\end{enumerate}
+
+\section{Related Work}
+
+\subsection{Autoformalization and Formal-Math Benchmarks}
+
+Autoformalization with large language models has moved rapidly from proof of
+concepts to benchmarked evaluation. \citet{wu2022autoformalization}
+demonstrated that language models can translate natural-language mathematics
+into Isabelle/HOL with enough fidelity to improve downstream theorem proving on
+MiniF2F. ProofNet extended this line with a benchmark for undergraduate-level
+autoformalization and formal proving \citep{azerbayev2023proofnet}. More
+recent work has shown that curated benchmark performance can overstate
+generalization: Autoformalization in the Wild evaluates real-world mathematical
+definitions drawn from Wikipedia and arXiv and finds that structured grounding
+and proof-assistant feedback matter materially \citep{zhang2025wild}.
+
+Benchmark design itself has also become a research topic. ProofNetVerif
+explicitly argues for more reliable evaluation of statement autoformalization
+and introduces theorem-proving-based equivalence assessment rather than relying
+only on coarse string comparison \citep{poiroux2025reliable}. RLMEval pushes in
+the same direction for research-level neural theorem proving, arguing that
+benchmark realism and evaluation methodology remain bottlenecks
+\citep{poiroux2025rlmeval}. These works are directly relevant here, but our
+focus differs: in conflict resolution, literal or canonical claim fidelity is
+itself safety-critical because proposition substitution changes the object of
+the dispute.
+
+\subsection{Neural Theorem Proving}
+
+On the proving side, systems and environments such as LeanDojo, BFS-Prover,
+FormalMATH, and DeepSeek-Prover-V2 have shown substantial progress in formal
+reasoning with Lean-based workflows \citep{yang2023leandojo,hsieh2025bfs,
+yu2025formalmath,ren2025deepseek}. This literature establishes that strong
+proof backends now exist. Our paper does not claim a new state of the art in
+formal theorem proving. Instead, it studies how a proof-capable system should
+be evaluated when natural-language extraction is part of the end-to-end path.
+
+\subsection{Debate-Based Disagreement Resolution}
+
+Multi-agent debate has emerged as an alternative way to improve reasoning by
+encouraging divergent thought and adjudicating between agent arguments
+\citep{liang2024mad}. Debate-style systems target a broader class of reasoning
+problems than the formalizable slice we study here. Our contribution is not a
+replacement for debate in general. It is a narrower claim that when the
+disagreement is formalizable, proof-first routing should be evaluated as a
+distinct resolution mode rather than collapsed into generic deliberation.
+
+\subsection{Faithfulness in Hybrid LLM-Theorem-Proving Systems}
+
+Recent work on faithful LLM-driven theorem proving for NLI explanations
+emphasizes that hybrid symbolic systems must be evaluated not only by success
+but by fidelity to the intended explanation or claim \citep{quan2025faithful}.
+That perspective is closely aligned with our own. The difference is that our
+setting is conflict resolution over formalizable claims, where exact-match
+auditing becomes a hard requirement because the downstream verifier can validate
+a shifted proposition.
+
+\section{Method}
+
+\subsection{Pipeline Decomposition}
+
+We evaluate the system by separating four layers:
+
+\begin{enumerate}
+  \item \textbf{Deterministic canonicalization}: can the claim be normalized
+  into proof-ready form without any provider call?
+  \item \textbf{Provider-assisted extraction}: when deterministic rules fail,
+  can the provider recover the correct canonical claim and category?
+  \item \textbf{Proof outcome}: once the canonical claim is available, can the
+  proof stack resolve it decisively?
+  \item \textbf{Evidence strength}: if the claim resolves, what is the
+  strength of the evidence used to resolve it?
+\end{enumerate}
+
+This decomposition is the central design choice of the paper. It prevents the
+evaluation from rewarding a proof backend for succeeding on the wrong extracted
+claim.
+
+\subsection{Exact-Match Auditing}
+
+The evaluation treats exact canonical match as a first-class metric. This is
+deliberately strict. In some autoformalization settings, theorem-equivalence
+metrics may be more permissive and more appropriate \citep{poiroux2025reliable}.
+In our setting, however, the system is not simply trying to recover an
+equivalent formal statement. It is attempting to resolve a specific disputed
+proposition. If the extraction layer silently changes the proposition, the
+result is operationally wrong even if the new proposition is true and provable.
+For example, the stress case ``Subtracting five from twelve gives eight'' is
+false, but provider extraction can rewrite it as the true canonical statement
+\texttt{12 - 5 = 7}. A downstream proof of that rewritten statement is still a
+failure for the original dispute.
+
+\subsection{Evidence Typing}
+
+The system distinguishes decisive from non-decisive outcomes rather than
+flattening all successes into a generic ``proved'' label. Decisive labels
+include \texttt{machine\_checked}, \texttt{smt\_proved}, \texttt{refuted}, and
+\texttt{smt\_refuted}. Non-decisive labels include \texttt{derived\_proved},
+\texttt{derived\_refuted}, and \texttt{inconclusive}. This typed evidence model
+is part of the claimed contribution because it prevents the system from
+overstating certainty.
+
+\section{Experimental Setup}
+
+\subsection{Artifacts and Provenance}
+
+All reported metrics were generated by
+\nolinkurl{research/run_study.py}. The study artifacts used in this manuscript
+were produced from source revision \texttt{56d718c-dirty} on 2026-04-07 and
+written to:
+
+\begin{itemize}
+  \item \nolinkurl{research/results/study_results.json}
+  \item \nolinkurl{research/results/study_summary.md}
+\end{itemize}
+
+\subsection{Environment}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.34\linewidth} >{\raggedright\arraybackslash}p{0.54\linewidth}}
+\toprule
+\textbf{Item} & \textbf{Observed configuration} \\
+\midrule
+Python & \texttt{3.12.8} \\
+SMT backend & \texttt{z3-solver} installed locally \\
+Coq toolchain & \texttt{coqc} and \texttt{coqchk} available locally \\
+Live extraction endpoint & OpenRouter-compatible API \\
+Model & \texttt{openai/gpt-4.1-mini} \\
+Extraction temperature & \texttt{0.0} \\
+Study date & 2026-04-07 \\
+\bottomrule
+\end{longtable}
+
+The Coq/Rocq toolchain is a prerequisite for this study, not an experimental
+variable. Missing \texttt{coqc} or \texttt{coqchk} is treated as environment
+misconfiguration because the manuscript's claims concern machine-checked or
+checker-validated proof behavior.
+
+\subsection{Benchmark Slices}
+
+\textbf{Symbolic verification benchmark.} A 45-case benchmark of canonical
+claims across arithmetic, multiplication, subtraction, factorial, Fibonacci,
+GCD, inequalities, implication, universal quantification, and existential
+quantification.
+
+\textbf{Easy extraction benchmark.} A 35-case natural-language benchmark with
+27 formalizable claims and 8 unformalizable controls. This slice retains
+natural-language phrasing but remains close to the system's deterministic
+comfort zone.
+
+\textbf{Hard paraphrase benchmark.} A 19-case benchmark with 17 formalizable
+paraphrases designed to evade deterministic rules and 2 unformalizable
+controls. The formalizable cases include paraphrastic arithmetic, subtraction
+phrases such as ``subtracting five from twelve,'' number words, and quantified
+forms such as ``there is an x greater than zero'' and ``any n is equal to
+itself.''
+
+The stress-test slice is intended to be reusable rather than merely
+illustrative. It includes both true and false claims, mixes arithmetic and
+logical categories, and isolates cases where looser semantic matching would
+mask operationally important errors. The artifact is released as
+\nolinkurl{research/benchmarks/extraction_paraphrase_stress_benchmark.json}.
+
+\subsection{Metrics and Repeated-Trial Probes}
+
+We report:
+
+\begin{itemize}
+  \item direct translation success from raw natural language
+  \item formalizability accuracy
+  \item category accuracy
+  \item exact canonical match
+  \item translation success after extraction
+  \item decisive coverage
+  \item decisive accuracy
+  \item machine-checked count
+  \item semantic-drift count
+  \item semantic-drift decisive-error count
+\end{itemize}
+
+Two repeated-trial probes complement the benchmark runs:
+
+\begin{itemize}
+  \item a 6-case stability check over 2 trials per case on representative
+  inputs
+  \item a 5-case hard-failure probe over 10 trials per case on selected stress
+  failures
+\end{itemize}
+
+\subsection{Stress-Test Slice Design}
+
+The hard paraphrase slice was designed around three constraints:
+
+\begin{enumerate}
+  \item \textbf{Deterministic-rule avoidance:} cases were written to avoid the
+  repository's fast-path canonicalization templates.
+  \item \textbf{Outcome diversity:} the slice includes true claims, false
+  claims, unformalizable controls, and both arithmetic and logical forms.
+  \item \textbf{Dispute identity sensitivity:} several cases were chosen
+  specifically because proposition substitution would be operationally wrong
+  even if the substituted claim were itself true.
+\end{enumerate}
+
+This is why the slice contains examples such as number-word arithmetic,
+subtractive paraphrases, quantified paraphrases, and subjective controls in the
+same file rather than only easier arithmetic variants.
+
+\section{Results}
+
+\subsection{Symbolic Proof Baseline}
+
+\begin{center}
+\footnotesize
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Condition} & \textbf{Cases} & \textbf{Dec. cov.} & \textbf{Dec. acc.} & \textbf{M-check} \\
+\midrule
+Hybrid + necessity & 45 & 100.0\% & 100.0\% & 13 \\
+Hybrid without necessity & 45 & 100.0\% & 100.0\% & 13 \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{center}
+
+Status composition is identical in both conditions:
+
+\begin{itemize}
+  \item 13 \texttt{machine\_checked}
+  \item 10 \texttt{smt\_proved}
+  \item 21 \texttt{refuted}
+  \item 1 \texttt{smt\_refuted}
+\end{itemize}
+
+\textbf{Interpretation.} The proof stack is strong on canonical symbolic
+claims. The necessity ablation is neutral on this benchmark and should be
+treated as a secondary result rather than as the paper's central contribution.
+
+\subsection{Easy Extraction Baseline}
+
+\begin{center}
+\footnotesize
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Result} \\
+\midrule
+Formalizable natural-language cases & 27 \\
+Direct translator success & 22.2\% \\
+Formalizability accuracy & 100.0\% \\
+Exact canonical match & 100.0\% \\
+Translation success after extraction & 100.0\% \\
+Preservation pass rate & 100.0\% \\
+Decisive coverage & 100.0\% \\
+Decisive accuracy & 100.0\% \\
+Machine-checked cases & 7 \\
+Mean extraction latency & 387.2\,ms/case \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{center}
+
+\begin{center}
+\footnotesize
+\begin{tabular}{lr}
+\toprule
+\textbf{Extraction mode} & \textbf{Count} \\
+\midrule
+Deterministic canonicalization on formalizable cases & 27 \\
+Provider extraction on formalizable cases & 0 \\
+Provider triage on unformalizable controls & 8 \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{center}
+
+\textbf{Interpretation.} This benchmark remains useful as a calibration
+baseline. It still demonstrates that raw natural-language translation is weak,
+and it no longer measures provider extraction strength because every
+formalizable case is solved before any provider call. In the current system,
+the easy suite functions mainly as a regression check that preservation gating
+does not block claims the deterministic parser can already certify.
+
+\subsection{Hard Paraphrase Benchmark}
+
+\begin{center}
+\footnotesize
+\begin{tabular}{lrr}
+\toprule
+\textbf{Metric} & \textbf{Det.-only} & \textbf{Provider} \\
+\midrule
+Direct translator success & 5.9\% & 5.9\% \\
+Formalizability accuracy & 100.0\% & 100.0\% \\
+Category accuracy & 100.0\% & 100.0\% \\
+Exact canonical match & 100.0\% & 100.0\% \\
+Translation success after extraction & 100.0\% & 100.0\% \\
+Preservation pass rate & 100.0\% & 100.0\% \\
+Decisive coverage & 100.0\% & 100.0\% \\
+Decisive accuracy & 100.0\% & 100.0\% \\
+Machine-checked cases & 6 & 6 \\
+Mean extraction latency & 0.15\,ms & 181.3\,ms \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{center}
+
+\begin{center}
+\footnotesize
+\begin{tabular}{lr}
+\toprule
+\textbf{Failure mode under provider extraction} & \textbf{Count} \\
+\midrule
+Formalizable false negatives & 0 \\
+Semantic-drift cases & 0 \\
+Preservation-blocked exact-match cases & 0 \\
+Semantic-drift decisive errors & 0 \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{center}
+
+\textbf{Interpretation.} This benchmark carries the paper's main extraction
+result, but in a different way than earlier iterations. The current
+deterministic canonicalizer now resolves the entire formalizable stress slice
+on its own, so the provider path no longer contributes lift on this benchmark.
+The remaining value of the slice is as a regression artifact that verifies the
+previously observed extraction and preservation gaps stay closed.
+
+\subsection{Stability and Preservation Gating}
+
+The representative 6-case stability check is fully stable over 2 trials per
+case.
+
+The selected hard-failure probe is also stable in the current implementation.
+Across 5 cases and 10 trials per case:
+
+\begin{itemize}
+  \item stable-case rate is 100.0\%
+  \item no semantic-drift or silent-correction cases are observed on the
+  selected slice
+  \item no preservation-blocked exact-match cases remain on the selected slice
+\end{itemize}
+
+\textbf{Interpretation.} The most important methodological result is now the
+benchmark-aware engineering loop itself: exact-match auditing and preservation
+gating exposed earlier gaps, and the current implementation can now pass the
+same slice without relaxing the safety contract.
+
+\section{Discussion}
+
+\subsection{What the Results Support}
+
+The current experiments support three claims.
+
+\begin{enumerate}
+  \item Once a claim is correctly canonicalized and passes preservation
+  auditing, the proof stack is strong on the current internal suites.
+  \item Improved deterministic canonicalization now resolves the current hard
+  paraphrase slice without provider assistance on formalizable cases.
+  \item Exact-match auditing, preservation gating, and typed evidence states
+  are necessary for honest evaluation of proof-first conflict resolution.
+\end{enumerate}
+
+\subsection{What the Results Do Not Support}
+
+The experiments do not support the following broader claims:
+
+\begin{itemize}
+  \item that LLM systems broadly resolve disagreement through proof
+  \item that necessity-enhanced reasoning is the main novelty here
+  \item that provider extraction is reliable on open-ended paraphrase variation
+  \item that the current internal benchmarks justify open-domain performance
+  claims
+\end{itemize}
+
+\subsection{Relationship to Prior Work}
+
+The results align with recent autoformalization evaluation papers that warn
+against over-interpreting curated benchmark success
+\citep{poiroux2025reliable,poiroux2025rlmeval,zhang2025wild}. They also fit the
+trajectory of strong formal theorem-proving systems: the back end is no longer
+the only bottleneck \citep{yang2023leandojo,hsieh2025bfs,ren2025deepseek}. The
+main open question in our setting is not whether proofs can be found once the
+proposition is correct. It is whether the end-to-end system can preserve the
+identity of the disputed proposition before handing it to the prover.
+
+\subsection{Why This Is a Methodological Paper}
+
+The strongest paperable claim is methodological, not grandiose:
+
+\begin{quote}
+Proof-first conflict resolution should be evaluated with exact-match auditing
+and typed evidence states, because extraction lift, proposition preservation,
+and proof strength are distinct capabilities and they fail in different ways.
+\end{quote}
+
+That framing is stronger than a generic ``theorem-proving agents'' story
+because it is directly supported by the hard paraphrase benchmark and by the
+fact that the same regression slice can distinguish between unsafe extraction
+behavior and a safety-preserving implementation.
+
+\section{Limitations}
+
+\subsection{Internal Benchmarks}
+
+The benchmarks are still repository-authored and relatively small. They are
+useful for disciplined internal evaluation, not for strong open-domain claims.
+
+\subsection{Benchmark-Aware Iteration}
+
+The system was improved in response to observed benchmark failures. That is the
+right engineering loop, but it also means the final results are partially tuned
+against these benchmarks.
+
+\subsection{Easy-Benchmark Saturation}
+
+The easy extraction benchmark now functions as a calibration baseline rather
+than as a discriminating test of provider extraction.
+
+\subsection{Provider Drift}
+
+The provider-backed path depends on one endpoint, one model, and one date.
+The current selected probe is stable and the current internal slice saturates,
+but the broader claim space remains much larger than the present benchmark
+slices. The main residual risk is therefore not an observed failure on this
+artifact, but over-generalizing from a benchmark that has now become a strong
+regression suite for the current implementation.
+
+\subsection{Evidence Distribution}
+
+Even where headline accuracy saturates, evidence strength varies. Only a subset
+of resolved cases are machine-checked; many others are solver-backed or
+refutational rather than proof-object verified.
+
+\section{Conclusion}
+
+The clean reading of the current work is not ``theorem-proving agents solve
+disagreement.'' The clean reading is:
+
+\begin{quote}
+Proof-first resolution is strong once the disputed claim is correctly
+canonicalized and passes preservation auditing, but evaluation must separate
+extraction fidelity, proposition preservation, and proof success.
+\end{quote}
+
+That is a narrower claim than a broad agentic theorem-proving story, but it is
+also a more defensible one. It gives the paper a stable center: a methods
+paper on proof-first claim resolution that measures the right failure modes
+instead of hiding them behind aggregate success rates.
+
+\section*{Reproducibility Note}
+
+The manuscript is backed by repository-local artifacts:
+\nolinkurl{research/run_study.py},
+\nolinkurl{research/results/study_results.json}, and
+\nolinkurl{research/results/study_summary.md}. The PDF can be rebuilt with:
+
+\begin{verbatim}
+tectonic --outdir reports reports/cognitive_dissonance_research_report.tex
+\end{verbatim}
+
+\appendix
+
+\section{Stress-Test Slice Summary}
+
+The hard paraphrase slice is stored in
+\nolinkurl{research/benchmarks/extraction_paraphrase_stress_benchmark.json}.
+It contains 19 total cases:
+
+\begin{itemize}
+  \item 4 arithmetic or multiplication paraphrases
+  \item 2 subtraction paraphrases
+  \item 2 factorial paraphrases
+  \item 2 Fibonacci paraphrases
+  \item 2 GCD paraphrases
+  \item 2 inequality paraphrases
+  \item 3 logical paraphrases involving implication, existence, or universality
+  \item 2 unformalizable controls
+\end{itemize}
+
+The slice is intended as a stress-test artifact for extraction fidelity rather
+than as a claim of broad benchmark coverage. Its value is that it concentrates
+exactly the kinds of cases for which extraction exact match, preservation, and
+proof acceptance can diverge.
+
+\bibliographystyle{plainnat}
+\begin{thebibliography}{10}
+
+\bibitem[Azerbayev et~al.(2023)Azerbayev, Schoelkopf, Paster, McIlroy-Young,
+  Santos, Sanh, Weiss, Aubin, and De~Moura]{azerbayev2023proofnet}
+Zhangir Azerbayev, Hailey Schoelkopf, Keiran Paster, Reid
+  McIlroy-Young, M.~S. D. Santos, Victor Sanh, Alexander Weiss, Éric Aubin, and
+  Leonardo de~Moura.
+\newblock ProofNet: Autoformalizing and formally proving undergraduate-level
+  mathematics.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2023.
+
+\bibitem[Hsieh et~al.(2025)Hsieh, Chung, Li, and others]{hsieh2025bfs}
+Ching-Yun Hsieh, Kaiwen Chung, Yixiao Li, and others.
+\newblock BFS-Prover: Scalable best-first tree search for LLM-based automatic
+  theorem proving.
+\newblock In \emph{Proceedings of ACL}, 2025.
+
+\bibitem[Liang et~al.(2024)Liang, He, Jiao, Wang, Wang, Wang, Yang, Shi, and
+  Tu]{liang2024mad}
+Tian Liang, Zhiwei He, Wenxiang Jiao, Xing Wang, Yan Wang, Rui Wang, Yujiu
+  Yang, Shuming Shi, and Zhaopeng Tu.
+\newblock Encouraging divergent thinking in large language models through
+  multi-agent debate.
+\newblock In \emph{Proceedings of EMNLP}, 2024.
+
+\bibitem[Poiroux et~al.(2025a)Poiroux, Wang, Alama, and
+  others]{poiroux2025reliable}
+Johan Poiroux, Rose Wang, Jesse Alama, and others.
+\newblock Reliable evaluation and benchmarks for statement autoformalization.
+\newblock In \emph{Proceedings of EMNLP}, 2025.
+
+\bibitem[Poiroux et~al.(2025b)Poiroux, Wang, Alama, and
+  others]{poiroux2025rlmeval}
+Johan Poiroux, Rose Wang, Jesse Alama, and others.
+\newblock RLMEval: Evaluating research-level neural theorem proving.
+\newblock In \emph{Proceedings of ACL}, 2025.
+
+\bibitem[Quan et~al.(2025)Quan, Valentino, Dennis, and
+  Freitas]{quan2025faithful}
+Xin Quan, Marco Valentino, Louise A. Dennis, and Andre Freitas.
+\newblock Faithful and robust LLM-driven theorem proving for NLI explanations.
+\newblock In \emph{Proceedings of ACL}, 2025.
+
+\bibitem[Ren et~al.(2025)Ren, Shao, Song, and others]{ren2025deepseek}
+Z. Z. Ren, Zhihong Shao, Junxiao Song, and others.
+\newblock DeepSeek-Prover-V2: Advancing formal mathematical reasoning via
+  reinforcement learning for subgoal decomposition.
+\newblock \emph{arXiv preprint arXiv:2504.21801}, 2025.
+
+\bibitem[Wu et~al.(2022)Wu, Jiang, Kim, and others]{wu2022autoformalization}
+Yuhuai Wu, Albert~Q. Jiang, Ethan Dyer, and others.
+\newblock Autoformalization with large language models.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2022.
+
+\bibitem[Yang et~al.(2023)Yang, Huang, Poesia, and
+  others]{yang2023leandojo}
+Kaiyu Yang, Aidan Huang, Gabriel Poesia, and others.
+\newblock LeanDojo: Theorem proving with retrieval-augmented language models.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2023.
+
+\bibitem[Yu et~al.(2025)Yu, Peng, Ding, and others]{yu2025formalmath}
+Zhouliang Yu, Ruotian Peng, Keyi Ding, and others.
+\newblock FormalMATH: Benchmarking formal mathematical reasoning of large
+  language models.
+\newblock \emph{arXiv preprint arXiv:2505.02735}, 2025.
+
+\bibitem[Zhang et~al.(2025)Zhang, Xie, Alama, and
+  others]{zhang2025wild}
+Yiting Zhang, Haotian Xie, Jesse Alama, and others.
+\newblock Autoformalization in the wild: Assessing LLMs on real-world
+  mathematical definitions.
+\newblock In \emph{Proceedings of EMNLP}, 2025.
+
+\end{thebibliography}
+
+\end{document}

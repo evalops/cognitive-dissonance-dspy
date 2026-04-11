@@ -1,17 +1,18 @@
 """Tests for OpenAI Agents SDK integration."""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 import json
+from unittest.mock import MagicMock, patch
 
-from formal_verification.structured_models import (
-    FormalizableClaim,
-    ClaimCategory,
-    ClaimExtractionResult
-)
-from formal_verification.openai_agents import OpenAIClaimExtractor
-from formal_verification.guardrails import ClaimGuardrails, GuardrailViolation
+import pytest
+
+from formal_verification.guardrails import ClaimGuardrails
 from formal_verification.hybrid_resolver import HybridCognitiveDissonanceResolver
+from formal_verification.openai_agents import OpenAIClaimExtractor
+from formal_verification.structured_models import (
+    ClaimCategory,
+    FormalizableClaim,
+    PreservationLabel,
+)
 
 
 class TestStructuredModels:
@@ -26,7 +27,7 @@ class TestStructuredModels:
             confidence=0.95,
             variables={"left": "2", "right": "2", "result": "4"},
             pattern_hints=["addition", "equals"],
-            reasoning="Simple arithmetic claim"
+            reasoning="Simple arithmetic claim",
         )
         assert claim.claim_text == "2 + 2 = 4"
 
@@ -38,7 +39,7 @@ class TestStructuredModels:
                 confidence=0.95,
                 variables={},
                 pattern_hints=[],
-                reasoning="Invalid format"
+                reasoning="Invalid format",
             )
 
     def test_formalizable_claim_validation_factorial(self):
@@ -50,7 +51,7 @@ class TestStructuredModels:
             confidence=0.95,
             variables={"input": "5", "output": "120"},
             pattern_hints=["factorial"],
-            reasoning="Factorial calculation"
+            reasoning="Factorial calculation",
         )
         assert claim.claim_text == "factorial 5 = 120"
 
@@ -62,7 +63,32 @@ class TestStructuredModels:
                 confidence=0.95,
                 variables={},
                 pattern_hints=[],
-                reasoning="Invalid format"
+                reasoning="Invalid format",
+            )
+
+    def test_formalizable_claim_validation_multiplication(self):
+        """Test that multiplication claims are validated correctly."""
+        claim = FormalizableClaim(
+            category=ClaimCategory.MULTIPLICATION,
+            claim_text="3 * 4 = 12",
+            confidence=0.95,
+            variables={"left": "3", "right": "4", "result": "12"},
+            pattern_hints=["multiplication"],
+            reasoning="Multiplication calculation",
+        )
+        assert claim.claim_text == "3 * 4 = 12"
+
+        with pytest.raises(
+            ValueError,
+            match="Multiplication claim must match pattern",
+        ):
+            FormalizableClaim(
+                category=ClaimCategory.MULTIPLICATION,
+                claim_text="three times four equals twelve",
+                confidence=0.95,
+                variables={},
+                pattern_hints=[],
+                reasoning="Invalid format",
             )
 
     def test_formalizable_claim_validation_logic(self):
@@ -74,7 +100,7 @@ class TestStructuredModels:
             confidence=0.9,
             variables={"hypothesis": "x > 5", "conclusion": "x > 3"},
             pattern_hints=["if", "then"],
-            reasoning="Logical implication"
+            reasoning="Logical implication",
         )
         assert "if" in claim.claim_text and "then" in claim.claim_text
 
@@ -85,7 +111,7 @@ class TestStructuredModels:
             confidence=0.9,
             variables={"variable": "n", "property": "n + 0 = n"},
             pattern_hints=["forall"],
-            reasoning="Universal quantification"
+            reasoning="Universal quantification",
         )
         assert "forall" in claim.claim_text
 
@@ -104,15 +130,15 @@ class TestGuardrails:
             confidence=0.95,
             variables={"left": "2", "right": "2", "result": "4"},
             pattern_hints=["addition"],
-            reasoning="Valid arithmetic"
+            reasoning="Valid arithmetic",
         )
 
         result = guardrails.validate(valid_claim)
         # May have warnings but should not have errors for well-formed claims
-        errors = [v for v in result.violations if v.severity == 'error']
+        errors = [v for v in result.violations if v.severity == "error"]
         # Note: translator_compatibility might fail without actual Coq installation
         # so we just check format validation passed
-        format_errors = [v for v in errors if v.rule_name == 'arithmetic_format']
+        format_errors = [v for v in errors if v.rule_name == "arithmetic_format"]
         assert len(format_errors) == 0
 
     def test_natural_language_artifact_detection(self):
@@ -126,14 +152,13 @@ class TestGuardrails:
             confidence=0.9,
             variables={},
             pattern_hints=["sorted"],
-            reasoning="Has natural language"
+            reasoning="Has natural language",
         )
 
         result = guardrails.validate(claim)
         # Should have warnings about natural language artifacts
         nl_warnings = [
-            v for v in result.violations
-            if v.rule_name == 'natural_language_artifact'
+            v for v in result.violations if v.rule_name == "natural_language_artifact"
         ]
         assert len(nl_warnings) > 0
 
@@ -148,13 +173,12 @@ class TestGuardrails:
             confidence=0.95,
             variables={"left": "3", "right": "5", "result": "8"},  # Wrong values
             pattern_hints=[],
-            reasoning="Inconsistent variables"
+            reasoning="Inconsistent variables",
         )
 
         result = guardrails.validate(claim)
         var_violations = [
-            v for v in result.violations
-            if v.rule_name == 'variable_not_in_claim'
+            v for v in result.violations if v.rule_name == "variable_not_in_claim"
         ]
         # Should detect that 3, 5, 8 are not in "2 + 2 = 4"
         assert len(var_violations) > 0
@@ -163,7 +187,42 @@ class TestGuardrails:
 class TestOpenAIClaimExtractor:
     """Test OpenAI claim extraction (mocked)."""
 
-    @patch('formal_verification.openai_agents.OpenAI')
+    def test_rule_based_extraction_includes_proof_artifacts(self):
+        """Deterministic extraction should emit IR and a passing preservation audit."""
+        extractor = OpenAIClaimExtractor()
+        result = extractor.extract_claim("Adding four and five yields nine.")
+
+        assert result.is_formalizable is True
+        assert result.claim is not None
+        assert result.claim.claim_text == "4 + 5 = 9"
+        assert result.claim_ir is not None
+        assert result.claim_ir.kind.value == "arithmetic"
+        assert result.preservation_audit is not None
+        assert result.preservation_audit.passed is True
+        assert result.preservation_audit.label == PreservationLabel.EQUIVALENT
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_initializes_openai_compatible_client(self, mock_openai_class):
+        """Test that compatible provider configuration is forwarded."""
+        OpenAIClaimExtractor(
+            api_key="test-key",
+            model="openai/gpt-4.1-mini",
+            base_url="https://openrouter.ai/api/v1",
+            app_name="EvalOps Cognitive Dissonance",
+            site_url="https://evalops.dev",
+            temperature=0.0,
+        )
+
+        mock_openai_class.assert_called_once_with(
+            api_key="test-key",
+            base_url="https://openrouter.ai/api/v1",
+            default_headers={
+                "X-Title": "EvalOps Cognitive Dissonance",
+                "HTTP-Referer": "https://evalops.dev",
+            },
+        )
+
+    @patch("formal_verification.openai_agents.OpenAI")
     def test_extract_arithmetic_claim(self, mock_openai_class):
         """Test extraction of arithmetic claim."""
         # Mock OpenAI response
@@ -173,38 +232,374 @@ class TestOpenAIClaimExtractor:
         # Mock triage response
         triage_response = MagicMock()
         triage_response.choices = [MagicMock()]
-        triage_response.choices[0].message.content = json.dumps({
-            "is_formalizable": True,
-            "category": "arithmetic",
-            "reasoning": "Simple arithmetic claim",
-            "suggestion": ""
-        })
+        triage_response.choices[0].message.content = json.dumps(
+            {
+                "is_formalizable": True,
+                "category": "arithmetic",
+                "reasoning": "Simple arithmetic claim",
+                "suggestion": "",
+            }
+        )
 
         # Mock math extraction response
         math_response = MagicMock()
         math_response.choices = [MagicMock()]
-        math_response.choices[0].message.content = json.dumps({
-            "claim_text": "2 + 2 = 4",
-            "confidence": 0.95,
-            "variables": {"left": "2", "right": "2", "result": "4"},
-            "pattern_hints": ["addition", "equals"],
-            "reasoning": "Extracted arithmetic claim"
-        })
+        math_response.choices[0].message.content = json.dumps(
+            {
+                "claim_text": "2 + 2 = 4",
+                "confidence": 0.95,
+                "variables": {"left": "2", "right": "2", "result": "4"},
+                "pattern_hints": ["addition", "equals"],
+                "reasoning": "Extracted arithmetic claim",
+            }
+        )
 
         mock_client.chat.completions.create.side_effect = [
             triage_response,
-            math_response
+            math_response,
         ]
 
-        extractor = OpenAIClaimExtractor()
-        result = extractor.extract_claim("two plus two equals four")
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
 
         assert result.is_formalizable
         assert result.claim is not None
         assert result.claim.claim_text == "2 + 2 = 4"
         assert result.claim.category == ClaimCategory.ARITHMETIC
 
-    @patch('formal_verification.openai_agents.OpenAI')
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_provider_drift_is_corrected_when_rule_based_preservation_exists(
+        self, mock_openai_class
+    ):
+        """When deterministic canonicalization knows the claim, keep the stated fact."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        triage_response = MagicMock()
+        triage_response.choices = [MagicMock()]
+        triage_response.choices[0].message.content = json.dumps(
+            {
+                "is_formalizable": True,
+                "category": "subtraction",
+                "reasoning": "Arithmetic subtraction claim",
+                "suggestion": "",
+            }
+        )
+
+        math_response = MagicMock()
+        math_response.choices = [MagicMock()]
+        math_response.choices[0].message.content = json.dumps(
+            {
+                "claim_text": "12 - 5 = 7",
+                "confidence": 0.95,
+                "variables": {"left": "12", "right": "5", "result": "7"},
+                "pattern_hints": ["subtraction"],
+                "reasoning": "Extracted subtraction claim",
+            }
+        )
+
+        mock_client.chat.completions.create.side_effect = [
+            triage_response,
+            math_response,
+        ]
+
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that subtracting five from twelve gives eight."
+        )
+
+        assert result.is_formalizable is True
+        assert result.claim is not None
+        assert result.claim.claim_text == "12 - 5 = 8"
+        assert result.preservation_audit is not None
+        assert result.preservation_audit.passed is True
+        assert result.preservation_audit.label == PreservationLabel.EQUIVALENT
+        assert result.extraction_mode == "provider_with_rule_correction"
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_normalizes_provider_category_labels(self, mock_openai_class):
+        """Test that provider category labels are normalized before enum lookup."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        triage_response = MagicMock()
+        triage_response.choices = [MagicMock()]
+        triage_response.choices[0].message.content = json.dumps(
+            {
+                "is_formalizable": True,
+                "category": "Arithmetic",
+                "reasoning": "Simple arithmetic claim",
+                "suggestion": "",
+            }
+        )
+
+        math_response = MagicMock()
+        math_response.choices = [MagicMock()]
+        math_response.choices[0].message.content = json.dumps(
+            {
+                "claim_text": "2 + 2 = 4",
+                "confidence": 0.95,
+                "variables": {"left": "2", "right": "2", "result": "4"},
+                "pattern_hints": ["addition", "equals"],
+                "reasoning": "Extracted arithmetic claim",
+            }
+        )
+
+        mock_client.chat.completions.create.side_effect = [
+            triage_response,
+            math_response,
+        ]
+
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
+
+        assert result.is_formalizable
+        assert result.claim is not None
+        assert result.claim.category == ClaimCategory.ARITHMETIC
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_normalizes_minimal_provider_triage_payload(self, mock_openai_class):
+        """Test that minimal compatible-provider triage payloads are accepted."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        triage_response = MagicMock()
+        triage_response.choices = [MagicMock()]
+        triage_response.choices[0].message.content = json.dumps(
+            {
+                "formalizable": True,
+                "category": "Arithmetic",
+            }
+        )
+
+        math_response = MagicMock()
+        math_response.choices = [MagicMock()]
+        math_response.choices[0].message.content = json.dumps(
+            {
+                "claim_text": "2 + 2 = 4",
+                "confidence": 0.95,
+                "variables": {"left": "2", "right": "2", "result": "4"},
+                "pattern_hints": ["addition"],
+                "reasoning": "Extracted arithmetic claim",
+            }
+        )
+
+        mock_client.chat.completions.create.side_effect = [
+            triage_response,
+            math_response,
+        ]
+
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
+
+        assert result.is_formalizable
+        assert result.claim is not None
+        assert result.reasoning == "Extracted arithmetic claim"
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_normalizes_flat_claim_payload(self, mock_openai_class):
+        """Test that top-level variable fields are folded into variables."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        triage_response = MagicMock()
+        triage_response.choices = [MagicMock()]
+        triage_response.choices[0].message.content = json.dumps(
+            {
+                "is_formalizable": True,
+                "category": "arithmetic",
+                "reasoning": "Arithmetic claim",
+                "suggestion": "",
+            }
+        )
+
+        math_response = MagicMock()
+        math_response.choices = [MagicMock()]
+        math_response.choices[0].message.content = json.dumps(
+            {
+                "claim": "2 + 2 = 4",
+                "confidence": "0.9",
+                "left": 2,
+                "right": 2,
+                "result": 4,
+                "keywords": ["addition"],
+            }
+        )
+
+        mock_client.chat.completions.create.side_effect = [
+            triage_response,
+            math_response,
+        ]
+
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
+
+        assert result.is_formalizable
+        assert result.claim is not None
+        assert result.claim.claim_text == "2 + 2 = 4"
+        assert result.claim.variables == {
+            "left": "2",
+            "right": "2",
+            "result": "4",
+        }
+        assert result.claim.pattern_hints == ["addition"]
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_parses_fenced_json_from_provider(self, mock_openai_class):
+        """Test that fenced JSON responses are parsed correctly."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        triage_response = MagicMock()
+        triage_response.choices = [MagicMock()]
+        triage_response.choices[0].message.content = (
+            "```json\n"
+            '{"is_formalizable": true, "category": "arithmetic", '
+            '"reasoning": "Arithmetic claim", "suggestion": ""}\n'
+            "```"
+        )
+
+        math_response = MagicMock()
+        math_response.choices = [MagicMock()]
+        math_response.choices[0].message.content = (
+            "Here is the result:\n"
+            '{"claim_text": "2 + 2 = 4", "confidence": 0.95, '
+            '"variables": {"left": "2", "right": "2", '
+            '"result": "4"}, "pattern_hints": ["addition"], '
+            '"reasoning": "Extracted arithmetic claim"}'
+        )
+
+        mock_client.chat.completions.create.side_effect = [
+            triage_response,
+            math_response,
+        ]
+
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
+
+        assert result.is_formalizable
+        assert result.claim is not None
+        assert result.claim.claim_text == "2 + 2 = 4"
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_infers_more_specific_category_from_provider_claim_text(
+        self, mock_openai_class
+    ):
+        """Provider claim text should override an overly generic triage label."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        triage_response = MagicMock()
+        triage_response.choices = [MagicMock()]
+        triage_response.choices[0].message.content = json.dumps(
+            {
+                "is_formalizable": True,
+                "category": "arithmetic",
+                "reasoning": "Math claim",
+                "suggestion": "",
+            }
+        )
+
+        math_response = MagicMock()
+        math_response.choices = [MagicMock()]
+        math_response.choices[0].message.content = json.dumps(
+            {
+                "claim_text": "3 * 4 = 12",
+                "confidence": 0.95,
+                "variables": {"left": "3", "right": "4", "result": "12"},
+                "pattern_hints": ["multiplication"],
+                "reasoning": "Extracted multiplication claim",
+            }
+        )
+
+        mock_client.chat.completions.create.side_effect = [
+            triage_response,
+            math_response,
+        ]
+
+        extractor = OpenAIClaimExtractor(api_key="test-key")
+        result = extractor.extract_claim(
+            "Please formalize the statement that three times four is twelve."
+        )
+
+        assert result.is_formalizable
+        assert result.claim is not None
+        assert result.claim.category == ClaimCategory.MULTIPLICATION
+        assert result.claim.claim_text == "3 * 4 = 12"
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_rule_based_claim_preserves_stated_false_math_claim(
+        self, mock_openai_class
+    ):
+        """Deterministic extraction should preserve obvious false math claims."""
+        extractor = OpenAIClaimExtractor()
+        result = extractor.extract_claim("Ten minus three equals eight.")
+
+        assert result.is_formalizable
+        assert result.claim is not None
+        assert result.claim.category == ClaimCategory.SUBTRACTION
+        assert result.claim.claim_text == "10 - 3 = 8"
+        mock_openai_class.assert_not_called()
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_uses_json_object_for_compatible_provider(self, mock_openai_class):
+        """Test that compatible providers use the portable JSON object mode."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        triage_response = MagicMock()
+        triage_response.choices = [MagicMock()]
+        triage_response.choices[0].message.content = json.dumps(
+            {
+                "is_formalizable": True,
+                "category": "arithmetic",
+                "reasoning": "Simple arithmetic claim",
+                "suggestion": "",
+            }
+        )
+
+        math_response = MagicMock()
+        math_response.choices = [MagicMock()]
+        math_response.choices[0].message.content = json.dumps(
+            {
+                "claim_text": "2 + 2 = 4",
+                "confidence": 0.95,
+                "variables": {"left": "2", "right": "2", "result": "4"},
+                "pattern_hints": ["addition", "equals"],
+                "reasoning": "Extracted arithmetic claim",
+            }
+        )
+
+        mock_client.chat.completions.create.side_effect = [
+            triage_response,
+            math_response,
+        ]
+
+        extractor = OpenAIClaimExtractor(
+            api_key="test-key",
+            base_url="https://openrouter.ai/api/v1",
+            model="openai/gpt-4.1-mini",
+        )
+        result = extractor.extract_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
+
+        assert result.is_formalizable
+        create_calls = mock_client.chat.completions.create.call_args_list
+        assert create_calls[0].kwargs["response_format"] == {"type": "json_object"}
+        assert create_calls[1].kwargs["response_format"] == {"type": "json_object"}
+
+    @patch("formal_verification.openai_agents.OpenAI")
     def test_extract_unformalizable_claim(self, mock_openai_class):
         """Test that unformalizable claims are rejected."""
         mock_client = MagicMock()
@@ -213,29 +608,94 @@ class TestOpenAIClaimExtractor:
         # Mock triage response for unformalizable claim
         triage_response = MagicMock()
         triage_response.choices = [MagicMock()]
-        triage_response.choices[0].message.content = json.dumps({
-            "is_formalizable": False,
-            "category": "unformalizable",
-            "reasoning": "Subjective claim without mathematical content",
-            "suggestion": "Provide a mathematical or algorithmic claim"
-        })
+        triage_response.choices[0].message.content = json.dumps(
+            {
+                "is_formalizable": False,
+                "category": "unformalizable",
+                "reasoning": "Subjective claim without mathematical content",
+                "suggestion": "Provide a mathematical or algorithmic claim",
+            }
+        )
 
         mock_client.chat.completions.create.return_value = triage_response
 
-        extractor = OpenAIClaimExtractor()
+        extractor = OpenAIClaimExtractor(api_key="test-key")
         result = extractor.extract_claim("the code is elegant")
 
         assert not result.is_formalizable
         assert result.claim is None
         assert "Subjective" in result.reasoning
 
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_rule_based_rescue_for_obvious_logic_claims(self, mock_openai_class):
+        """Rule-based normalization should bypass provider calls for simple logic."""
+        extractor = OpenAIClaimExtractor()
+        result = extractor.extract_claim(
+            "If x is greater than 5, then x is greater than 3."
+        )
+
+        assert result.is_formalizable
+        assert result.claim is not None
+        assert result.claim.category == ClaimCategory.LOGIC_IMPLICATION
+        assert result.claim.claim_text == "if x > 5 then x > 3"
+        mock_openai_class.assert_not_called()
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_rule_based_rescue_for_unsupported_logic_category(self, mock_openai_class):
+        """Deterministic normalization should also handle quantified logic."""
+        extractor = OpenAIClaimExtractor()
+        result = extractor.extract_claim("For all n, n plus zero equals n.")
+
+        assert result.is_formalizable
+        assert result.claim is not None
+        assert result.claim.category == ClaimCategory.LOGIC_FORALL
+        assert result.claim.claim_text == "forall n, n + 0 = n"
+        mock_openai_class.assert_not_called()
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_rule_based_handles_hyphenated_number_words(self, mock_openai_class):
+        """Hyphenated number words should not require provider extraction."""
+        extractor = OpenAIClaimExtractor()
+        result = extractor.extract_claim("Seven times six is forty-two.")
+
+        assert result.is_formalizable
+        assert result.claim is not None
+        assert result.claim.category == ClaimCategory.MULTIPLICATION
+        assert result.claim.claim_text == "7 * 6 = 42"
+        mock_openai_class.assert_not_called()
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_initializes_without_provider_client_when_api_key_missing(
+        self, mock_openai_class
+    ):
+        """Missing credentials should leave the extractor in deterministic mode."""
+        extractor = OpenAIClaimExtractor()
+
+        assert extractor.client is None
+        mock_openai_class.assert_not_called()
+
+    @patch("formal_verification.openai_agents.OpenAI")
+    def test_non_rule_based_claim_without_credentials_returns_clear_failure(
+        self, mock_openai_class
+    ):
+        """Claims needing provider routing should fail clearly without a key."""
+        extractor = OpenAIClaimExtractor()
+        result = extractor.extract_claim(
+            "Please formalize the statement that the code is elegant."
+        )
+
+        assert not result.is_formalizable
+        assert result.claim is None
+        assert "credentials" in result.reasoning.lower()
+        mock_openai_class.assert_not_called()
+
 
 class TestHybridResolver:
     """Test the hybrid resolver integration."""
 
-    @patch('formal_verification.openai_agents.OpenAI')
-    @patch('formal_verification.hybrid_resolver.CoqProver')
-    def test_analyze_claim_success(self, mock_prover_class, mock_openai_class):
+    @patch("formal_verification.openai_agents.OpenAI")
+    @patch("formal_verification.hybrid_resolver.FormalVerificationConflictDetector")
+    def test_analyze_claim_success(self, mock_detector_class, mock_openai_class):
         """Test successful claim analysis."""
         # Mock OpenAI
         mock_client = MagicMock()
@@ -243,50 +703,71 @@ class TestHybridResolver:
 
         triage_response = MagicMock()
         triage_response.choices = [MagicMock()]
-        triage_response.choices[0].message.content = json.dumps({
-            "is_formalizable": True,
-            "category": "arithmetic",
-            "reasoning": "Arithmetic claim",
-            "suggestion": ""
-        })
+        triage_response.choices[0].message.content = json.dumps(
+            {
+                "is_formalizable": True,
+                "category": "arithmetic",
+                "reasoning": "Arithmetic claim",
+                "suggestion": "",
+            }
+        )
 
         math_response = MagicMock()
         math_response.choices = [MagicMock()]
-        math_response.choices[0].message.content = json.dumps({
-            "claim_text": "2 + 2 = 4",
-            "confidence": 0.95,
-            "variables": {"left": "2", "right": "2", "result": "4"},
-            "pattern_hints": ["addition"],
-            "reasoning": "Simple arithmetic"
-        })
+        math_response.choices[0].message.content = json.dumps(
+            {
+                "claim_text": "2 + 2 = 4",
+                "confidence": 0.95,
+                "variables": {"left": "2", "right": "2", "result": "4"},
+                "pattern_hints": ["addition"],
+                "reasoning": "Simple arithmetic",
+            }
+        )
 
         mock_client.chat.completions.create.side_effect = [
             triage_response,
-            math_response
+            math_response,
         ]
 
-        # Mock Coq prover
-        mock_prover = MagicMock()
-        mock_prover_class.return_value = mock_prover
+        # Mock formal detector
+        mock_detector = MagicMock()
+        mock_detector_class.return_value = mock_detector
 
-        from formal_verification.types import ProofResult, FormalSpec, Claim, PropertyType
+        from formal_verification.types import ProofResult
+
         mock_proof_result = ProofResult(
             spec=MagicMock(),
             proven=True,
             proof_time_ms=50.0,
             error_message=None,
-            counter_example=None
+            counter_example=None,
+            prover_name="z3",
+            solver_status="smt_proved",
         )
-        mock_prover.prove.return_value = mock_proof_result
+        mock_detector.analyze_claims.return_value = {
+            "proof_results": [mock_proof_result],
+            "translation_failures": [],
+            "summary": "",
+            "resolution": {},
+            "conflicts": [],
+            "specifications": [],
+            "original_claims": [],
+        }
 
         # Test
-        resolver = HybridCognitiveDissonanceResolver(use_guardrails=False)
-        analysis = resolver.analyze_claim("2 + 2 = 4")
+        resolver = HybridCognitiveDissonanceResolver(
+            openai_api_key="test-key",
+            use_guardrails=False,
+        )
+        analysis = resolver.analyze_claim(
+            "Please formalize the statement that two plus two equals four."
+        )
 
         assert analysis.is_formalizable
         assert analysis.formalized_claim is not None
         assert analysis.proof_result is not None
         assert analysis.proof_result.proven
+        assert analysis.proof_result.prover_name == "z3"
 
 
 def test_claim_category_enum():

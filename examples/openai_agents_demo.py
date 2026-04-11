@@ -1,5 +1,4 @@
-"""
-Demonstration of OpenAI Agents SDK integration for claim extraction.
+"""Demonstration of OpenAI Agents SDK integration for claim extraction.
 
 This example shows how the new structured extraction approach improves
 upon the DSPy-based approach by:
@@ -10,19 +9,25 @@ upon the DSPy-based approach by:
 
 Run with:
     python examples/openai_agents_demo.py
+
+Optional provider settings:
+    export OPENAI_API_KEY='...'
+    export OPENAI_BASE_URL='https://openrouter.ai/api/v1'
+    export OPENAI_APP_NAME='EvalOps Cognitive Dissonance'
+    export OPENAI_SITE_URL='https://evalops.dev'
 """
 
+import logging
 import os
 import sys
-import logging
 from pathlib import Path
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from formal_verification.guardrails import ClaimGuardrails, GuardrailWithRetry
 from formal_verification.hybrid_resolver import HybridCognitiveDissonanceResolver
 from formal_verification.openai_agents import OpenAIClaimExtractor
-from formal_verification.guardrails import ClaimGuardrails, GuardrailWithRetry
 
 # Configure logging
 logging.basicConfig(
@@ -62,7 +67,7 @@ def demo_basic_extraction():
             print(f"  Variables: {result.claim.variables}")
             print(f"  Reasoning: {result.reasoning}")
         else:
-            print(f"✗ Not formalizable")
+            print("✗ Not formalizable")
             print(f"  Reasoning: {result.reasoning}")
             if result.alternative_formulation:
                 print(f"  Suggestion: {result.alternative_formulation}")
@@ -91,7 +96,7 @@ def demo_with_guardrails():
         claim, validation = guarded_extractor.extract_with_validation(text)
 
         if validation.passed:
-            print(f"✓ Passed guardrails")
+            print("✓ Passed guardrails")
             print(f"  Claim: {claim.claim_text}")
             print(f"  Category: {claim.category.value}")
             print(f"  Confidence: {claim.confidence:.2f}")
@@ -135,7 +140,7 @@ def demo_full_analysis():
             if analysis.proof_result.proven:
                 print(f"✓ PROVEN ({analysis.proof_time_ms:.1f}ms)")
             else:
-                print(f"✗ DISPROVEN or FAILED")
+                print("✗ DISPROVEN or FAILED")
                 if analysis.proof_result.error_message:
                     print(f"  Error: {analysis.proof_result.error_message[:100]}")
 
@@ -161,13 +166,13 @@ def demo_conflict_detection():
     agent_names = ["Alice", "Bob", "Charlie"]
 
     print("\nAgent Claims:")
-    for name, claim in zip(agent_names, claims):
+    for name, claim in zip(agent_names, claims, strict=True):
         print(f"  {name}: '{claim}'")
 
     print("\nAnalyzing claims...")
     conflict_analysis = resolver.analyze_multiple_claims(claims)
 
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Total claims: {len(claims)}")
     print(f"  Analysis time: {conflict_analysis.total_time_ms:.1f}ms")
 
@@ -177,17 +182,17 @@ def demo_conflict_detection():
         print(f"    Formalizable: {analysis.is_formalizable}")
         if analysis.proof_result:
             if analysis.proof_result.proven:
-                print(f"    Status: ✓ PROVEN")
+                print("    Status: ✓ PROVEN")
             else:
-                print(f"    Status: ✗ DISPROVEN/FAILED")
+                print("    Status: ✗ DISPROVEN/FAILED")
 
     if conflict_analysis.conflicts_detected:
-        print(f"\n⚠️  Conflicts Detected:")
+        print("\n⚠️  Conflicts Detected:")
         for conflict_desc in conflict_analysis.conflict_descriptions:
             print(f"    - {conflict_desc}")
         print(f"\n  Resolution: {conflict_analysis.resolution_strategy}")
     else:
-        print(f"\n✓ No conflicts detected")
+        print("\n✓ No conflicts detected")
 
 
 def demo_comparison():
@@ -213,13 +218,21 @@ def demo_comparison():
     print(f"\nTesting {len(test_claims)} claims...")
     metrics = resolver.compare_with_dspy(test_claims)
 
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Total claims: {metrics['total_claims']}")
-    print(f"\n  OpenAI SDK + Guardrails:")
-    print(f"    Formalizable: {metrics['openai']['formalizable_count']}/{metrics['total_claims']} "
-          f"({metrics['openai']['formalizable_rate']:.1%})")
-    print(f"    Proven: {metrics['openai']['proven_count']}/{metrics['total_claims']} "
-          f"({metrics['openai']['proven_rate']:.1%})")
+    print("\n  OpenAI SDK + Guardrails:")
+    print(
+        "    Formalizable: "
+        f"{metrics['openai']['formalizable_count']}/"
+        f"{metrics['total_claims']} "
+        f"({metrics['openai']['formalizable_rate']:.1%})"
+    )
+    print(
+        "    Proven: "
+        f"{metrics['openai']['proven_count']}/"
+        f"{metrics['total_claims']} "
+        f"({metrics['openai']['proven_rate']:.1%})"
+    )
     print(f"    Avg extraction: {metrics['openai']['avg_extraction_time_ms']:.1f}ms")
     print(f"    Avg proof: {metrics['openai']['avg_proof_time_ms']:.1f}ms")
     print(f"    Total time: {metrics['openai']['total_time_ms']:.1f}ms")
@@ -231,13 +244,22 @@ def main():
     print("OpenAI Agents SDK Integration for Cognitive Dissonance DSPy")
     print("="*80)
 
-    # Check for OpenAI API key
+    # Check for OpenAI-compatible API key
     if not os.getenv("OPENAI_API_KEY"):
         print("\n⚠️  WARNING: OPENAI_API_KEY not set in environment")
-        print("Please set your OpenAI API key:")
+        print("Please set your OpenAI-compatible API key:")
         print("  export OPENAI_API_KEY='your-key-here'")
+        print("\nOptional provider settings:")
+        print("  export OPENAI_BASE_URL='https://openrouter.ai/api/v1'")
+        print("  export OPENAI_APP_NAME='EvalOps Cognitive Dissonance'")
+        print("  export OPENAI_SITE_URL='https://evalops.dev'")
         print("\nDemos will fail without a valid API key.\n")
         return
+
+    if os.getenv("OPENAI_BASE_URL"):
+        print(f"\nUsing compatible provider endpoint: {os.getenv('OPENAI_BASE_URL')}")
+    else:
+        print("\nUsing default OpenAI API endpoint")
 
     try:
         # Run demos
@@ -256,8 +278,9 @@ def main():
         print(f"\n✗ Error: {e}")
         print("\nCommon issues:")
         print("  1. OPENAI_API_KEY not set or invalid")
-        print("  2. Coq not installed (required for proof verification)")
-        print("  3. Missing dependencies (run: pip install openai pydantic)")
+        print("  2. OPENAI_BASE_URL points to an incompatible endpoint")
+        print("  3. Coq not installed (required for proof verification)")
+        print("  4. Missing dependencies (run: pip install openai pydantic)")
 
 
 if __name__ == "__main__":

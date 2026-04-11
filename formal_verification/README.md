@@ -1,34 +1,62 @@
 # Formal Verification Framework
 
-A comprehensive formal verification system that integrates with DSPy agents to provide mathematical certainty in cognitive dissonance resolution. This framework moves beyond probabilistic "best guess" reconciliation to achieve mathematical proof where possible.
+A comprehensive formal verification system that integrates with DSPy agents to provide mathematically grounded conflict resolution. Machine-checked proofs are reported separately from derived or assumption-based results so the system does not overstate certainty.
 
 ## Core Philosophy
 
-**"Stop arguing; prove it."**
+**"Prove the preserved claim, or abstain."**
 
-When agents disagree about verifiable claims, we don't debate—we prove. Mathematical truth provides definitive resolution with confidence=1.0, while subjective claims gracefully fall back to probabilistic methods.
+When agents disagree about verifiable claims, proof is only useful if the
+system preserves the original disputed proposition. This framework therefore
+separates:
+
+1. surface-form extraction
+2. canonicalization
+3. preservation auditing
+4. proof generation
+5. proof evidence reporting
+
+Mathematical truth provides decisive resolution only after the canonical claim
+has been shown to preserve the agent's original statement.
 
 ## Architecture
 
 ### Core Components
 
 ```
-DSPy Agents → Mathematical Resolver → Formal Verification → Necessity Prover → Z3/Coq
+DSPy Agents → Canonicalization + Preservation Audit → Claim IR → Translator → Necessity/Z3/Coq
 ```
 
-- **`detector.py`**: Main orchestrator for formal verification workflow
+- **`proof_protocol.py`**: Deterministic canonicalization, persistent claim IR, and preservation auditing
+- **`detector.py`**: Main orchestrator for preservation-gated formal verification
+- **`guardrails.py`**: Extraction validation including surface-preservation checks
 - **`necessity_prover.py`**: Revolutionary necessity-based proof discovery
 - **`z3_prover.py`**: Z3/SMT solver integration with hybrid Coq proving
-- **`translator.py`**: Natural language to formal specification translation
+- **`translator.py`**: Claim IR or canonical text to formal specification translation
 - **`proof_learning.py`**: ML-driven proof strategy learning
 - **`lemma_discovery.py`**: Automated lemma discovery for failed proofs
 - **`deep_analysis.py`**: Deep program property analysis
 
 ### Integration Points
 
-- **`cognitive_dissonance/mathematical_resolver.py`**: Main integration with DSPy agents
+- **`cognitive_dissonance/verifier.py`**: DSPy extraction that emits surface claim, canonical claim, and preservation metadata
+- **`cognitive_dissonance/mathematical_resolver.py`**: Main integration with DSPy agents and preservation-aware proof routing
 - **`tests/test_formal_verification.py`**: Comprehensive test suite
 - **CLI**: `python -m cognitive_dissonance.main mathematical`
+
+## Proof-Preservation Contract
+
+Formalizable claims can now carry a proof-oriented record rather than a single
+string:
+
+- `surface_text`: the original statement made by the agent
+- `claim_text`: the canonical statement selected for proving
+- `claim_ir`: structured persistent representation of the canonical claim
+- `preservation_audit`: `exact`, `equivalent`, `drift`, or `unknown`
+
+The proof stack only advances when `preservation_audit.passed` is true. A proof
+of a drifted canonical claim is treated as an invalid resolution, not as a
+successful disagreement outcome.
 
 ## Mathematical Necessity
 
@@ -217,6 +245,54 @@ print(f"Proven: {results['proof_results'][0].proven}")    # True
 print(f"Proof time: {results['proof_results'][0].proof_time_ms}ms")  # ~150ms
 ```
 
+If a claim arrives with a failed preservation audit, `detector.py` records the
+audit failure and skips proof instead of translating or proving the drifted
+claim.
+
+### OpenAI-Compatible Claim Extraction
+
+The structured extractor supports the default OpenAI endpoint and compatible
+providers such as OpenRouter.
+
+```bash
+export OPENAI_API_KEY='your-key-here'
+
+# Optional for OpenAI-compatible providers
+export OPENAI_BASE_URL='https://openrouter.ai/api/v1'
+export OPENAI_APP_NAME='EvalOps Cognitive Dissonance'
+export OPENAI_SITE_URL='https://evalops.dev'
+```
+
+```python
+from formal_verification.openai_agents import OpenAIClaimExtractor
+
+extractor = OpenAIClaimExtractor(model="openai/gpt-4.1-mini")
+result = extractor.extract_claim("two plus two equals four")
+
+print(result.is_formalizable)         # True
+print(result.claim.claim_text)        # "2 + 2 = 4"
+print(result.claim.category.value)    # "arithmetic"
+print(result.claim_ir.kind.value)     # "arithmetic"
+print(result.preservation_audit.label.value)  # "exact"
+```
+
+The extractor uses strict JSON schema on the native OpenAI endpoint and a more
+portable JSON-object mode on compatible endpoints, then normalizes lighter
+provider payloads before validation. Deterministic canonicalization and
+preservation auditing run alongside provider extraction so the system can keep a
+known-correct surface meaning or block proof when semantic drift is detected.
+
+Optional live smoke coverage is available for a provider-backed extraction plus
+hybrid proof run:
+
+```bash
+RUN_LIVE_API_TESTS=true \
+OPENAI_API_KEY="$OPENAI_API_KEY" \
+OPENAI_BASE_URL="${OPENAI_BASE_URL:-https://openrouter.ai/api/v1}" \
+OPENAI_MODEL="${OPENAI_MODEL:-openai/gpt-4.1-mini}" \
+.venv/bin/python -m pytest -q tests/test_openai_compatible_integration.py
+```
+
 ## Research Applications
 
 This framework enables research in:
@@ -257,6 +333,17 @@ python -m pytest tests/test_mathematical_resolver.py -v
 python -m pytest tests/ -v
 ```
 
+To exercise the live provider-backed extraction plus preservation-gated proof
+path:
+
+```bash
+RUN_LIVE_API_TESTS=true \
+OPENAI_API_KEY="$OPENAI_API_KEY" \
+OPENAI_BASE_URL="${OPENAI_BASE_URL:-https://openrouter.ai/api/v1}" \
+OPENAI_MODEL="${OPENAI_MODEL:-openai/gpt-4.1-mini}" \
+.venv/bin/python -m pytest -q tests/test_openai_compatible_integration.py
+```
+
 ## Architecture Decisions
 
 ### Why Necessity-Based Proving?
@@ -282,4 +369,5 @@ DSPy agents handle natural language understanding and conflict detection. Formal
 
 **Related Work**: This framework builds on decades of theorem proving research while introducing novel necessity-based proof discovery and integration with modern LLM systems. For citations and detailed comparisons, see the main project README.
 
-**Status**: Production-ready with comprehensive test coverage (202 passing tests) and active development.
+**Status**: Active development with preservation-gated proof routing and
+comprehensive automated coverage.

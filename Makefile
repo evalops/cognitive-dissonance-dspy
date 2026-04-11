@@ -1,17 +1,17 @@
 .PHONY: install test lint format clean
 
 install:
-	pip install -e .[dev]
+	python -m pip install -e .[dev]
 
 test:
-	pytest
+	python -m pytest
 
 lint:
-	ruff check .
+	python -m ruff check .
 
 format:
-	black .
-	isort .
+	python -m black .
+	python -m isort .
 
 clean:
 	find . -type f -name "*.pyc" -delete

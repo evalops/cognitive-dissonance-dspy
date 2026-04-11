@@ -1,0 +1,266 @@
+[
+  {
+    "id": "nl_arith_true",
+    "text": "Two plus two equals four.",
+    "expected_formalizable": true,
+    "expected_category": "arithmetic",
+    "expected_canonical_claim": "2 + 2 = 4",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_arith_false",
+    "text": "Two plus two equals five.",
+    "expected_formalizable": true,
+    "expected_category": "arithmetic",
+    "expected_canonical_claim": "2 + 2 = 5",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_arith_alt_true",
+    "text": "Four plus five equals nine.",
+    "expected_formalizable": true,
+    "expected_category": "arithmetic",
+    "expected_canonical_claim": "4 + 5 = 9",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_arith_alt_false",
+    "text": "Four plus five equals ten.",
+    "expected_formalizable": true,
+    "expected_category": "arithmetic",
+    "expected_canonical_claim": "4 + 5 = 10",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_mult_true",
+    "text": "Three times four is twelve.",
+    "expected_formalizable": true,
+    "expected_category": "multiplication",
+    "expected_canonical_claim": "3 * 4 = 12",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_mult_alt_true",
+    "text": "Seven times six is forty-two.",
+    "expected_formalizable": true,
+    "expected_category": "multiplication",
+    "expected_canonical_claim": "7 * 6 = 42",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_mult_alt_false",
+    "text": "Seven times six is forty-one.",
+    "expected_formalizable": true,
+    "expected_category": "multiplication",
+    "expected_canonical_claim": "7 * 6 = 41",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_sub_false",
+    "text": "Ten minus three equals eight.",
+    "expected_formalizable": true,
+    "expected_category": "subtraction",
+    "expected_canonical_claim": "10 - 3 = 8",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_sub_alt_true",
+    "text": "Twelve minus five equals seven.",
+    "expected_formalizable": true,
+    "expected_category": "subtraction",
+    "expected_canonical_claim": "12 - 5 = 7",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_sub_alt_false",
+    "text": "Twelve minus five equals eight.",
+    "expected_formalizable": true,
+    "expected_category": "subtraction",
+    "expected_canonical_claim": "12 - 5 = 8",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_factorial_true",
+    "text": "The factorial of 5 is 120.",
+    "expected_formalizable": true,
+    "expected_category": "factorial",
+    "expected_canonical_claim": "factorial 5 = 120",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_fibonacci_true",
+    "text": "Fibonacci of 8 equals 21.",
+    "expected_formalizable": true,
+    "expected_category": "fibonacci",
+    "expected_canonical_claim": "fibonacci 8 = 21",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_factorial_false",
+    "text": "The factorial of 4 is 23.",
+    "expected_formalizable": true,
+    "expected_category": "factorial",
+    "expected_canonical_claim": "factorial 4 = 23",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_factorial_base_true",
+    "text": "The factorial of 0 is 1.",
+    "expected_formalizable": true,
+    "expected_category": "factorial",
+    "expected_canonical_claim": "factorial 0 = 1",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_fibonacci_false",
+    "text": "Fibonacci of 6 equals 9.",
+    "expected_formalizable": true,
+    "expected_category": "fibonacci",
+    "expected_canonical_claim": "fibonacci 6 = 9",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_gcd_true",
+    "text": "The gcd of 12 and 8 is 4.",
+    "expected_formalizable": true,
+    "expected_category": "gcd",
+    "expected_canonical_claim": "gcd(12, 8) = 4",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_gcd_false",
+    "text": "The gcd of 18 and 12 is 3.",
+    "expected_formalizable": true,
+    "expected_category": "gcd",
+    "expected_canonical_claim": "gcd(18, 12) = 3",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_ineq_true",
+    "text": "Three is less than five.",
+    "expected_formalizable": true,
+    "expected_category": "inequality",
+    "expected_canonical_claim": "3 < 5",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_ineq_false",
+    "text": "Seven is greater than or equal to ten.",
+    "expected_formalizable": true,
+    "expected_category": "inequality",
+    "expected_canonical_claim": "7 >= 10",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_ineq_alt_true",
+    "text": "9 is less than or equal to 9.",
+    "expected_formalizable": true,
+    "expected_category": "inequality",
+    "expected_canonical_claim": "9 <= 9",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_ineq_alt_false",
+    "text": "2 is greater than 11.",
+    "expected_formalizable": true,
+    "expected_category": "inequality",
+    "expected_canonical_claim": "2 > 11",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_implication_true",
+    "text": "If x is greater than 5, then x is greater than 3.",
+    "expected_formalizable": true,
+    "expected_category": "logic_implication",
+    "expected_canonical_claim": "if x > 5 then x > 3",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_forall_true",
+    "text": "For all n, n plus zero equals n.",
+    "expected_formalizable": true,
+    "expected_category": "logic_forall",
+    "expected_canonical_claim": "forall n, n + 0 = n",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_implication_false",
+    "text": "If x is greater than 10, then x is greater than 20.",
+    "expected_formalizable": true,
+    "expected_category": "logic_implication",
+    "expected_canonical_claim": "if x > 10 then x > 20",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_forall_false",
+    "text": "For all n, n is greater than n.",
+    "expected_formalizable": true,
+    "expected_category": "logic_forall",
+    "expected_canonical_claim": "forall n, n > n",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_exists_true",
+    "text": "There exists x such that x is greater than zero.",
+    "expected_formalizable": true,
+    "expected_category": "logic_exists",
+    "expected_canonical_claim": "exists x such that x > 0",
+    "expected_truth": true
+  },
+  {
+    "id": "nl_exists_false",
+    "text": "There exists x such that x is greater than x.",
+    "expected_formalizable": true,
+    "expected_category": "logic_exists",
+    "expected_canonical_claim": "exists x such that x > x",
+    "expected_truth": false
+  },
+  {
+    "id": "nl_subjective_code",
+    "text": "The code is elegant.",
+    "expected_formalizable": false,
+    "expected_category": "unformalizable"
+  },
+  {
+    "id": "nl_subjective_speed",
+    "text": "This implementation feels fast.",
+    "expected_formalizable": false,
+    "expected_category": "unformalizable"
+  },
+  {
+    "id": "nl_subjective_users",
+    "text": "Users will love this feature.",
+    "expected_formalizable": false,
+    "expected_category": "unformalizable"
+  },
+  {
+    "id": "nl_subjective_quality",
+    "text": "This is industry-grade engineering.",
+    "expected_formalizable": false,
+    "expected_category": "unformalizable"
+  },
+  {
+    "id": "nl_subjective_design",
+    "text": "The API design feels intuitive.",
+    "expected_formalizable": false,
+    "expected_category": "unformalizable"
+  },
+  {
+    "id": "nl_subjective_maintainability",
+    "text": "This architecture is future-proof.",
+    "expected_formalizable": false,
+    "expected_category": "unformalizable"
+  },
+  {
+    "id": "nl_subjective_reliability",
+    "text": "This proof strategy feels robust.",
+    "expected_formalizable": false,
+    "expected_category": "unformalizable"
+  },
+  {
+    "id": "nl_subjective_clarity",
+    "text": "The implementation is pleasantly readable.",
+    "expected_formalizable": false,
+    "expected_category": "unformalizable"
+  }
+]

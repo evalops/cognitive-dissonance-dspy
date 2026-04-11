@@ -2,167 +2,277 @@
 
 [![Requirements: Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![DSPy](https://img.shields.io/badge/DSPy-Compatible-green.svg)](https://github.com/stanfordnlp/dspy)
-[![Coq](https://img.shields.io/badge/Coq-8.18+-orange.svg)](https://coq.inria.fr/)
+[![Coq/Rocq](https://img.shields.io/badge/Coq%2FRocq-required-orange.svg)](https://coq.inria.fr/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Stop arguing; prove it.**  
-Cognitive Dissonance DSPy detects belief conflicts between LLM agents, translates formalizable claims to Coq, and attempts a machine‑checked proof. If a claim can't be formalized, we say so and **punt** (fall back to labeled heuristics).
+This repository accompanies the manuscript:
 
-- **Agents & optimization:** built on DSPy's programmatic agent framework.  
-- **Proofs:** compiled (`coqc`) and independently checked (`coqchk`) Coq artifacts.
+**Exact-Match Auditing for Proof-First Conflict Resolution**
 
-> To our knowledge, this is the first framework that combines **DSPy‑based cognitive‑dissonance detection**, **NL→Coq translation**, and **online proving** in one loop.
+The paper studies a narrow problem: how should a system evaluate and resolve
+formalizable claim disagreements when proof is available as a resolution
+mechanism? The central claim is not that large language models broadly solve
+disagreement through theorem proving. The central claim is methodological:
 
----
+> Proof-first conflict resolution should be evaluated by separating
+> deterministic canonicalization, provider-assisted extraction, proof outcome,
+> and evidence strength. Exact-match auditing is necessary because provider
+> lift on hard paraphrases comes with silent-correction risk.
 
-## Why
+All reported results presume a correctly configured Coq/Rocq environment. Runs
+without `coqc` and `coqchk` are treated as setup failures, not as meaningful
+experimental conditions.
 
-Most multi‑agent systems resolve contradictions with debate, confidence scores, or arbitration heuristics. That's arm‑wrestling, not ground truth. When a claim **is** formalizable, we hand it to a theorem prover and return a proof object (or a failure).
+## Research Claim
 
-**Scope** (initial): arithmetic + basic algebra, simple algorithmic properties (e.g., permutation + sortedness), and other first‑order fragments that Coq and standard tactics handle well. We'll expand coverage pragmatically.
+The paper contributes an evaluation decomposition with four distinct layers:
 
----
+1. deterministic canonicalization
+2. provider-assisted extraction
+3. proof outcome
+4. evidence strength
 
-## How it works
+This separation matters because downstream proof success is not a reliable
+proxy for extraction fidelity. A system can prove the wrong proposition if the
+extraction layer silently rewrites the original claim.
+
+This should be read as a methods paper with a narrow empirical stress test, not
+as a broad systems paper.
+
+## Implemented Protocol
+
+The library now treats proof among agents as a preservation problem before it
+is a proving problem.
+
+Each formalizable claim can carry four linked artifacts:
+
+1. `surface_text`: the original statement made by an agent
+2. `claim_text`: the canonical text selected for proving
+3. `claim_ir`: a persistent structured representation of that canonical claim
+4. `preservation_audit`: an audit record describing whether the canonical claim
+   exactly preserves, is equivalent to, or drifts from the original statement
+
+The proof stack only advances when preservation passes. If deterministic
+auditing recovers a different meaning from the surface form, the system blocks
+proof instead of claiming a successful resolution on the wrong dispute.
+
+This protocol is implemented across:
+
+- `formal_verification/proof_protocol.py`
+- `formal_verification/openai_agents.py`
+- `formal_verification/guardrails.py`
+- `formal_verification/detector.py`
+- `formal_verification/hybrid_resolver.py`
+- `cognitive_dissonance/verifier.py`
+- `research/run_study.py`
+
+## Headline Results
+
+Artifacts reported here were regenerated from local runs of
+`research/run_study.py` on 2026-04-08 UTC (2026-04-07
+America/Los_Angeles).
+
+These repository artifacts reflect the current implementation, which now
+includes preservation-gated proving and broader deterministic canonicalization.
+They therefore differ in places from the earlier manuscript snapshot.
+
+### Symbolic proof baseline
+
+The 45-case symbolic benchmark is fully decisive under the required
+Coq/Rocq-backed environment.
+
+| Condition | Decisive Coverage | Decisive Accuracy | Machine-Checked Cases |
+| --- | ---: | ---: | ---: |
+| Hybrid + necessity | 100.0% | 100.0% | 13 |
+| Hybrid without necessity | 100.0% | 100.0% | 13 |
+
+This means:
+
+- the proof stack is strong on canonical symbolic claims
+- the necessity ablation is neutral on this benchmark
+- necessity should not be positioned as the paper’s main novelty
+
+### Easy extraction benchmark
+
+The 35-case main natural-language benchmark contains 27 formalizable cases and
+8 unformalizable controls.
+
+| Metric | Result |
+| --- | ---: |
+| Direct translator success on formalizable claims | 22.2% |
+| Exact canonical match | 100.0% |
+| Preservation pass rate | 100.0% |
+| End-to-end decisive coverage | 100.0% |
+| End-to-end decisive accuracy | 100.0% |
+| Formalizable cases handled by deterministic canonicalization | 27 |
+| Formalizable cases requiring provider extraction | 0 |
+
+This benchmark is now a calibration and regression baseline. Every
+formalizable case is canonicalized, preserved, translated, and resolved
+without any provider extraction on the formalizable slice.
+
+### Hard paraphrase benchmark
+
+The 19-case paraphrase stress benchmark contains 17 formalizable paraphrases
+designed to evade deterministic rules and 2 unformalizable controls.
+
+| Metric | Deterministic Only | Provider Enabled |
+| --- | ---: | ---: |
+| Exact canonical match | 100.0% | 100.0% |
+| Preservation pass rate | 100.0% | 100.0% |
+| Translation success after extraction | 100.0% | 100.0% |
+| End-to-end decisive coverage | 100.0% | 100.0% |
+| End-to-end decisive accuracy | 100.0% | 100.0% |
+| Machine-checked formalizable cases | 6 | 6 |
+
+This is the benchmark that carries the paper’s main empirical result:
+
+- the current deterministic canonicalizer now covers the entire formalizable
+  stress suite
+- the provider path no longer adds formalizable-slice lift on this benchmark
+  because all 17 formalizable cases are resolved before any provider call
+- the benchmark remains useful as a regression artifact because it previously
+  exposed preservation-sensitive failures and now verifies that those gaps stay
+  closed
+- preservation auditing is therefore part of the resolution contract, not just
+  a reporting detail
+- the benchmark file is meant to be reusable as a stress-test artifact, not
+  just an illustrative slice inside the paper
+
+### Current Internal Failure Count
+
+Under provider-assisted extraction on the hard paraphrase benchmark:
+
+| Failure Mode | Count |
+| --- | ---: |
+| Formalizable false negatives | 0 |
+| Semantic-drift cases | 0 |
+| Preservation-blocked exact-match cases | 0 |
+| Decisive errors caused by semantic drift | 0 |
+
+The 10-trial hard-failure probe is now stable under the current implementation.
+On the present internal slice, no semantic-drift or preservation-blocked cases
+remain. The stronger claim is therefore not that the current repository state
+still exhibits those failures, but that the auditing protocol and stress slice
+were necessary to find and close them during iteration.
+
+## Positioning Against Prior Work
+
+The manuscript is positioned relative to four research threads:
+
+- autoformalization and formal math benchmarks such as Autoformalization with
+  Large Language Models, ProofNet, Autoformalization in the Wild, and
+  ProofNetVerif
+- theorem-proving systems and environments such as LeanDojo, BFS-Prover,
+  FormalMATH, and DeepSeek-Prover-V2
+- debate-based disagreement resolution such as Multi-Agent Debate
+- hybrid faithfulness-oriented LLM-theorem-proving systems such as Faithful and
+  Robust LLM-Driven Theorem Proving for NLI Explanations
+
+The manuscript’s niche is narrower than theorem-proving state of the art. It
+focuses on evaluation discipline under extraction uncertainty.
+
+## What This Work Claims
+
+- proof-first routing is viable on correctly canonicalized formalizable claims
+- extraction fidelity and proof success are different capabilities
+- proof among agents should require preservation of the disputed claim before
+  proof is accepted as evidence
+- evidence strength should remain typed rather than flattened into a generic
+  “proved” label
+- exact-match auditing is necessary for honest evaluation on hard paraphrases
+
+## What This Work Does Not Claim
+
+- that LLM systems broadly resolve disagreement through proof
+- that the current benchmarks justify open-domain performance claims
+- that necessity-enhanced reasoning is the main contribution
+- that provider extraction is reliable on unrestricted paraphrase variation
+
+## Manuscript And Artifacts
+
+Primary manuscript files:
+
+- `reports/cognitive_dissonance_research_report.tex`
+- `reports/cognitive_dissonance_research_report.pdf`
+
+Primary study artifacts:
+
+- `research/run_study.py`
+- `research/benchmarks/formal_verification_benchmark.json`
+- `research/benchmarks/extraction_benchmark.json`
+- `research/benchmarks/extraction_paraphrase_stress_benchmark.json`
+- `research/results/study_results.json`
+- `research/results/study_summary.md`
+
+## Reproducing The Study
+
+### Local benchmark run
+
+```bash
+.venv/bin/python research/run_study.py
+```
+
+`research/run_study.py` now fails fast if `coqc` or `coqchk` is missing.
+Study artifacts now also record preservation labels and
+`preservation_pass_rate_formalizable` for extraction benchmarks.
+
+### Live provider-backed extraction run
+
+```bash
+export OPENAI_API_KEY=...
+export OPENAI_BASE_URL=https://openrouter.ai/api/v1
+export OPENAI_MODEL=openai/gpt-4.1-mini
+export OPENAI_APP_NAME="EvalOps Research"
+export OPENAI_SITE_URL=https://evalops.dev
+
+.venv/bin/python research/run_study.py \
+  --model "$OPENAI_MODEL" \
+  --temperature 0.0 \
+  --stability-trials 2 \
+  --stress-trials 10
+```
+
+### Test suite
+
+```bash
+.venv/bin/python -m pytest -q
+```
+
+### Build the manuscript PDF
+
+```bash
+tectonic --outdir reports reports/cognitive_dissonance_research_report.tex
+```
+
+## Repository Layout
 
 ```text
-[Agents (DSPy)] → [Belief Extractor] → [Claim Normalizer]
-                               ↓ conflicts
-                 [NL→Coq Translator + Spec Templates]
-                               ↓ goals
-                     [Coq Prover (coqc)] ──▶ [coqchk]
-                               ↓
-                     { PROVED | DISPROVEN | NO-PROOF }
-```
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.10+
-- Coq theorem prover (`coqc` command available)
-- Ollama or compatible API endpoint (for agent reasoning)
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/evalops/cognitive-dissonance-dspy.git
-cd cognitive-dissonance-dspy
-
-# Set up virtual environment and install dependencies
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-# Install Coq (Ubuntu/Debian)
-sudo apt update && sudo apt install -y coq
-
-# Install Coq (macOS)
-brew install coq
-
-# Verify installation
-coqc --version
-```
-
-### Example: When Agents Disagree
-
-```python
-from formal_verification import FormalVerificationConflictDetector, Claim, PropertyType
-
-detector = FormalVerificationConflictDetector()
-
-claims = [
-    Claim("alice", "2 + 2 = 4", PropertyType.CORRECTNESS, 0.95, time.time()),
-    Claim("bob", "2 + 2 = 5", PropertyType.CORRECTNESS, 0.80, time.time()),
-]
-
-results = detector.analyze_claims(claims)
-# Alice: ✅ PROVEN (reflexivity)
-# Bob:   ❌ DISPROVEN (Unable to unify "5" with "4")
-```
-
-### Run Examples
-
-```bash
-# Mathematical claims demonstration
-python examples/mathematical_claims.py
-
-# Advanced theorem proving
-python examples/advanced_theorems.py
-
-# Comprehensive framework demo
-python examples/comprehensive_demo.py
-```
-
----
-
-## What We Can Prove
-
-**Current coverage:**
-- **Arithmetic & algebra:** `2 + 2 = 4` (✓), `factorial 7 = 5040` (✓ in 502ms)
-- **Algorithm properties:** sorting correctness via `Permutation + LocallySorted`
-- **Simple invariants:** list properties, basic data structure constraints
-
-**Measured performance:**
-- 15 claims → 80% success rate
-- Average proof time: 179.7ms
-- Conflicts resolved deterministically (no voting)
-
----
-
-## Architecture
-
-```
-formal_verification/
-├── translator.py    # NL → Coq patterns  
-├── prover.py        # subprocess wrapper for coqc
-└── detector.py      # orchestrates the pipeline
-
 cognitive_dissonance/
-├── verifier.py      # DSPy agents for belief extraction
-└── experiment.py    # co-training & optimization
+  mathematical_resolver.py   orchestrates agent outputs and proof results
+
+formal_verification/
+  detector.py                conflict analysis and proof orchestration
+  guardrails.py              extraction validation and preservation checks
+  openai_agents.py           structured extraction and canonicalization
+  necessity_prover.py        necessity-first proof construction
+  prover.py                  Coq interface and coqchk validation
+  proof_protocol.py          canonicalization, claim IR, preservation audit
+  structured_models.py       typed extraction and audit payloads
+  translator.py              claim-to-spec translation
+  types.py                   normalized proof status model
+  z3_prover.py               SMT-backed proving and hybrid routing
+
+research/
+  benchmarks/                study datasets
+  results/                   generated artifacts
+  run_study.py               empirical evaluation harness
+
+reports/
+  cognitive_dissonance_research_report.tex
+  cognitive_dissonance_research_report.pdf
 ```
-
-**Translation examples:**
-```python
-"2 + 2 = 4"               → Theorem arith : 2 + 2 = 4. reflexivity. Qed.
-"factorial 5 = 120"       → Fixpoint + simpl proof
-"sorts correctly"         → Permutation ∧ LocallySorted
-```
-
----
-
-## Related Work
-
-**LLM × ITP integration:**
-- LeanDojo (Yang et al. 2023): LLMs + Lean for proof search
-- APOLLO (Wang et al. 2024): GPT-4 generating Lean proofs  
-- Minerva (Lewkowycz et al. 2022): math problem solving
-
-**Multi-agent verification:**
-- BDI agent logics (Wooldridge & Fisher 2005)
-- Consensus mechanisms in distributed AI (recent IJCAI/AAMAS work)
-
-**Our contribution:** First to combine DSPy cognitive dissonance detection + NL→Coq translation + online proving in one system.
-
----
-
-## Roadmap
-
-- [ ] Expand pattern library (induction, recursive data structures)
-- [ ] Better error messages when formalization fails
-- [ ] Integration with LeanDojo/APOLLO for cross-prover validation
-- [ ] Benchmark on existing theorem proving datasets
-
----
 
 ## License
 
 MIT
-
-## Contact
-
-[GitHub Issues](https://github.com/evalops/cognitive-dissonance-dspy/issues) | [EvalOps](https://github.com/evalops)

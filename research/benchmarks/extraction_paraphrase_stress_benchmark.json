@@ -1,0 +1,150 @@
+[
+  {
+    "id": "stress_add_true",
+    "text": "Adding four and five yields nine.",
+    "expected_formalizable": true,
+    "expected_category": "arithmetic",
+    "expected_canonical_claim": "4 + 5 = 9",
+    "expected_truth": true
+  },
+  {
+    "id": "stress_add_false",
+    "text": "Adding four and five yields ten.",
+    "expected_formalizable": true,
+    "expected_category": "arithmetic",
+    "expected_canonical_claim": "4 + 5 = 10",
+    "expected_truth": false
+  },
+  {
+    "id": "stress_mult_true",
+    "text": "The product of seven and six is forty-two.",
+    "expected_formalizable": true,
+    "expected_category": "multiplication",
+    "expected_canonical_claim": "7 * 6 = 42",
+    "expected_truth": true
+  },
+  {
+    "id": "stress_mult_false",
+    "text": "The product of seven and six is forty-one.",
+    "expected_formalizable": true,
+    "expected_category": "multiplication",
+    "expected_canonical_claim": "7 * 6 = 41",
+    "expected_truth": false
+  },
+  {
+    "id": "stress_sub_true",
+    "text": "Subtracting five from twelve gives seven.",
+    "expected_formalizable": true,
+    "expected_category": "subtraction",
+    "expected_canonical_claim": "12 - 5 = 7",
+    "expected_truth": true
+  },
+  {
+    "id": "stress_sub_false",
+    "text": "Subtracting five from twelve gives eight.",
+    "expected_formalizable": true,
+    "expected_category": "subtraction",
+    "expected_canonical_claim": "12 - 5 = 8",
+    "expected_truth": false
+  },
+  {
+    "id": "stress_factorial_true",
+    "text": "Five factorial equals one hundred twenty.",
+    "expected_formalizable": true,
+    "expected_category": "factorial",
+    "expected_canonical_claim": "factorial 5 = 120",
+    "expected_truth": true
+  },
+  {
+    "id": "stress_factorial_false",
+    "text": "Four factorial equals twenty-three.",
+    "expected_formalizable": true,
+    "expected_category": "factorial",
+    "expected_canonical_claim": "factorial 4 = 23",
+    "expected_truth": false
+  },
+  {
+    "id": "stress_fibonacci_true",
+    "text": "The eighth Fibonacci number is twenty-one.",
+    "expected_formalizable": true,
+    "expected_category": "fibonacci",
+    "expected_canonical_claim": "fibonacci 8 = 21",
+    "expected_truth": true
+  },
+  {
+    "id": "stress_fibonacci_false",
+    "text": "The sixth Fibonacci number is nine.",
+    "expected_formalizable": true,
+    "expected_category": "fibonacci",
+    "expected_canonical_claim": "fibonacci 6 = 9",
+    "expected_truth": false
+  },
+  {
+    "id": "stress_gcd_true",
+    "text": "The greatest common divisor of twelve and eight is four.",
+    "expected_formalizable": true,
+    "expected_category": "gcd",
+    "expected_canonical_claim": "gcd(12, 8) = 4",
+    "expected_truth": true
+  },
+  {
+    "id": "stress_gcd_false",
+    "text": "The greatest common divisor of eighteen and twelve is three.",
+    "expected_formalizable": true,
+    "expected_category": "gcd",
+    "expected_canonical_claim": "gcd(18, 12) = 3",
+    "expected_truth": false
+  },
+  {
+    "id": "stress_ineq_true",
+    "text": "Nine is no greater than nine.",
+    "expected_formalizable": true,
+    "expected_category": "inequality",
+    "expected_canonical_claim": "9 <= 9",
+    "expected_truth": true
+  },
+  {
+    "id": "stress_ineq_false",
+    "text": "Two is strictly larger than eleven.",
+    "expected_formalizable": true,
+    "expected_category": "inequality",
+    "expected_canonical_claim": "2 > 11",
+    "expected_truth": false
+  },
+  {
+    "id": "stress_implication_true",
+    "text": "If x exceeds five, then x exceeds three.",
+    "expected_formalizable": true,
+    "expected_category": "logic_implication",
+    "expected_canonical_claim": "if x > 5 then x > 3",
+    "expected_truth": true
+  },
+  {
+    "id": "stress_exists_true",
+    "text": "There is an x greater than zero.",
+    "expected_formalizable": true,
+    "expected_category": "logic_exists",
+    "expected_canonical_claim": "exists x such that x > 0",
+    "expected_truth": true
+  },
+  {
+    "id": "stress_forall_true",
+    "text": "Any n is equal to itself.",
+    "expected_formalizable": true,
+    "expected_category": "logic_forall",
+    "expected_canonical_claim": "forall n, n = n",
+    "expected_truth": true
+  },
+  {
+    "id": "stress_subjective_clean",
+    "text": "This code path feels clean and robust.",
+    "expected_formalizable": false,
+    "expected_category": "unformalizable"
+  },
+  {
+    "id": "stress_subjective_ergonomic",
+    "text": "The interface seems delightfully ergonomic.",
+    "expected_formalizable": false,
+    "expected_category": "unformalizable"
+  }
+]

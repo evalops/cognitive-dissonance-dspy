@@ -1,17 +1,17 @@
 """Natural language claim to formal specification translator."""
 
-import re
 import logging
-from typing import Optional
+import re
 
-from .types import Claim, FormalSpec, PropertyType
+from .structured_models import ClaimIRKind
+from .types import Claim, FormalSpec
 
 logger = logging.getLogger(__name__)
 
 
 class ClaimTranslator:
     """Translates natural language claims to formal Coq specifications."""
-    
+
     def __init__(self):
         """Initialize the claim translator with pattern matching rules."""
         # Logic and quantifier patterns (NEW)
@@ -21,208 +21,222 @@ class ClaimTranslator:
             (r"for\s*all\s+(.+?),\s*(.+)", self._forall_spec),
             (r"forall\s+(.+?),\s*(.+)", self._forall_spec),
             (r"there\s+exists\s+(.+?)\s+such\s+that\s+(.+)", self._exists_spec),
+            (r"exists\s+(.+?)\s+such\s+that\s+(.+)", self._exists_spec),
             (r"exists\s+(.+?),\s*(.+)", self._exists_spec),
         ]
-        
+
         # Inequality patterns (NEW)
         self.inequality_patterns = [
-            (r"(\d+)\s*<\s*(\d+)", self._inequality_spec),
-            (r"(\d+)\s*>\s*(\d+)", self._inequality_spec),
-            (r"(\d+)\s*<=\s*(\d+)", self._inequality_spec),
-            (r"(\d+)\s*>=\s*(\d+)", self._inequality_spec),
+            (r"(\d+)\s*(<)\s*(\d+)", self._inequality_spec),
+            (r"(\d+)\s*(>)\s*(\d+)", self._inequality_spec),
+            (r"(\d+)\s*(<=)\s*(\d+)", self._inequality_spec),
+            (r"(\d+)\s*(>=)\s*(\d+)", self._inequality_spec),
         ]
-        
+
         self.memory_patterns = [
-            (r"memory safe|no buffer overflow|no use.after.free", self._memory_safety_spec),
+            (
+                r"memory safe|no buffer overflow|no use.after.free",
+                self._memory_safety_spec,
+            ),
             (r"buffer overflow|memory corruption|segfault", self._memory_safety_spec),
         ]
-        
+
         self.complexity_patterns = [
-            (r"[Oo]\(([^)]+)\)|time complexity.*[Oo]\(([^)]+)\)", self._complexity_spec),
+            (
+                r"[Oo]\(([^)]+)\)|time complexity.*[Oo]\(([^)]+)\)",
+                self._complexity_spec,
+            ),
             (r"linear time|[Oo]\(n\)", self._complexity_spec),
             (r"constant time|[Oo]\(1\)", self._complexity_spec),
         ]
-        
+
         self.correctness_patterns = [
-            (r"sorts? the array|sorting|sorted|correctly sorts", self._sorting_correctness_spec),
-            (r"returns? the (maximum|minimum)|finds the (maximum|minimum)", self._extremum_correctness_spec),
+            (
+                r"sorts? the array|sorting|sorted|correctly sorts",
+                self._sorting_correctness_spec,
+            ),
+            (
+                r"returns? the (maximum|minimum)|finds the (maximum|minimum)",
+                self._extremum_correctness_spec,
+            ),
             (r"computes? the sum", self._sum_correctness_spec),
-            (r"binary.?search.*returns.*correct.*index|binary.?search.*finds.*element", self._binary_search_correctness_spec),
+            (
+                r"binary.?search.*returns.*correct.*index|binary.?search.*finds.*element",
+                self._binary_search_correctness_spec,
+            ),
             (r"preserves all elements|permutation", self._permutation_correctness_spec),
         ]
-        
+
         self.mathematical_patterns = [
             (r"(\d+)\s*\+\s*(\d+)\s*=\s*(\d+)", self._arithmetic_spec),
             (r"(\d+)\s*\*\s*(\d+)\s*=\s*(\d+)", self._multiplication_spec),
             (r"(\d+)\s*-\s*(\d+)\s*=\s*(\d+)", self._subtraction_spec),
             (r"factorial\s*\(?(\d+)\)?\s*(?:=|equals)\s*(\d+)", self._factorial_spec),
-            (r"fibonacci\s+(\d+)\s*=\s*(\d+)", self._fibonacci_spec),
-            (r"gcd\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)\s*=\s*(\d+)", self._gcd_spec),
+            (r"fibonacci\s*\(?\s*(\d+)\s*\)?\s*=\s*(\d+)", self._fibonacci_spec),
+            (
+                r"gcd\s*\(?\s*(\d+)\s*,\s*(\d+)\s*\)?\s*=\s*(\d+)",
+                self._gcd_spec,
+            ),
             (r"max\s*\(\s*\[([\d,\s]+)\]\s*\)\s*returns?\s*(\d+)", self._max_spec),
         ]
-        
+
         # Software property patterns
         self.software_patterns = [
-            (r"accessing\s+array\[(\d+)\].*length.*?(\d+).*?(safe|unsafe|overflow)", self._array_bounds_spec),
-            (r"for\s+loop.*?(\d+).*?to.*?(\w+)\s+terminates", self._loop_termination_spec),
+            (
+                r"accessing\s+array\[(\d+)\].*length.*?(\d+).*?(safe|unsafe|overflow)",
+                self._array_bounds_spec,
+            ),
+            (
+                r"for\s+loop.*?(\d+).*?to.*?(\w+)\s+terminates",
+                self._loop_termination_spec,
+            ),
             (r"while\s*\(\s*true\s*\).*?terminates", self._infinite_loop_spec),
             (r"list\s+size\s+increases.*?after\s+append", self._list_append_spec),
         ]
-    
-    def translate(self, claim: Claim, code: str) -> Optional[FormalSpec]:
+
+    def _translate_from_ir(self, claim: Claim, code: str) -> FormalSpec | None:
+        """Translate from persistent claim IR when available."""
+        ir = claim.claim_ir
+        if ir is None:
+            return None
+
+        kind = ir.kind
+        bindings = ir.bindings
+
+        if kind == ClaimIRKind.ARITHMETIC:
+            return self._arithmetic_spec_from_values(
+                claim,
+                int(bindings["left"]),
+                int(bindings["right"]),
+                int(bindings["result"]),
+            )
+        if kind == ClaimIRKind.MULTIPLICATION:
+            return self._multiplication_spec_from_values(
+                claim,
+                int(bindings["left"]),
+                int(bindings["right"]),
+                int(bindings["result"]),
+            )
+        if kind == ClaimIRKind.SUBTRACTION:
+            return self._subtraction_spec_from_values(
+                claim,
+                int(bindings["left"]),
+                int(bindings["right"]),
+                int(bindings["result"]),
+            )
+        if kind == ClaimIRKind.FACTORIAL:
+            return self._factorial_spec_from_values(
+                claim,
+                int(bindings["input"]),
+                int(bindings["output"]),
+            )
+        if kind == ClaimIRKind.FIBONACCI:
+            return self._fibonacci_spec_from_values(
+                claim,
+                int(bindings["n"]),
+                int(bindings["result"]),
+            )
+        if kind == ClaimIRKind.GCD:
+            return self._gcd_spec_from_values(
+                claim,
+                int(bindings["a"]),
+                int(bindings["b"]),
+                int(bindings["result"]),
+            )
+        if kind == ClaimIRKind.INEQUALITY:
+            return self._inequality_spec_from_values(
+                claim,
+                bindings["left"],
+                bindings["op"],
+                bindings["right"],
+            )
+        if kind == ClaimIRKind.LOGIC_IMPLICATION:
+            return self._implication_spec_from_parts(
+                claim,
+                bindings["hypothesis"],
+                bindings["conclusion"],
+            )
+        if kind == ClaimIRKind.LOGIC_FORALL:
+            return self._forall_spec_from_parts(
+                claim,
+                bindings["variable"],
+                bindings["property"],
+            )
+        if kind == ClaimIRKind.LOGIC_EXISTS:
+            return self._exists_spec_from_parts(
+                claim,
+                bindings["variable"],
+                bindings["property"],
+            )
+
+        return None
+
+    def translate(self, claim: Claim, code: str) -> FormalSpec | None:
         """Convert a claim to formal specification.
-        
+
         Args:
             claim: The claim to translate
             code: The code being analyzed
-            
+
         Returns:
             FormalSpec if translation successful, None otherwise
         """
+        structured_spec = self._translate_from_ir(claim, code)
+        if structured_spec is not None:
+            return structured_spec
+
         claim_lower = claim.claim_text.lower()
-        
+
         # Try logic patterns first (NEW)
         for pattern, spec_generator in self.logic_patterns:
             match = re.search(pattern, claim_lower)
             if match:
                 return spec_generator(claim, code, match)
-        
+
         # Try inequality patterns (NEW)
         for pattern, spec_generator in self.inequality_patterns:
             match = re.search(pattern, claim_lower)
             if match:
                 return spec_generator(claim, code, match)
-        
+
         # Try memory safety patterns
         for pattern, spec_generator in self.memory_patterns:
             if re.search(pattern, claim_lower):
                 return spec_generator(claim, code)
-        
-        # Try complexity patterns  
+
+        # Try complexity patterns
         for pattern, spec_generator in self.complexity_patterns:
             match = re.search(pattern, claim_lower)
             if match:
                 return spec_generator(claim, code, match)
-        
+
         # Try correctness patterns
         for pattern, spec_generator in self.correctness_patterns:
             if re.search(pattern, claim_lower):
                 return spec_generator(claim, code)
-        
+
         # Try mathematical patterns
         for pattern, spec_generator in self.mathematical_patterns:
             match = re.search(pattern, claim_lower)
             if match:
                 return spec_generator(claim, code, match)
-        
+
         # Try software property patterns
         for pattern, spec_generator in self.software_patterns:
             match = re.search(pattern, claim_lower)
             if match:
                 return spec_generator(claim, code, match)
-        
+
         logger.warning(f"Could not translate claim: {claim.claim_text}")
         return None
-    
-    def _extract_function_name(self, code: str) -> str:
-        """Extract function name from code."""
-        func_match = re.search(r'fn\s+(\w+)', code)
-        return func_match.group(1) if func_match else "function"
-    
-    def _memory_safety_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate memory safety specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} does not cause buffer overflows or use-after-free"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
 
-Definition {func_name}_safe (input: list nat) : Prop :=
-  forall i, i < length input -> 
-    exists result, {func_name} input = Some result /\\
-    (forall j, j < length result -> nth j result 0 < max_val).
-
-Theorem {func_name}_memory_safe : 
-  forall input, {func_name}_safe input.
-Proof.
-  (* Proof would establish memory safety *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
-    def _extremum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate extremum finding correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly finds the extremum value"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
-
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  In output input /\\ (forall x, In x input -> x <= output).
-
-Theorem {func_name}_finds_extremum :
-  forall input, input <> nil ->
-    exists output, {func_name} input = Some output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify extremum finding correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
-    def _sum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate sum computation correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly computes the sum"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
-
-Fixpoint list_sum (l: list nat) : nat :=
-  match l with
-  | nil => 0
-  | h :: t => h + list_sum t
-  end.
-
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  output = list_sum input.
-
-Theorem {func_name}_computes_sum :
-  forall input, exists output,
-    {func_name} input = output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify sum computation correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
-    def _arithmetic_spec(self, claim: Claim, code: str, match) -> FormalSpec:
-        """Generate arithmetic correctness specification."""
-        left = int(match.group(1))
-        middle = int(match.group(2))  
-        right = int(match.group(3))
-        
+    def _arithmetic_spec_from_values(
+        self,
+        claim: Claim,
+        left: int,
+        middle: int,
+        right: int,
+    ) -> FormalSpec:
         spec_text = f"Arithmetic claim: {left} + {middle} = {right}"
         coq_code = f"""
 Require Import Arith.
@@ -232,19 +246,21 @@ Proof.
   reflexivity.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"left": str(left), "middle": str(middle), "right": str(right)}
+            variables={"left": str(left), "middle": str(middle), "right": str(right)},
+            claim_ir=claim.claim_ir,
         )
-    
-    def _factorial_spec(self, claim: Claim, code: str, match) -> FormalSpec:
-        """Generate factorial correctness specification."""
-        input_val = int(match.group(1))
-        output_val = int(match.group(2))
-        
+
+    def _factorial_spec_from_values(
+        self,
+        claim: Claim,
+        input_val: int,
+        output_val: int,
+    ) -> FormalSpec:
         spec_text = f"Factorial claim: factorial {input_val} = {output_val}"
         coq_code = f"""
 Require Import Arith.
@@ -261,31 +277,32 @@ Proof.
   reflexivity.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"input": str(input_val), "output": str(output_val)}
+            variables={"input": str(input_val), "output": str(output_val)},
+            claim_ir=claim.claim_ir,
         )
-    
-    def _implication_spec(self, claim: Claim, code: str, match) -> FormalSpec:
-        """Generate implication specification (if-then)."""
-        hypothesis = match.group(1).strip()
-        conclusion = match.group(2).strip()
-        
-        # Parse and handle variable bindings
+
+    def _implication_spec_from_parts(
+        self,
+        claim: Claim,
+        hypothesis: str,
+        conclusion: str,
+    ) -> FormalSpec:
         hyp_coq = self._parse_expression(hypothesis)
         conc_coq = self._parse_expression(conclusion)
-        
-        # Extract variables from expressions
-        import re
-        variables = set(re.findall(r'\b[a-z]\b', hypothesis + " " + conclusion))
-        
+        variables = set(re.findall(r"\b[a-z]\b", hypothesis + " " + conclusion))
+
         if variables:
-            # Handle implications with variables
-            var_decls = ", ".join([f"{v} : nat" for v in sorted(variables)])
-            spec_text = f"Implication: forall {', '.join(sorted(variables))}, if {hypothesis} then {conclusion}"
+            var_decls = ", ".join(f"{v} : nat" for v in sorted(variables))
+            quantified_vars = ", ".join(sorted(variables))
+            spec_text = (
+                f"Implication: forall {quantified_vars}, "
+                f"if {hypothesis} then {conclusion}"
+            )
             coq_code = f"""
 Require Import Arith.
 Require Import Lia.
@@ -297,7 +314,6 @@ Proof.
 Qed.
 """
         else:
-            # Simple numeric implication
             spec_text = f"Implication: if {hypothesis} then {conclusion}"
             coq_code = f"""
 Require Import Arith.
@@ -309,20 +325,21 @@ Proof.
   lia.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"hypothesis": hypothesis, "conclusion": conclusion}
+            variables={"hypothesis": hypothesis, "conclusion": conclusion},
+            claim_ir=claim.claim_ir,
         )
-    
-    def _forall_spec(self, claim: Claim, code: str, match) -> FormalSpec:
-        """Generate universal quantification specification."""
-        variable = match.group(1).strip()
-        property_text = match.group(2).strip()
-        
-        # Handle common patterns like "n + 0 = n"
+
+    def _forall_spec_from_parts(
+        self,
+        claim: Claim,
+        variable: str,
+        property_text: str,
+    ) -> FormalSpec:
         if "+" in property_text and "0" in property_text:
             spec_text = f"Universal: forall {variable}, {property_text}"
             coq_code = f"""
@@ -347,21 +364,22 @@ Proof.
   auto.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"variable": variable, "property": property_text}
+            variables={"variable": variable, "property": property_text},
+            claim_ir=claim.claim_ir,
         )
-    
-    def _exists_spec(self, claim: Claim, code: str, match) -> FormalSpec:
-        """Generate existential quantification specification."""
-        variable = match.group(1).strip()
-        property_text = match.group(2).strip()
-        
+
+    def _exists_spec_from_parts(
+        self,
+        claim: Claim,
+        variable: str,
+        property_text: str,
+    ) -> FormalSpec:
         property_coq = self._parse_expression(property_text)
-        
         spec_text = f"Existential: exists {variable} such that {property_text}"
         coq_code = f"""
 Require Import Arith.
@@ -372,31 +390,22 @@ Proof.
   auto.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"variable": variable, "property": property_text}
+            variables={"variable": variable, "property": property_text},
+            claim_ir=claim.claim_ir,
         )
-    
-    def _inequality_spec(self, claim: Claim, code: str, match) -> FormalSpec:
-        """Generate inequality specification."""
-        left = int(match.group(1))
-        right = int(match.group(2))
-        
-        # Determine operator from original claim
-        if "<" in claim.claim_text and "=" not in claim.claim_text:
-            op = "<"
-        elif ">" in claim.claim_text and "=" not in claim.claim_text:
-            op = ">"
-        elif "<=" in claim.claim_text:
-            op = "<="
-        elif ">=" in claim.claim_text:
-            op = ">="
-        else:
-            op = "<"  # Default
-        
+
+    def _inequality_spec_from_values(
+        self,
+        claim: Claim,
+        left: str,
+        op: str,
+        right: str,
+    ) -> FormalSpec:
         spec_text = f"Inequality: {left} {op} {right}"
         coq_code = f"""
 Require Import Arith.
@@ -407,20 +416,22 @@ Proof.
   lia.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"left": str(left), "right": str(right), "op": op}
+            variables={"left": str(left), "right": str(right), "op": op},
+            claim_ir=claim.claim_ir,
         )
-    
-    def _multiplication_spec(self, claim: Claim, code: str, match) -> FormalSpec:
-        """Generate multiplication specification."""
-        left = int(match.group(1))
-        right = int(match.group(2))
-        result = int(match.group(3))
-        
+
+    def _multiplication_spec_from_values(
+        self,
+        claim: Claim,
+        left: int,
+        right: int,
+        result: int,
+    ) -> FormalSpec:
         spec_text = f"Multiplication: {left} * {right} = {result}"
         coq_code = f"""
 Require Import Arith.
@@ -430,20 +441,22 @@ Proof.
   reflexivity.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"left": str(left), "right": str(right), "result": str(result)}
+            variables={"left": str(left), "right": str(right), "result": str(result)},
+            claim_ir=claim.claim_ir,
         )
-    
-    def _subtraction_spec(self, claim: Claim, code: str, match) -> FormalSpec:
-        """Generate subtraction specification."""
-        left = int(match.group(1))
-        right = int(match.group(2))
-        result = int(match.group(3))
-        
+
+    def _subtraction_spec_from_values(
+        self,
+        claim: Claim,
+        left: int,
+        right: int,
+        result: int,
+    ) -> FormalSpec:
         spec_text = f"Subtraction: {left} - {right} = {result}"
         coq_code = f"""
 Require Import Arith.
@@ -453,19 +466,21 @@ Proof.
   reflexivity.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"left": str(left), "right": str(right), "result": str(result)}
+            variables={"left": str(left), "right": str(right), "result": str(result)},
+            claim_ir=claim.claim_ir,
         )
-    
-    def _fibonacci_spec(self, claim: Claim, code: str, match) -> FormalSpec:
-        """Generate Fibonacci specification."""
-        n = int(match.group(1))
-        result = int(match.group(2))
-        
+
+    def _fibonacci_spec_from_values(
+        self,
+        claim: Claim,
+        n: int,
+        result: int,
+    ) -> FormalSpec:
         spec_text = f"Fibonacci: fibonacci {n} = {result}"
         coq_code = f"""
 Require Import Arith.
@@ -483,20 +498,22 @@ Proof.
   reflexivity.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"n": str(n), "result": str(result)}
+            variables={"n": str(n), "result": str(result)},
+            claim_ir=claim.claim_ir,
         )
-    
-    def _gcd_spec(self, claim: Claim, code: str, match) -> FormalSpec:
-        """Generate GCD specification."""
-        a = int(match.group(1))
-        b = int(match.group(2))
-        result = int(match.group(3))
-        
+
+    def _gcd_spec_from_values(
+        self,
+        claim: Claim,
+        a: int,
+        b: int,
+        result: int,
+    ) -> FormalSpec:
         spec_text = f"GCD: gcd({a}, {b}) = {result}"
         coq_code = f"""
 Require Import Arith.
@@ -509,14 +526,183 @@ Proof.
   reflexivity.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"a": str(a), "b": str(b), "result": str(result)}
+            variables={"a": str(a), "b": str(b), "result": str(result)},
+            claim_ir=claim.claim_ir,
         )
-    
+
+    def _extract_function_name(self, code: str) -> str:
+        """Extract function name from code."""
+        patterns = [
+            r"\bdef\s+(\w+)\s*\(",
+            r"\bfn\s+(\w+)\s*\(",
+            r"\bfunction\s+(\w+)\s*\(",
+        ]
+        for pattern in patterns:
+            func_match = re.search(pattern, code)
+            if func_match:
+                return func_match.group(1)
+        return "function"
+
+    def _memory_safety_spec(self, claim: Claim, code: str) -> FormalSpec:
+        """Generate memory safety specification."""
+        func_name = self._extract_function_name(code)
+
+        spec_text = (
+            f"Function {func_name} does not cause buffer overflows or use-after-free"
+        )
+        coq_code = f"""
+Require Import List.
+Require Import Arith.
+
+Definition {func_name}_safe (input: list nat) : Prop :=
+  forall i, i < length input ->
+    exists result, {func_name} input = Some result /\\
+    (forall j, j < length result -> nth j result 0 < max_val).
+
+Theorem {func_name}_memory_safe :
+  forall input, {func_name}_safe input.
+Proof.
+  (* Proof would establish memory safety *)
+Admitted.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"func_name": func_name},
+        )
+
+    def _extremum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
+        """Generate extremum finding correctness specification."""
+        func_name = self._extract_function_name(code)
+
+        spec_text = f"Function {func_name} correctly finds the extremum value"
+        coq_code = f"""
+Require Import List.
+Require Import Arith.
+
+Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
+  In output input /\\ (forall x, In x input -> x <= output).
+
+Theorem {func_name}_finds_extremum :
+  forall input, input <> nil ->
+    exists output, {func_name} input = Some output /\\ {func_name}_correct input output.
+Proof.
+  (* Proof would verify extremum finding correctness *)
+Admitted.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"func_name": func_name},
+        )
+
+    def _sum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
+        """Generate sum computation correctness specification."""
+        func_name = self._extract_function_name(code)
+
+        spec_text = f"Function {func_name} correctly computes the sum"
+        coq_code = f"""
+Require Import List.
+Require Import Arith.
+
+Fixpoint list_sum (l: list nat) : nat :=
+  match l with
+  | nil => 0
+  | h :: t => h + list_sum t
+  end.
+
+Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
+  output = list_sum input.
+
+Theorem {func_name}_computes_sum :
+  forall input, exists output,
+    {func_name} input = output /\\ {func_name}_correct input output.
+Proof.
+  (* Proof would verify sum computation correctness *)
+Admitted.
+"""
+
+        return FormalSpec(
+            claim=claim,
+            spec_text=spec_text,
+            coq_code=coq_code,
+            variables={"func_name": func_name},
+        )
+
+    def _arithmetic_spec(self, claim: Claim, code: str, match) -> FormalSpec:
+        """Generate arithmetic correctness specification."""
+        left = int(match.group(1))
+        middle = int(match.group(2))
+        right = int(match.group(3))
+        return self._arithmetic_spec_from_values(claim, left, middle, right)
+
+    def _factorial_spec(self, claim: Claim, code: str, match) -> FormalSpec:
+        """Generate factorial correctness specification."""
+        input_val = int(match.group(1))
+        output_val = int(match.group(2))
+        return self._factorial_spec_from_values(claim, input_val, output_val)
+
+    def _implication_spec(self, claim: Claim, code: str, match) -> FormalSpec:
+        """Generate implication specification (if-then)."""
+        hypothesis = match.group(1).strip()
+        conclusion = match.group(2).strip()
+        return self._implication_spec_from_parts(claim, hypothesis, conclusion)
+
+    def _forall_spec(self, claim: Claim, code: str, match) -> FormalSpec:
+        """Generate universal quantification specification."""
+        variable = match.group(1).strip()
+        property_text = match.group(2).strip()
+        return self._forall_spec_from_parts(claim, variable, property_text)
+
+    def _exists_spec(self, claim: Claim, code: str, match) -> FormalSpec:
+        """Generate existential quantification specification."""
+        variable = match.group(1).strip()
+        property_text = match.group(2).strip()
+        return self._exists_spec_from_parts(claim, variable, property_text)
+
+    def _inequality_spec(self, claim: Claim, code: str, match) -> FormalSpec:
+        """Generate inequality specification."""
+        left = match.group(1)
+        op = match.group(2)
+        right = match.group(3)
+        return self._inequality_spec_from_values(claim, left, op, right)
+
+    def _multiplication_spec(self, claim: Claim, code: str, match) -> FormalSpec:
+        """Generate multiplication specification."""
+        left = int(match.group(1))
+        right = int(match.group(2))
+        result = int(match.group(3))
+        return self._multiplication_spec_from_values(claim, left, right, result)
+
+    def _subtraction_spec(self, claim: Claim, code: str, match) -> FormalSpec:
+        """Generate subtraction specification."""
+        left = int(match.group(1))
+        right = int(match.group(2))
+        result = int(match.group(3))
+        return self._subtraction_spec_from_values(claim, left, right, result)
+
+    def _fibonacci_spec(self, claim: Claim, code: str, match) -> FormalSpec:
+        """Generate Fibonacci specification."""
+        n = int(match.group(1))
+        result = int(match.group(2))
+        return self._fibonacci_spec_from_values(claim, n, result)
+
+    def _gcd_spec(self, claim: Claim, code: str, match) -> FormalSpec:
+        """Generate GCD specification."""
+        a = int(match.group(1))
+        b = int(match.group(2))
+        result = int(match.group(3))
+        return self._gcd_spec_from_values(claim, a, b, result)
+
     def _parse_expression(self, expr: str) -> str:
         """Parse a natural language expression to Coq syntax."""
         # Simple parsing rules
@@ -526,23 +712,23 @@ Qed.
         expr = expr.replace(" plus ", " + ")
         expr = expr.replace(" minus ", " - ")
         expr = expr.replace(" times ", " * ")
-        
+
         # Handle variable references
-        expr = re.sub(r'\b(x|y|n|m)\b', r'\1', expr)
-        
-        # Handle numeric comparisons  
-        expr = re.sub(r'(\d+)\s*=\s*(\d+)', r'\1 = \2', expr)
-        
+        expr = re.sub(r"\b(x|y|n|m)\b", r"\1", expr)
+
+        # Handle numeric comparisons
+        expr = re.sub(r"(\d+)\s*=\s*(\d+)", r"\1 = \2", expr)
+
         return expr
-    
+
     def _max_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate max function specification."""
         array_str = match.group(1).strip()
         result = int(match.group(2))
-        
+
         # Parse array elements
-        elements = [int(x.strip()) for x in array_str.split(',')]
-        
+        elements = [int(x.strip()) for x in array_str.split(",")]
+
         spec_text = f"Max of [{', '.join(map(str, elements))}] returns {result}"
         coq_code = f"""
 Require Import List.
@@ -565,24 +751,28 @@ Proof.
   reflexivity.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"array": str(elements), "result": str(result)}
+            variables={"array": str(elements), "result": str(result)},
         )
-    
+
     def _array_bounds_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate array bounds checking specification."""
         index = int(match.group(1))
         length = int(match.group(2))
         safety = match.group(3).lower()
-        
+
         is_safe = "safe" in safety
-        
-        spec_text = f"Array access at index {index} with length {length} is {'safe' if is_safe else 'unsafe'}"
-        
+
+        safety_text = "safe" if is_safe else "unsafe"
+        spec_text = (
+            f"Array access at index {index} with length {length} is "
+            f"{safety_text}"
+        )
+
         if is_safe:
             # Prove safety
             coq_code = f"""
@@ -605,21 +795,21 @@ Proof.
   lia.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"index": str(index), "length": str(length)}
+            variables={"index": str(index), "length": str(length)},
         )
-    
+
     def _loop_termination_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate loop termination proof."""
         start = match.group(1) if match.group(1).isdigit() else "0"
         end = match.group(2) if match.group(2) else "n"
-        
+
         spec_text = f"For loop from {start} to {end} terminates"
-        
+
         if end.isdigit():
             # Concrete bounds
             coq_code = f"""
@@ -638,7 +828,7 @@ Qed.
 Require Import Arith.
 Require Import Lia.
 
-Theorem loop_terminates : forall n : nat, {start} < n -> 
+Theorem loop_terminates : forall n : nat, {start} < n ->
   exists steps : nat, steps = n - {start}.
 Proof.
   intros n H.
@@ -646,16 +836,16 @@ Proof.
   reflexivity.
 Qed.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"start": start, "end": end}
+            variables={"start": start, "end": end},
         )
-    
+
     def _infinite_loop_spec(self, claim: Claim, code: str, match) -> FormalSpec:
-        """Generate specification for infinite loop (should fail to prove termination)."""
+        """Generate specification for an infinite-loop termination claim."""
         spec_text = "While(true) loop terminates"
         coq_code = """
 Require Import Arith.
@@ -666,14 +856,11 @@ Proof.
   (* Cannot prove False *)
 Admitted.
 """
-        
+
         return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={}
+            claim=claim, spec_text=spec_text, coq_code=coq_code, variables={}
         )
-    
+
     def _list_append_spec(self, claim: Claim, code: str, match) -> FormalSpec:
         """Generate list append specification."""
         spec_text = "List size increases by 1 after append"
@@ -692,14 +879,11 @@ Proof.
   reflexivity.
 Qed.
 """
-        
+
         return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={}
+            claim=claim, spec_text=spec_text, coq_code=coq_code, variables={}
         )
-    
+
     def _complexity_spec(self, claim: Claim, code: str, match=None) -> FormalSpec:
         """Generate time complexity specification."""
         complexity = "n"  # Default
@@ -707,36 +891,36 @@ Qed.
             # Extract the non-None group from the regex match
             groups = [g for g in match.groups() if g is not None]
             complexity = groups[0] if groups else "n"
-        
+
         func_name = self._extract_function_name(code)
-        
+
         spec_text = f"Function {func_name} has time complexity O({complexity})"
         coq_code = f"""
 Require Import Omega.
 
-Definition time_complexity_{func_name} (n: nat) : nat := 
+Definition time_complexity_{func_name} (n: nat) : nat :=
   (* Time function would be derived from code analysis *)
   n. (* Simplified for example *)
 
 Theorem {func_name}_complexity :
-  exists c k, forall n, n >= k -> 
+  exists c k, forall n, n >= k ->
     time_complexity_{func_name} n <= c * ({complexity}).
 Proof.
   (* Proof would establish the complexity bound *)
 Admitted.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"func_name": func_name, "complexity": complexity}
+            variables={"func_name": func_name, "complexity": complexity},
         )
-    
+
     def _sorting_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
         """Generate sorting correctness specification."""
         func_name = self._extract_function_name(code)
-        
+
         spec_text = f"Function {func_name} correctly sorts its input"
         coq_code = f"""
 Require Import List.
@@ -753,85 +937,26 @@ Proof.
   (* Proof would verify sorting correctness *)
 Admitted.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"func_name": func_name}
+            variables={"func_name": func_name},
         )
-    
-    def _extremum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate extremum finding correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly finds the extremum value"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
 
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  In output input /\\ (forall x, In x input -> x <= output).
-
-Theorem {func_name}_finds_extremum :
-  forall input, input <> nil ->
-    exists output, {func_name} input = Some output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify extremum finding correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
-    def _sum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate sum computation correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly computes the sum"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
-
-Fixpoint list_sum (l: list nat) : nat :=
-  match l with
-  | nil => 0
-  | h :: t => h + list_sum t
-  end.
-
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  output = list_sum input.
-
-Theorem {func_name}_computes_sum :
-  forall input, exists output,
-    {func_name} input = output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify sum computation correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
     def _binary_search_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
         """Generate binary search correctness specification."""
         func_name = self._extract_function_name(code)
-        
+
         spec_text = f"Function {func_name} correctly implements binary search"
         coq_code = f"""
 Require Import List.
 Require Import Arith.
 Require Import Sorted.
 
-Definition {func_name}_correct (input: list nat) (target: nat) (result: option nat) : Prop :=
+Definition {func_name}_correct
+  (input: list nat) (target: nat) (result: option nat) : Prop :=
   match result with
   | Some idx => idx < length input /\\ nth idx input 0 = target
   | None => ~In target input
@@ -839,83 +964,25 @@ Definition {func_name}_correct (input: list nat) (target: nat) (result: option n
 
 Theorem {func_name}_search_correct :
   forall input target, LocallySorted le input ->
-    exists result, {func_name} input target = result /\\ {func_name}_correct input target result.
+    exists result,
+      {func_name} input target = result /\\
+      {func_name}_correct input target result.
 Proof.
   (* Proof would verify binary search correctness *)
 Admitted.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"func_name": func_name}
+            variables={"func_name": func_name},
         )
-    
-    def _extremum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate extremum finding correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly finds the extremum value"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
 
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  In output input /\\ (forall x, In x input -> x <= output).
-
-Theorem {func_name}_finds_extremum :
-  forall input, input <> nil ->
-    exists output, {func_name} input = Some output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify extremum finding correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
-    def _sum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate sum computation correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly computes the sum"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
-
-Fixpoint list_sum (l: list nat) : nat :=
-  match l with
-  | nil => 0
-  | h :: t => h + list_sum t
-  end.
-
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  output = list_sum input.
-
-Theorem {func_name}_computes_sum :
-  forall input, exists output,
-    {func_name} input = output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify sum computation correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
     def _permutation_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
         """Generate permutation preservation specification."""
         func_name = self._extract_function_name(code)
-        
+
         spec_text = f"Function {func_name} preserves all elements (permutation)"
         coq_code = f"""
 Require Import List.
@@ -931,70 +998,10 @@ Proof.
   (* Proof would verify permutation preservation *)
 Admitted.
 """
-        
+
         return FormalSpec(
             claim=claim,
             spec_text=spec_text,
             coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
-    def _extremum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate extremum finding correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly finds the extremum value"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
-
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  In output input /\\ (forall x, In x input -> x <= output).
-
-Theorem {func_name}_finds_extremum :
-  forall input, input <> nil ->
-    exists output, {func_name} input = Some output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify extremum finding correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
-        )
-    
-    def _sum_correctness_spec(self, claim: Claim, code: str) -> FormalSpec:
-        """Generate sum computation correctness specification."""
-        func_name = self._extract_function_name(code)
-        
-        spec_text = f"Function {func_name} correctly computes the sum"
-        coq_code = f"""
-Require Import List.
-Require Import Arith.
-
-Fixpoint list_sum (l: list nat) : nat :=
-  match l with
-  | nil => 0
-  | h :: t => h + list_sum t
-  end.
-
-Definition {func_name}_correct (input: list nat) (output: nat) : Prop :=
-  output = list_sum input.
-
-Theorem {func_name}_computes_sum :
-  forall input, exists output,
-    {func_name} input = output /\\ {func_name}_correct input output.
-Proof.
-  (* Proof would verify sum computation correctness *)
-Admitted.
-"""
-        
-        return FormalSpec(
-            claim=claim,
-            spec_text=spec_text,
-            coq_code=coq_code,
-            variables={"func_name": func_name}
+            variables={"func_name": func_name},
         )

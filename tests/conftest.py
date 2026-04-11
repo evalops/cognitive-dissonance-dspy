@@ -1,7 +1,8 @@
 """Shared fixtures for tests."""
 
-import pytest
 import dspy
+import pytest
+
 from cognitive_dissonance.config import ExperimentConfig
 
 
@@ -32,7 +33,7 @@ def mock_lm():
     class MockLM:
         def __call__(self, *args, **kwargs):
             return {"text": "mock response", "choices": [{"text": "mock response"}]}
-    
+
     return MockLM()
 
 
@@ -59,7 +60,7 @@ def sample_examples():
             has_dissonance="yes",
             reconciled="The Earth is round.",
         ).with_inputs("text1", "text2"),
-        
+
         dspy.Example(
             text1="Coffee contains caffeine.",
             text2="Tea also contains caffeine.",

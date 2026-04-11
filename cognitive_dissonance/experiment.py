@@ -1,22 +1,23 @@
 """Main experiment implementation for Cognitive Dissonance resolution."""
 
-from typing import List, Dict, Tuple, Any
 import logging
+from typing import Any
+
 from dspy.teleprompt import BootstrapFewShot
 
 from .config import ExperimentConfig
-from .verifier import CognitiveDissonanceResolver, BeliefAgent, DissonanceDetector
 from .data import get_dev_labeled, get_train_unlabeled, validate_dataset
+from .evaluation import agreement_rate, analyze_errors, evaluate
 from .metrics import (
-    dissonance_detection_accuracy,
-    combined_metric,
     agreement_metric_factory,
     blended_metric_factory,
-    confidence_weighted_accuracy
+    combined_metric,
+    confidence_weighted_accuracy,
+    dissonance_detection_accuracy,
 )
-from .evaluation import evaluate, agreement_rate, analyze_errors
-from .optimization import create_advanced_optimizer, GEPAOptimizer, EnsembleOptimizer
-from .uncertainty import UncertaintyQuantifier, EnhancedConfidenceScorer
+from .optimization import GEPAOptimizer, create_advanced_optimizer
+from .uncertainty import EnhancedConfidenceScorer, UncertaintyQuantifier
+from .verifier import CognitiveDissonanceResolver
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class ExperimentResults:
     """Container for experiment results."""
 
     def __init__(self):
-        self.rounds: List[Dict[str, Any]] = []
+        self.rounds: list[dict[str, Any]] = []
         self.agent_a = None
         self.agent_b = None
         self.error_analysis = {}
@@ -54,7 +55,7 @@ class ExperimentResults:
             }
         )
 
-    def get_final_accuracies(self) -> Tuple[float, float]:
+    def get_final_accuracies(self) -> tuple[float, float]:
         """Get final accuracies for both agents."""
         if not self.rounds:
             return 0.0, 0.0
@@ -73,7 +74,7 @@ class ExperimentResults:
             return 0.0
         return self.rounds[-1].get("reconciliation_quality", 0.0)
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Get experiment summary."""
         if not self.rounds:
             return {"total_rounds": 0}
@@ -97,12 +98,11 @@ class ExperimentResults:
 
 def cognitive_dissonance_experiment(
     config: ExperimentConfig = None,
-    rounds: int = None,
-    use_cot: bool = None,
-    alpha_anchor: float = None,
+    rounds: int | None = None,
+    use_cot: bool | None = None,
+    alpha_anchor: float | None = None,
 ) -> ExperimentResults:
-    """
-    Run the Cognitive Dissonance experiment.
+    """Run the Cognitive Dissonance experiment.
 
     Args:
         config: Experiment configuration (if None, loads from environment)
@@ -240,12 +240,11 @@ def cognitive_dissonance_experiment(
 def advanced_cognitive_dissonance_experiment(
     config: ExperimentConfig = None,
     optimization_strategy: str = "gepa+ensemble",
-    rounds: int = None,
-    use_cot: bool = None,
-    alpha_anchor: float = None,
+    rounds: int | None = None,
+    use_cot: bool | None = None,
+    alpha_anchor: float | None = None,
 ) -> ExperimentResults:
-    """
-    Run advanced cognitive dissonance experiment with enhanced optimization.
+    """Run advanced cognitive dissonance experiment with enhanced optimization.
 
     Args:
         config: Experiment configuration
@@ -301,7 +300,7 @@ def advanced_cognitive_dissonance_experiment(
     try:
         # Advanced baseline optimization
         logger.info("Training baseline agents with advanced optimization...")
-        
+
         # Create advanced optimizers
         optimizer_a = create_advanced_optimizer(optimization_strategy)
         optimizer_b = create_advanced_optimizer(optimization_strategy)
@@ -336,7 +335,7 @@ def advanced_cognitive_dissonance_experiment(
                 advanced_optimizer_a = GEPAOptimizer(metric=metric_a)
             else:
                 advanced_optimizer_a = create_advanced_optimizer("ensemble")
-            
+
             agent_a = advanced_optimizer_a.compile(agent_a, trainset=train_unlabeled)
 
             logger.debug("Training agent B with advanced optimization...")
@@ -344,7 +343,7 @@ def advanced_cognitive_dissonance_experiment(
                 advanced_optimizer_b = GEPAOptimizer(metric=metric_b)
             else:
                 advanced_optimizer_b = create_advanced_optimizer("ensemble")
-            
+
             agent_b = advanced_optimizer_b.compile(agent_b, trainset=train_unlabeled)
 
             # Evaluate with enhanced metrics
@@ -366,7 +365,7 @@ def advanced_cognitive_dissonance_experiment(
             # Advanced confidence analysis
             sample_predictions_a = []
             sample_predictions_b = []
-            
+
             for example in dev_labeled[:10]:
                 try:
                     pred_a = agent_a(text1=example.text1, text2=example.text2)
@@ -381,14 +380,14 @@ def advanced_cognitive_dissonance_experiment(
             if sample_predictions_a:
                 confidence_summary_a = confidence_scorer.get_scoring_summary(sample_predictions_a)
                 confidence_summary_b = confidence_scorer.get_scoring_summary(sample_predictions_b)
-                
+
                 avg_confidence = (
-                    confidence_summary_a.get('avg_confidence', 0.5) + 
+                    confidence_summary_a.get('avg_confidence', 0.5) +
                     confidence_summary_b.get('avg_confidence', 0.5)
                 ) / 2
-                
+
                 avg_uncertainty = (
-                    confidence_summary_a.get('avg_uncertainty', 0.5) + 
+                    confidence_summary_a.get('avg_uncertainty', 0.5) +
                     confidence_summary_b.get('avg_uncertainty', 0.5)
                 ) / 2
             else:
@@ -431,21 +430,21 @@ def advanced_cognitive_dissonance_experiment(
         # Enhanced error analysis
         logger.info("Performing enhanced error analysis...")
         results.error_analysis = analyze_errors(agent_a, dev_labeled, metric=combined_metric)
-        
+
         # Final confidence analysis
         all_predictions = []
         ground_truth = []
-        
+
         for example in dev_labeled:
             try:
                 pred = agent_a(text1=example.text1, text2=example.text2)
                 all_predictions.append(pred)
-                
+
                 # Determine ground truth correctness
                 expected_dissonance = getattr(example, 'has_dissonance', 'no')
                 actual_dissonance = getattr(pred, 'has_dissonance', 'no')
                 ground_truth.append(expected_dissonance.lower() == actual_dissonance.lower())
-                
+
             except Exception as e:
                 logger.warning(f"Failed to get prediction for confidence analysis: {e}")
                 continue
@@ -468,9 +467,8 @@ def advanced_cognitive_dissonance_experiment(
 
 def run_ablation_study(
     base_config: ExperimentConfig = None,
-) -> Dict[str, ExperimentResults]:
-    """
-    Run an ablation study with different configurations.
+) -> dict[str, ExperimentResults]:
+    """Run an ablation study with different configurations.
 
     Args:
         base_config: Base configuration to modify
@@ -522,7 +520,7 @@ def run_ablation_study(
     # Compare results
     logger.info("Ablation study completed")
     logger.info("\nConfiguration comparison:")
-    
+
     for name, result in results.items():
         if result and result.rounds:  # Check if result exists and has data
             summary = result.summary()
@@ -537,9 +535,8 @@ def run_ablation_study(
 
 def run_confidence_analysis(
     config: ExperimentConfig = None
-) -> Dict[str, Any]:
-    """
-    Analyze the impact of confidence weighting.
+) -> dict[str, Any]:
+    """Analyze the impact of confidence weighting.
 
     Args:
         config: Experiment configuration
