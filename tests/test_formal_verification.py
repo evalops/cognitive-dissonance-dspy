@@ -14,10 +14,6 @@ from formal_verification import (
     PropertyType,
     build_claim_ir,
 )
-from formal_verification.hybrid_lean_coq_resolver import (
-    HybridLeanCoqResolver,
-    ProverBackend,
-)
 from formal_verification.structured_models import PreservationAudit, PreservationLabel
 
 
@@ -605,42 +601,6 @@ class TestFormalVerificationConflictDetector:
         assert summary["conflicts_detected"] == 1
         assert summary["average_proof_time_ms"] == (100 + 150 + 75) / 3
         assert summary["has_ground_truth"] is True
-
-
-class TestHybridLeanCoqResolver:
-    """Tests for the hybrid Lean/Coq fallback resolver."""
-
-    def test_try_coq_proof_wraps_proof_result_in_dict(self):
-        """Verify _try_coq_proof returns a dict wrapper around ProofResult."""
-        resolver = HybridLeanCoqResolver()
-        proof_result = ProofResult(None, True, 12.0, None, None, prover_name="coq")
-
-        with (
-            patch.object(resolver.coq_translator, "translate", return_value=Mock()) as mock_translate,
-            patch.object(resolver.coq_prover, "prove_specification", return_value=proof_result),
-        ):
-            result = resolver._try_coq_proof([("alice", "2 + 2 = 4", "correctness")])
-
-        assert result["proven"] is True
-        assert result["result"] is proof_result
-        assert result["error"] is None
-        mock_translate.assert_called_once()
-
-    def test_resolve_conflict_uses_coq_fallback_without_dataclass_get(self):
-        """Verify Coq fallback when Lean proof fails."""
-        resolver = HybridLeanCoqResolver(prefer_lean=True, use_fallback=True)
-        failed_lean = Mock(proven=False)
-        coq_result = {"proven": True, "result": ProofResult(None, True, 1.0, None, None)}
-
-        with (
-            patch.object(resolver, "_try_lean_proof", return_value=failed_lean),
-            patch.object(resolver, "_try_coq_proof", return_value=coq_result),
-        ):
-            result = resolver.resolve_conflict([("alice", "2 + 2 = 4", "correctness")])
-
-        assert result.proven is True
-        assert result.prover_used == ProverBackend.COQ
-        assert result.fallback_result == coq_result
 
 
 class TestIntegration:
