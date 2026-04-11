@@ -124,6 +124,18 @@ class LeanProver:
                 prover_name="lean",
                 solver_status=ProofStatus.TIMEOUT.value,
             )
+        except Exception as exc:
+            logger.error("Lean proof attempt failed: %s", exc)
+            result = ProofResult(
+                spec=spec,
+                proven=False,
+                proof_time_ms=(time.time() - start_time) * 1000,
+                error_message=str(exc),
+                counter_example=None,
+                proof_output="",
+                prover_name="lean",
+                solver_status=ProofStatus.INCONCLUSIVE.value,
+            )
 
         if self.use_cache and self.cache:
             self.cache.put(spec, result)
