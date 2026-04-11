@@ -1,5 +1,6 @@
 """Tests for formal verification cognitive dissonance detection."""
 
+import subprocess
 import time
 from unittest.mock import Mock, patch
 
@@ -9,6 +10,9 @@ from formal_verification import (
     CoqProver,
     FormalSpec,
     FormalVerificationConflictDetector,
+    HybridLeanCoqResolver,
+    LeanProver,
+    LeanTranslator,
     ProofResult,
     ProofStatus,
     PropertyType,
@@ -636,3 +640,255 @@ class TestIntegration:
         assert len(results["proof_results"]) >= 1  # At least one should translate
         assert results["summary"]["total_claims"] >= 1
         assert "agent_rankings" in results["resolution"]
+
+
+class TestLeanTranslator:
+    """Tests for Lean 4 claim translation."""
+
+    def test_translate_arithmetic(self):
+        """Translate simple addition claim to Lean."""
+        translator = LeanTranslator()
+        claim = Claim("a", "2 + 2 = 4", PropertyType.CORRECTNESS, 1.0, 0)
+        spec = translator.translate(claim)
+
+        assert spec is not None
+        assert "omega" in spec.coq_code
+        assert "(2 + 2 : Nat) = 4" in spec.coq_code
+
+    def test_translate_multiplication(self):
+        """Translate multiplication claim to Lean."""
+        translator = LeanTranslator()
+        claim = Claim("a", "3 * 4 = 12", PropertyType.CORRECTNESS, 1.0, 0)
+        spec = translator.translate(claim)
+
+        assert spec is not None
+        assert "(3 * 4 : Nat) = 12" in spec.coq_code
+
+    def test_translate_factorial(self):
+        """Translate factorial claim to Lean."""
+        translator = LeanTranslator()
+        claim = Claim("a", "factorial(5) = 120", PropertyType.CORRECTNESS, 1.0, 0)
+        spec = translator.translate(claim)
+
+        assert spec is not None
+        assert "factorial" in spec.coq_code
+        assert "native_decide" in spec.coq_code
+
+    def test_translate_fibonacci(self):
+        """Translate Fibonacci claim to Lean."""
+        translator = LeanTranslator()
+        claim = Claim("a", "fibonacci(6) = 8", PropertyType.CORRECTNESS, 1.0, 0)
+        spec = translator.translate(claim)
+
+        assert spec is not None
+        assert "fib" in spec.coq_code
+        assert "native_decide" in spec.coq_code
+
+    def test_translate_inequality(self):
+        """Translate inequality claim to Lean."""
+        translator = LeanTranslator()
+        claim = Claim("a", "3 < 5", PropertyType.CORRECTNESS, 1.0, 0)
+        spec = translator.translate(claim)
+
+        assert spec is not None
+        assert "omega" in spec.coq_code
+
+    def test_translate_gcd(self):
+        """Translate GCD claim to Lean."""
+        translator = LeanTranslator()
+        claim = Claim("a", "gcd(12, 8) = 4", PropertyType.CORRECTNESS, 1.0, 0)
+        spec = translator.translate(claim)
+
+        assert spec is not None
+        assert "Nat.gcd 12 8 = 4" in spec.coq_code
+
+    def test_untranslatable_returns_none(self):
+        """Return None for claims that cannot be translated."""
+        translator = LeanTranslator()
+        claim = Claim("a", "the sky is blue", PropertyType.CORRECTNESS, 1.0, 0)
+        assert translator.translate(claim) is None
+
+    def test_translate_from_ir(self):
+        """Translate from structured claim IR."""
+        translator = LeanTranslator()
+        ir = build_claim_ir("2 + 3 = 5")
+        claim = Claim("a", "2 + 3 = 5", PropertyType.CORRECTNESS, 1.0, 0, claim_ir=ir)
+        spec = translator.translate(claim)
+
+        assert spec is not None
+        assert "(2 + 3 : Nat) = 5" in spec.coq_code
+
+
+class TestLeanProver:
+    """Tests for Lean 4 prover interface."""
+
+    def test_initialization(self):
+        """Test prover initializes and checks binary."""
+        with patch.object(LeanProver, "_check_binary", return_value=False):
+            prover = LeanProver()
+            assert prover.lean_available is False
+
+    def test_unavailable_returns_status(self):
+        """Return UNAVAILABLE when lean binary is missing."""
+        with patch.object(LeanProver, "_check_binary", return_value=False):
+            prover = LeanProver()
+            claim = Claim("a", "2 + 2 = 4", PropertyType.CORRECTNESS, 1.0, 0)
+            spec = FormalSpec(claim=claim, spec_text="test", coq_code="", variables={})
+            result = prover.prove_specification(spec)
+
+            assert result.proven is False
+            assert result.prover_name == "lean"
+            assert result.solver_status == "unavailable"
+
+    def test_sorry_detected_as_assumption(self):
+        """Detect sorry as an unverified assumption."""
+        with patch.object(LeanProver, "_check_binary", return_value=True):
+            prover = LeanProver()
+            claim = Claim("a", "test", PropertyType.CORRECTNESS, 1.0, 0)
+            lean_code = "theorem t : True := by sorry"
+            spec = FormalSpec(
+                claim=claim, spec_text="test", coq_code=lean_code, variables={}
+            )
+            result = prover.prove_specification(spec)
+
+            assert result.proven is False
+            assert result.assumptions_present is True
+            assert result.solver_status == "formalized_unproved"
+
+    @patch("subprocess.run")
+    def test_successful_proof(self, mock_run):
+        """Successful lean invocation returns machine_checked."""
+        mock_run.return_value = Mock(returncode=0, stdout=b"", stderr=b"")
+        with patch.object(LeanProver, "_check_binary", return_value=True):
+            prover = LeanProver(use_cache=False)
+            claim = Claim("a", "2 + 2 = 4", PropertyType.CORRECTNESS, 1.0, 0)
+            lean_code = "theorem t : (2 + 2 : Nat) = 4 := by omega"
+            spec = FormalSpec(
+                claim=claim, spec_text="test", coq_code=lean_code, variables={}
+            )
+            result = prover.prove_specification(spec)
+
+            assert result.proven is True
+            assert result.prover_name == "lean"
+            assert result.solver_status == "machine_checked"
+            assert result.checker_name == "lean"
+
+    @patch("subprocess.run")
+    def test_failed_proof(self, mock_run):
+        """Failed lean invocation returns refuted."""
+        mock_run.return_value = Mock(
+            returncode=1, stdout=b"", stderr=b"type mismatch"
+        )
+        with patch.object(LeanProver, "_check_binary", return_value=True):
+            prover = LeanProver(use_cache=False)
+            claim = Claim("a", "2 + 2 = 5", PropertyType.CORRECTNESS, 1.0, 0)
+            lean_code = "theorem t : (2 + 2 : Nat) = 5 := by omega"
+            spec = FormalSpec(
+                claim=claim, spec_text="test", coq_code=lean_code, variables={}
+            )
+            result = prover.prove_specification(spec)
+
+            assert result.proven is False
+            assert result.solver_status == "refuted"
+            assert "type mismatch" in result.error_message
+
+    @patch("subprocess.run")
+    def test_timeout(self, mock_run):
+        """Timeout returns TIMEOUT status."""
+        mock_run.side_effect = subprocess.TimeoutExpired("lean", 30)
+        with patch.object(LeanProver, "_check_binary", return_value=True):
+            prover = LeanProver(use_cache=False)
+            claim = Claim("a", "test", PropertyType.CORRECTNESS, 1.0, 0)
+            spec = FormalSpec(
+                claim=claim, spec_text="test", coq_code="theorem t : True := by trivial", variables={}
+            )
+            result = prover.prove_specification(spec)
+
+            assert result.proven is False
+            assert result.solver_status == "timeout"
+
+
+class TestHybridLeanCoqResolver:
+    """Tests for the hybrid Lean/Coq resolver."""
+
+    def test_lean_success_returns_immediately(self):
+        """When Lean proves the claim, skip Coq."""
+        resolver = HybridLeanCoqResolver(prefer_lean=True)
+        lean_result = ProofResult(
+            None, True, 10.0, None, None, prover_name="lean",
+            solver_status="machine_checked",
+        )
+
+        with (
+            patch.object(resolver.lean_prover, "prove_specification", return_value=lean_result),
+            patch.object(resolver.coq_prover, "prove_specification") as mock_coq,
+        ):
+            claim = Claim("a", "2 + 2 = 4", PropertyType.CORRECTNESS, 1.0, 0)
+            spec = FormalSpec(claim=claim, spec_text="", coq_code="", variables={})
+            result = resolver.prove_specification(spec)
+
+            assert result.proven is True
+            assert result.prover_name == "lean"
+            mock_coq.assert_not_called()
+
+    def test_lean_failure_falls_back_to_coq(self):
+        """When Lean fails and fallback is on, try Coq."""
+        resolver = HybridLeanCoqResolver(prefer_lean=True, use_fallback=True)
+        lean_fail = ProofResult(
+            None, False, 10.0, "failed", None, prover_name="lean",
+            solver_status="refuted",
+        )
+        coq_ok = ProofResult(
+            None, True, 20.0, None, None, prover_name="coq",
+            solver_status="machine_checked",
+        )
+
+        with (
+            patch.object(resolver.lean_prover, "prove_specification", return_value=lean_fail),
+            patch.object(resolver.coq_prover, "prove_specification", return_value=coq_ok),
+        ):
+            claim = Claim("a", "2 + 2 = 4", PropertyType.CORRECTNESS, 1.0, 0)
+            spec = FormalSpec(claim=claim, spec_text="", coq_code="", variables={})
+            result = resolver.prove_specification(spec)
+
+            assert result.proven is True
+            assert result.prover_name == "coq"
+
+    def test_no_fallback_returns_first_failure(self):
+        """When fallback is off, don't try the second prover."""
+        resolver = HybridLeanCoqResolver(prefer_lean=True, use_fallback=False)
+        lean_fail = ProofResult(
+            None, False, 5.0, "failed", None, prover_name="lean",
+            solver_status="refuted",
+        )
+
+        with (
+            patch.object(resolver.lean_prover, "prove_specification", return_value=lean_fail),
+            patch.object(resolver.coq_prover, "prove_specification") as mock_coq,
+        ):
+            claim = Claim("a", "2 + 2 = 4", PropertyType.CORRECTNESS, 1.0, 0)
+            spec = FormalSpec(claim=claim, spec_text="", coq_code="", variables={})
+            result = resolver.prove_specification(spec)
+
+            assert result.proven is False
+            mock_coq.assert_not_called()
+
+    def test_coq_preferred_tries_coq_first(self):
+        """When prefer_lean=False, try Coq before Lean."""
+        resolver = HybridLeanCoqResolver(prefer_lean=False)
+        coq_ok = ProofResult(
+            None, True, 15.0, None, None, prover_name="coq",
+            solver_status="machine_checked",
+        )
+
+        with (
+            patch.object(resolver.coq_prover, "prove_specification", return_value=coq_ok),
+            patch.object(resolver.lean_prover, "prove_specification") as mock_lean,
+        ):
+            claim = Claim("a", "2 + 2 = 4", PropertyType.CORRECTNESS, 1.0, 0)
+            spec = FormalSpec(claim=claim, spec_text="", coq_code="", variables={})
+            result = resolver.prove_specification(spec)
+
+            assert result.proven is True
+            assert result.prover_name == "coq"
+            mock_lean.assert_not_called()

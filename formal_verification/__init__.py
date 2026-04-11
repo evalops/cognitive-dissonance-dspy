@@ -6,6 +6,9 @@ rigorous conflict resolution for agent claims about code properties.
 """
 
 from .detector import FormalVerificationConflictDetector
+from .hybrid_lean_coq_resolver import HybridLeanCoqResolver
+from .lean_prover import LeanProver
+from .lean_translator import LeanTranslator
 from .proof_protocol import (
     PreservationAuditor,
     build_claim_ir,
@@ -25,6 +28,9 @@ __all__ = [
     "CoqProver",
     "FormalSpec",
     "FormalVerificationConflictDetector",
+    "HybridLeanCoqResolver",
+    "LeanProver",
+    "LeanTranslator",
     "PreservationAudit",
     "PreservationAuditor",
     "PreservationLabel",
