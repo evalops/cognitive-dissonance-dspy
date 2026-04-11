@@ -4,16 +4,17 @@ Provides intelligent fallback between Lean (via LeanDojo) and Coq provers
 for maximum theorem proving coverage when resolving cognitive dissonance.
 """
 
+import logging
 import time
-from typing import Any, Optional, Dict, List, Tuple
 from dataclasses import dataclass
 from enum import Enum
-import logging
+from typing import Any
 
-from .lean_translator import LeanTranslator, LeanStatement
-from .lean_prover import LeanProver, ProofResult as LeanProofResult
-from .translator import ClaimTranslator
+from .lean_prover import LeanProver
+from .lean_prover import ProofResult as LeanProofResult
+from .lean_translator import LeanTranslator
 from .prover import CoqProver
+from .translator import ClaimTranslator
 from .types import Claim, PropertyType
 
 logger = logging.getLogger(__name__)
@@ -31,8 +32,8 @@ class HybridProofResult:
     """Result from hybrid Lean/Coq prover."""
     proven: bool
     prover_used: ProverBackend
-    primary_result: Optional[object] = None
-    fallback_result: Optional[object] = None
+    primary_result: object | None = None
+    fallback_result: object | None = None
     combined_confidence: float = 0.0
 
 
@@ -48,13 +49,13 @@ class HybridLeanCoqResolver:
         self.coq_prover = CoqProver()
 
     def resolve_conflict(
-        self, claims: List[Tuple[str, str, str]]
+        self, claims: list[tuple[str, str, str]]
     ) -> HybridProofResult:
         """Resolve a conflict between claims using hybrid approach.
-        
+
         Args:
             claims: List of (agent_id, claim_text, claim_type) tuples
-            
+
         Returns:
             HybridProofResult with proof status and prover backend used
         """
@@ -68,7 +69,7 @@ class HybridLeanCoqResolver:
                     primary_result=lean_result,
                     combined_confidence=0.95,
                 )
-            
+
             # Fallback to Coq
             if self.use_fallback:
                 coq_result = self._try_coq_proof(claims)
@@ -89,7 +90,7 @@ class HybridLeanCoqResolver:
                     primary_result=coq_result,
                     combined_confidence=0.90,
                 )
-            
+
             # Fallback to Lean
             if self.use_fallback:
                 lean_result = self._try_lean_proof(claims)
@@ -100,23 +101,23 @@ class HybridLeanCoqResolver:
                         fallback_result=lean_result,
                         combined_confidence=0.85,
                     )
-        
+
         return HybridProofResult(proven=False, prover_used=ProverBackend.HYBRID)
 
-    def _try_lean_proof(self, claims: List[Tuple[str, str, str]]) -> LeanProofResult:
+    def _try_lean_proof(self, claims: list[tuple[str, str, str]]) -> LeanProofResult:
         """Attempt proof using Lean/LeanDojo."""
         try:
             # Translate first claim to Lean
             claim_text = claims[0][1]
             claim_type = claims[0][2]
-            
+
             lean_stmt = self.lean_translator.translate_claim(claim_text, claim_type)
             lean_code = self.lean_translator.to_lean_code(lean_stmt)
-            
+
             # Attempt proof
             proof_result = self.lean_prover.prove(lean_code, lean_stmt.name)
             logger.info(f"Lean proof attempt: {proof_result}")
-            
+
             return proof_result
         except Exception as e:
             logger.error(f"Lean proof failed: {e}")
@@ -127,7 +128,7 @@ class HybridLeanCoqResolver:
                 error_message=str(e),
             )
 
-    def _try_coq_proof(self, claims: List[Tuple[str, str, str]]) -> Dict[str, Any]:
+    def _try_coq_proof(self, claims: list[tuple[str, str, str]]) -> dict[str, Any]:
         """Attempt proof using Coq (existing implementation)."""
         try:
             agent_id, claim_text, claim_type = claims[0]

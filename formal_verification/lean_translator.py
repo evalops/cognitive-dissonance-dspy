@@ -1,15 +1,13 @@
 """Lean Formalization Translator via LeanDojo.
 
-Translates natural language claims to Lean 4 proofs leveraging the 
+Translates natural language claims to Lean 4 proofs leveraging the
 LeanDojo framework for advanced theorem proving capabilities.
 """
 
-import re
-import json
-from typing import Optional, Dict, Any
-from dataclasses import dataclass
-import subprocess
 import logging
+import re
+from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +17,8 @@ class LeanStatement:
     """Lean theorem/lemma statement."""
     name: str
     statement: str
-    proof: Optional[str] = None
-    namespace: Optional[str] = "CognitiveDissonance"
+    proof: str | None = None
+    namespace: str | None = "CognitiveDissonance"
 
 
 class LeanTranslator:
@@ -28,15 +26,15 @@ class LeanTranslator:
 
     def __init__(self, use_leandojo: bool = True):
         self.use_leandojo = use_leandojo
-        self.translation_cache: Dict[str, LeanStatement] = {}
+        self.translation_cache: dict[str, LeanStatement] = {}
 
     def translate_claim(self, claim: str, claim_type: str = "arithmetic") -> LeanStatement:
         """Translate a natural language claim to Lean.
-        
+
         Args:
             claim: Natural language statement
             claim_type: Category of claim (arithmetic, algorithm, invariant, etc.)
-            
+
         Returns:
             LeanStatement with Lean 4 formalization
         """
@@ -69,8 +67,6 @@ class LeanTranslator:
 
         if match:
             a, op, b, result = match.groups()
-            op_map = {"+": "HAdd.hAdd", "-": "HSub.hSub", "*": "HMul.hMul", "/": "HDiv.hDiv"}
-            lean_op = op_map.get(op, "HAdd.hAdd")
 
             statement = f"({a} {op} {b} : Nat) = {result}"
             proof = "by omega"
@@ -129,13 +125,13 @@ theorem {statement.name} : {statement.statement} := by
 """.strip()
         return code
 
-    def verify_with_leandojo(self, statement: LeanStatement) -> Dict[str, Any]:
+    def verify_with_leandojo(self, statement: LeanStatement) -> dict[str, Any]:
         """Verify using LeanDojo (requires leandojo installation)."""
         if not self.use_leandojo:
             return {"status": "skipped", "reason": "LeanDojo disabled"}
 
         try:
-            lean_code = self.to_lean_code(statement)
+            self.to_lean_code(statement)
             # LeanDojo API call would go here
             result = {
                 "status": "verified",

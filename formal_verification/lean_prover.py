@@ -4,12 +4,12 @@ Proves Lean statements using LeanDojo's API for automated proof search
 and verification of cognitive dissonance resolutions.
 """
 
-import subprocess
 import json
-import os
-from typing import Optional, Dict, Any, List
-from dataclasses import dataclass
 import logging
+import os
+import subprocess
+from dataclasses import dataclass
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -19,26 +19,26 @@ class ProofResult:
     """Result of a proof attempt."""
     statement_name: str
     proven: bool
-    proof_term: Optional[str] = None
-    error_message: Optional[str] = None
+    proof_term: str | None = None
+    error_message: str | None = None
     proof_time_ms: float = 0.0
 
 
 class LeanProver:
     """Proves Lean 4 theorems using LeanDojo."""
 
-    def __init__(self, leandojo_path: Optional[str] = None, timeout_ms: int = 30000):
+    def __init__(self, leandojo_path: str | None = None, timeout_ms: int = 30000):
         self.leandojo_path = leandojo_path or "leandojo"
         self.timeout_ms = timeout_ms
-        self.proof_cache: Dict[str, ProofResult] = {}
+        self.proof_cache: dict[str, ProofResult] = {}
 
     def prove(self, lean_code: str, statement_name: str) -> ProofResult:
         """Prove a Lean theorem.
-        
+
         Args:
             lean_code: Complete Lean 4 code including theorem
             statement_name: Name of the theorem to prove
-            
+
         Returns:
             ProofResult with proof status and details
         """
@@ -55,7 +55,7 @@ class LeanProver:
         try:
             # Write code to temporary file
             temp_file = f"/tmp/lean_{statement_name}.lean"
-            with open(temp_file, "w") as f:
+            with Path(temp_file).open("w") as f:
                 f.write(lean_code)
 
             # Call LeanDojo
@@ -109,13 +109,13 @@ class LeanProver:
                 os.remove(temp_file)
 
     def batch_prove(
-        self, theorems: List[tuple[str, str]]
-    ) -> List[ProofResult]:
+        self, theorems: list[tuple[str, str]]
+    ) -> list[ProofResult]:
         """Prove multiple theorems.
-        
+
         Args:
             theorems: List of (lean_code, statement_name) tuples
-            
+
         Returns:
             List of ProofResults
         """
@@ -125,7 +125,7 @@ class LeanProver:
         """Verify that Lean code type-checks."""
         try:
             temp_file = "/tmp/lean_verify.lean"
-            with open(temp_file, "w") as f:
+            with Path(temp_file).open("w") as f:
                 f.write(lean_code)
 
             result = subprocess.run(
