@@ -112,9 +112,12 @@ class LeanProver:
 
         try:
             result = self._run_lean(lean_code, start_time, spec)
+            if self.use_cache and self.cache:
+                self.cache.put(spec, result)
+            return result
         except subprocess.TimeoutExpired:
             logger.warning("Lean proof timeout for: %s", spec.spec_text)
-            result = ProofResult(
+            return ProofResult(
                 spec=spec,
                 proven=False,
                 proof_time_ms=self.timeout_seconds * 1000,
@@ -126,7 +129,7 @@ class LeanProver:
             )
         except Exception as exc:
             logger.error("Lean proof attempt failed: %s", exc)
-            result = ProofResult(
+            return ProofResult(
                 spec=spec,
                 proven=False,
                 proof_time_ms=(time.time() - start_time) * 1000,
@@ -136,11 +139,6 @@ class LeanProver:
                 prover_name="lean",
                 solver_status=ProofStatus.INCONCLUSIVE.value,
             )
-
-        if self.use_cache and self.cache:
-            self.cache.put(spec, result)
-
-        return result
 
     def _run_lean(
         self, lean_code: str, start_time: float, spec: FormalSpec
