@@ -54,30 +54,41 @@ class HybridLeanCoqResolver:
         """Try Lean first, fall back to Coq."""
         lean_spec = self._ensure_lean_spec(spec)
         if lean_spec is not None:
-            result = self.lean_prover.prove_specification(lean_spec)
-            if result.proven:
-                return result
+            lean_result = self.lean_prover.prove_specification(lean_spec)
+            if lean_result.proven:
+                return lean_result
+        else:
+            lean_result = None
 
         if not self.use_fallback:
-            if lean_spec is not None:
-                return result
+            if lean_result is not None:
+                return lean_result
             return self._untranslatable(spec, "lean")
 
-        return self.coq_prover.prove_specification(spec)
+        coq_result = self.coq_prover.prove_specification(spec)
+        if coq_result.proven:
+            return coq_result
+        # Prefer the more informative result from whichever prover ran.
+        return lean_result if lean_result is not None else coq_result
 
     def _coq_then_lean(self, spec: FormalSpec) -> ProofResult:
         """Try Coq first, fall back to Lean."""
-        result = self.coq_prover.prove_specification(spec)
-        if result.proven:
-            return result
+        coq_result = self.coq_prover.prove_specification(spec)
+        if coq_result.proven:
+            return coq_result
 
         if not self.use_fallback:
-            return result
+            return coq_result
 
         lean_spec = self._ensure_lean_spec(spec)
         if lean_spec is None:
-            return result
-        return self.lean_prover.prove_specification(lean_spec)
+            return coq_result
+
+        lean_result = self.lean_prover.prove_specification(lean_spec)
+        if lean_result.proven:
+            return lean_result
+        # Both failed — prefer the initial result.
+        return coq_result
 
     def _ensure_lean_spec(self, spec: FormalSpec) -> FormalSpec | None:
         """Translate the spec's claim to Lean if needed."""
