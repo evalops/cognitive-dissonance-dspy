@@ -721,6 +721,20 @@ class TestLeanTranslator:
         if spec is not None:
             assert "⟨6," in spec.coq_code
 
+    def test_implication_quantifies_free_variables(self):
+        """Implication with free variables wraps them in forall binders."""
+        translator = LeanTranslator()
+        ir = build_claim_ir("if x > 5 then x > 3")
+        if ir is not None:
+            claim = Claim(
+                "a", "if x > 5 then x > 3",
+                PropertyType.CORRECTNESS, 1.0, 0, claim_ir=ir,
+            )
+            spec = translator.translate(claim)
+            assert spec is not None
+            assert "∀" in spec.coq_code
+            assert "(x : Nat)" in spec.coq_code
+
     def test_untranslatable_returns_none(self):
         """Return None for claims that cannot be translated."""
         translator = LeanTranslator()

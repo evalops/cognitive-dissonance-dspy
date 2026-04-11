@@ -218,7 +218,16 @@ theorem fib_claim : fib {n} = {result} := by native_decide"""
     ) -> FormalSpec:
         hyp = self._to_lean_expr(hypothesis)
         conc = self._to_lean_expr(conclusion)
-        lean = f"theorem impl_claim : {hyp} → {conc} := by omega"
+        combined = hypothesis + " " + conclusion
+        free_vars = sorted(set(re.findall(r"\b([a-z])\b", combined)))
+        if free_vars:
+            binders = " ".join(f"({v} : Nat)" for v in free_vars)
+            lean = (
+                f"theorem impl_claim : ∀ {binders}, "
+                f"{hyp} → {conc} := by omega"
+            )
+        else:
+            lean = f"theorem impl_claim : {hyp} → {conc} := by omega"
         return FormalSpec(
             claim=claim,
             spec_text=f"Implication: {hypothesis} → {conclusion}",
