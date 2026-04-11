@@ -4,15 +4,17 @@ Provides intelligent fallback between Lean (via LeanDojo) and Coq provers
 for maximum theorem proving coverage when resolving cognitive dissonance.
 """
 
-from typing import Optional, Dict, List, Tuple
+import time
+from typing import Any, Optional, Dict, List, Tuple
 from dataclasses import dataclass
 from enum import Enum
 import logging
 
 from .lean_translator import LeanTranslator, LeanStatement
 from .lean_prover import LeanProver, ProofResult as LeanProofResult
-from .translator import Translator  # Existing Coq translator
-from .prover import Prover  # Existing Coq prover
+from .translator import ClaimTranslator
+from .prover import CoqProver
+from .types import Claim, PropertyType
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +44,8 @@ class HybridLeanCoqResolver:
         self.use_fallback = use_fallback
         self.lean_translator = LeanTranslator()
         self.lean_prover = LeanProver()
-        self.coq_translator = Translator()  # Existing
-        self.coq_prover = Prover()  # Existing
+        self.coq_translator = ClaimTranslator()
+        self.coq_prover = CoqProver()
 
     def resolve_conflict(
         self, claims: List[Tuple[str, str, str]]
@@ -125,17 +127,38 @@ class HybridLeanCoqResolver:
                 error_message=str(e),
             )
 
-    def _try_coq_proof(self, claims: List[Tuple[str, str, str]]) -> Dict:
+    def _try_coq_proof(self, claims: List[Tuple[str, str, str]]) -> Dict[str, Any]:
         """Attempt proof using Coq (existing implementation)."""
         try:
-            claim_text = claims[0][1]
-            coq_code = self.coq_translator.translate(claim_text)
-            result = self.coq_prover.prove(coq_code)
-            logger.info(f"Coq proof attempt: {result}")
-            return result
+            agent_id, claim_text, claim_type = claims[0]
+            claim = Claim(
+                agent_id=agent_id,
+                claim_text=claim_text,
+                property_type=self._property_type_from_claim_type(claim_type),
+                confidence=1.0,
+                timestamp=time.time(),
+            )
+            spec = self.coq_translator.translate(claim, "")
+            if spec is None:
+                return {"proven": False, "result": None, "error": "translation_failed"}
+
+            proof_result = self.coq_prover.prove_specification(spec)
+            logger.info(f"Coq proof attempt: {proof_result}")
+            return {
+                "proven": proof_result.proven,
+                "result": proof_result,
+                "error": proof_result.error_message,
+            }
         except Exception as e:
             logger.error(f"Coq proof failed: {e}")
-            return {"proven": False, "error": str(e)}
+            return {"proven": False, "result": None, "error": str(e)}
+
+    def _property_type_from_claim_type(self, claim_type: str) -> PropertyType:
+        normalized = claim_type.strip().lower().replace("-", "_").replace(" ", "_")
+        for candidate in PropertyType:
+            if candidate.value == normalized or candidate.name.lower() == normalized:
+                return candidate
+        return PropertyType.CORRECTNESS
 
     def get_best_backend_for_claim(
         self, claim_type: str
