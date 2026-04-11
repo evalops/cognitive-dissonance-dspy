@@ -114,7 +114,7 @@ class LeanProver:
             result = self._run_lean(lean_code, start_time, spec)
         except subprocess.TimeoutExpired:
             logger.warning("Lean proof timeout for: %s", spec.spec_text)
-            result = ProofResult(
+            return ProofResult(
                 spec=spec,
                 proven=False,
                 proof_time_ms=self.timeout_seconds * 1000,
@@ -126,7 +126,7 @@ class LeanProver:
             )
         except Exception as exc:
             logger.error("Lean proof attempt failed: %s", exc)
-            result = ProofResult(
+            return ProofResult(
                 spec=spec,
                 proven=False,
                 proof_time_ms=(time.time() - start_time) * 1000,
