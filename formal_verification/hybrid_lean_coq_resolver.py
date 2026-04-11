@@ -61,7 +61,7 @@ class HybridLeanCoqResolver:
         if not self.use_fallback:
             if lean_spec is not None:
                 return result
-            return self._unavailable(spec, "lean")
+            return self._untranslatable(spec, "lean")
 
         return self.coq_prover.prove_specification(spec)
 
@@ -84,8 +84,8 @@ class HybridLeanCoqResolver:
         return self.lean_translator.translate(spec.claim)
 
     @staticmethod
-    def _unavailable(spec: FormalSpec, prover: str) -> ProofResult:
-        """Return an UNAVAILABLE result when translation failed."""
+    def _untranslatable(spec: FormalSpec, prover: str) -> ProofResult:
+        """Return an INCONCLUSIVE result when translation failed."""
         return ProofResult(
             spec=spec,
             proven=False,
@@ -94,5 +94,5 @@ class HybridLeanCoqResolver:
             counter_example=None,
             proof_output="",
             prover_name=prover,
-            solver_status="unavailable",
+            solver_status="inconclusive",
         )

@@ -133,7 +133,7 @@ class LeanTranslator:
         self, claim: Claim, left: int, right: int, result: int
     ) -> FormalSpec:
         lean = (
-            f"theorem mul_claim : ({left} * {right} : Nat) = {result} := by omega"
+            f"theorem mul_claim : ({left} * {right} : Nat) = {result} := by native_decide"
         )
         return FormalSpec(
             claim=claim,
